@@ -39,9 +39,6 @@ export function Login() {
             {loading ? <Spinner className="h-4 w-4 border-white/40 border-t-white" /> : "Entrar"}
           </button>
         </form>
-        <p className="text-center text-xs text-slate-400 mt-4">
-          Demo · admin@reservas.test / staff@barberia.test
-        </p>
       </div>
     </div>
   );
