@@ -7,7 +7,7 @@ import { WEEKDAYS_ES, shortTime } from "@reservas/shared";
 import { PageHeader, Spinner } from "../components/ui";
 import { IntegrationsForm } from "../components/IntegrationsForm";
 
-const WIDGET_URL = import.meta.env.VITE_WIDGET_URL as string;
+const WIDGET_URL = ((import.meta.env.VITE_WIDGET_URL as string) || "").replace(/\/+$/, "");
 type Hour = { weekday: number; open_time: string; close_time: string };
 
 export function Configuracion() {

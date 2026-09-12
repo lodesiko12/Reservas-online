@@ -8,7 +8,7 @@ import { PageHeader, StatCard, Spinner, Modal, EmptyState } from "../components/
 
 type Business = Tables<"businesses">;
 
-const WIDGET_URL = import.meta.env.VITE_WIDGET_URL as string;
+const WIDGET_URL = ((import.meta.env.VITE_WIDGET_URL as string) || "").replace(/\/+$/, "");
 
 export function Businesses() {
   const qc = useQueryClient();

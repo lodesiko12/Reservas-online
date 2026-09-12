@@ -9,7 +9,7 @@ import { PageHeader, StatCard, Spinner, StatusBadge } from "../components/ui";
 import { IntegrationsForm } from "../components/IntegrationsForm";
 
 type Business = Tables<"businesses">;
-const WIDGET_URL = import.meta.env.VITE_WIDGET_URL as string;
+const WIDGET_URL = ((import.meta.env.VITE_WIDGET_URL as string) || "").replace(/\/+$/, "");
 type Tab = "dashboard" | "editar" | "integraciones";
 
 export function BusinessDetail() {
