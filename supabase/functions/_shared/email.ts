@@ -79,7 +79,7 @@ export async function sendEmail(
   businessFrom?: string | null
 ): Promise<string | null> {
   const apiKey = businessApiKey || Deno.env.get("RESEND_API_KEY");
-  const from = businessFrom || Deno.env.get("EMAIL_FROM") || "Reservas <onboarding@resend.dev>";
+  const from = businessFrom || Deno.env.get("EMAIL_FROM") || "Turnigo <onboarding@resend.dev>";
   if (!apiKey) {
     console.warn("[email] Sin credencial de Resend (ni del negocio ni global); se omite el envío.");
     return null;

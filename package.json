@@ -2,7 +2,7 @@
   "name": "reservas-saas",
   "private": true,
   "version": "0.1.0",
-  "description": "SaaS multi-tenant de reservas online (widget embebible + panel de negocio + super-admin) sobre Supabase.",
+  "description": "Turnigo — SaaS multi-tenant de reservas online (widget embebible + panel de negocio + super-admin) sobre Supabase.",
   "workspaces": [
     "packages/*",
     "apps/*"

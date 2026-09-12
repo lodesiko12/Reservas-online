@@ -1,4 +1,4 @@
-# SaaS de Reservas Online (multi-tenant)
+# Turnigo — SaaS de reservas online (multi-tenant)
 
 Plataforma **multi-tenant** de reservas para negocios locales, con tres piezas:
 

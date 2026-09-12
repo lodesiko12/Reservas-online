@@ -11,7 +11,7 @@ export function Layout({ nav, brandLabel }: { nav: NavItem[]; brandLabel: string
       {/* Sidebar */}
       <aside className="w-60 shrink-0 bg-white border-r border-slate-200 flex flex-col">
         <div className="h-16 flex items-center gap-2 px-5 border-b border-slate-200">
-          <div className="h-8 w-8 rounded-lg bg-brand-500 grid place-items-center text-white font-bold">R</div>
+          <div className="h-8 w-8 rounded-lg bg-brand-500 grid place-items-center text-white font-bold">T</div>
           <span className="font-bold text-slate-800">{brandLabel}</span>
         </div>
 

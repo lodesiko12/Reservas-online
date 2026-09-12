@@ -21,8 +21,8 @@ export function Login() {
     <div className="min-h-screen grid place-items-center p-4 bg-gradient-to-br from-slate-100 to-slate-200">
       <div className="w-full max-w-sm">
         <div className="text-center mb-6">
-          <div className="mx-auto h-12 w-12 rounded-xl bg-brand-500 grid place-items-center text-white font-bold text-xl">R</div>
-          <h1 className="mt-3 text-xl font-bold">Panel de Reservas</h1>
+          <div className="mx-auto h-12 w-12 rounded-xl bg-brand-500 grid place-items-center text-white font-bold text-xl">T</div>
+          <h1 className="mt-3 text-xl font-bold">Turnigo</h1>
           <p className="text-sm text-slate-500">Accede con tu cuenta</p>
         </div>
         <form onSubmit={submit} className="card p-6 space-y-4">

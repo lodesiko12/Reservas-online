@@ -10,7 +10,7 @@ const nav: NavItem[] = [
 export function AdminApp() {
   return (
     <Routes>
-      <Route element={<Layout nav={nav} brandLabel="Super-Admin" />}>
+      <Route element={<Layout nav={nav} brandLabel="Turnigo · Admin" />}>
         <Route index element={<Businesses />} />
         <Route path="negocio/:id" element={<BusinessDetail />} />
         <Route path="*" element={<Navigate to="/admin" replace />} />
