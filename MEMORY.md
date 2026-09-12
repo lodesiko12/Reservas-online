@@ -1,0 +1,1 @@
+- [SaaS Reservas (proyecto)](memory/project-reservas-saas.md) — infra Supabase en vivo, credenciales demo y decisiones de arquitectura

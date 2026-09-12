@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "widget",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev:widget"],
+      "port": 5174
+    },
+    {
+      "name": "dashboard",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev:dashboard"],
+      "port": 5173
+    }
+  ]
+}

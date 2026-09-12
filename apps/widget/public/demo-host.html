@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Web de ejemplo del negocio — Barbería El Corte</title>
+    <style>
+      body { font-family: Georgia, serif; margin: 0; color: #1f2937; background: #fafaf9; }
+      header { background: #111827; color: #fff; padding: 40px 20px; text-align: center; }
+      header h1 { margin: 0; font-size: 32px; }
+      .container { max-width: 900px; margin: 0 auto; padding: 40px 20px; }
+      .lead { font-size: 18px; color: #4b5563; line-height: 1.6; }
+      .reserva-box { background: #fff; border: 1px solid #e5e7eb; border-radius: 16px; padding: 24px; margin-top: 24px; box-shadow: 0 8px 30px rgba(0,0,0,.05); }
+      h2 { border-bottom: 2px solid #0f766e; padding-bottom: 8px; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>💈 Barbería El Corte</h1>
+      <p>Tradición y estilo desde 1998</p>
+    </header>
+    <div class="container">
+      <p class="lead">
+        Esta es una página de ejemplo que simula la web que ya tiene el negocio.
+        El bloque de abajo es el <strong>widget de reservas embebido</strong> mediante una sola línea de script.
+      </p>
+
+      <h2>Reserva tu cita</h2>
+      <div class="reserva-box">
+        <!-- ↓↓↓ Esto es lo único que el negocio pega en su web ↓↓↓ -->
+        <div id="reservas-widget" data-slug="barberia-demo"></div>
+        <script src="/embed.js" async></script>
+        <!-- ↑↑↑ ------------------------------------------------ ↑↑↑ -->
+      </div>
+    </div>
+  </body>
+</html>

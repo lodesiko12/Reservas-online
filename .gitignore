@@ -1,0 +1,21 @@
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+*.local
+.claude/settings.local.json
+
+# Archivos personales con credenciales/secretos (nunca subir)
+Enlaces y claves.txt
+*claves*.txt
+*secrets*.txt
+
+.DS_Store
+npm-debug.log*
+.vite/
+supabase/.temp/
+coverage/
+
+# Cachés de build de TypeScript
+*.tsbuildinfo

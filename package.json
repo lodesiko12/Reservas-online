@@ -1,0 +1,20 @@
+{
+  "name": "reservas-saas",
+  "private": true,
+  "version": "0.1.0",
+  "description": "SaaS multi-tenant de reservas online (widget embebible + panel de negocio + super-admin) sobre Supabase.",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev:dashboard": "npm run dev -w @reservas/dashboard",
+    "dev:widget": "npm run dev -w @reservas/widget",
+    "build": "npm run build -w @reservas/widget && npm run build -w @reservas/dashboard",
+    "build:widget": "npm run build -w @reservas/widget",
+    "build:dashboard": "npm run build -w @reservas/dashboard"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
