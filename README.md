@@ -182,6 +182,35 @@ Página de ejemplo que embebe el widget: `http://localhost:5174/demo-host.html`.
 
 ---
 
+## Desplegar online (Netlify)
+
+El backend (Supabase) ya está online; solo hay que publicar los dos frontends. Se crean **dos sitios** en [Netlify](https://netlify.com) (gratis) conectados al mismo repo de GitHub. El SPA-fallback ya está resuelto con los archivos `public/_redirects` de cada app (y `vercel.json` si prefieres Vercel).
+
+**Sitio 1 — Widget** (públicalo primero):
+- *Base directory*: (vacío, raíz del repo)
+- *Build command*: `npm run build:widget`
+- *Publish directory*: `apps/widget/dist`
+- *Environment variables*:
+  - `VITE_SUPABASE_URL` = tu URL de Supabase
+  - `VITE_SUPABASE_ANON_KEY` = tu clave publishable/anon
+- Al desplegar te da una URL, p.ej. `https://reservas-widget.netlify.app`. **Anótala.**
+
+**Sitio 2 — Panel (dashboard)**:
+- *Build command*: `npm run build:dashboard`
+- *Publish directory*: `apps/dashboard/dist`
+- *Environment variables*: las dos anteriores **más**
+  - `VITE_WIDGET_URL` = la URL del widget del paso anterior
+
+**Después de desplegar** (opcional, para que el enlace "Mi reserva" de los emails apunte al widget online):
+```bash
+supabase secrets set WIDGET_URL=https://reservas-widget.netlify.app
+```
+
+> No hace falta tocar CORS: las funciones y RPCs ya aceptan peticiones cross-origin, así que el widget funciona embebido en cualquier dominio.
+> Alternativas equivalentes: **Cloudflare Pages** (usa los mismos `_redirects`) o **Vercel** (usa los `vercel.json`, con *Root Directory* = `apps/widget` / `apps/dashboard`).
+
+---
+
 ## Panel super-admin
 
 Además de crear negocios, el super-admin puede, para cada tenant (desde **Negocios → Gestionar**):
