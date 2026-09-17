@@ -374,8 +374,16 @@ Widget demo local: `http://localhost:5174/?slug=barberia-demo`.
 - **Petición de reseña post-visita**: cron `request-reviews` (mismo patrón que `whatsapp-reminders`) que envía un email 1–3h después de que termine una reserva no cancelada, solo si el negocio configuró un enlace de reseña en `Panel → Configuración → Reseñas`. Idempotente vía `review_requests_log`.
 - **Huella bancaria y prepago con Stripe**: pendiente — requiere que el negocio tenga cuenta de Stripe (el usuario indicó no tenerla aún); se retoma cuando haya claves de API, aunque sean de test.
 
+**Fase 4 — Diferenciación (revisada con el usuario, sin cambios de código):**
+- **Mesas combinables automáticas** y **límites por origen** (online vs. teléfono/walk-in): ya estaban hechos desde las Fases 1 y 3 (`dining_assign_table` prueba combinaciones automáticamente; `online_max_covers`/pacing separan stock online del total).
+- **Multi-local**: ya cubierto por el selector de negocio (`Layout.tsx`) para usuarios con varios negocios, cada uno aislado por RLS. El usuario confirmó que no hace falta un dashboard agregado por ahora.
+- **API/webhooks**: no es prioritario todavía; no se ha construido.
+- **Resumen de reseñas con IA**: pendiente, igual que Stripe — requiere que el negocio tenga acceso a la API de Google Business Profile (y una API de IA para resumir), de los que el usuario no dispone aún.
+
 **Siguientes fases (ver `docs/` para el roadmap completo tipo TheFork):**
-- Huella bancaria/prepago con Stripe (`SetupIntent`/`PaymentIntent`, con el aviso legal de política de cancelación que exige el documento de referencia).
+- Huella bancaria/prepago con Stripe (`SetupIntent`/`PaymentIntent`, con el aviso legal de política de cancelación que exige el documento de referencia) — pendiente de cuenta Stripe.
+- Resumen de reseñas con IA — pendiente de acceso a Google Business Profile.
+- API pública/webhooks para integraciones a medida — sin priorizar aún.
 - Editor visual de posiciones de mesa (drag&drop sobre un croquis) — de momento el plano es una cuadrícula por zona, no un mapa libre.
 - Arrastrar-soltar para reprogramar en la rejilla semanal de Agenda.
 - Multi-idioma del widget y más proveedores de email/SMS.
