@@ -71,6 +71,36 @@ ${d.manageUrl ? `Gestiona tu reserva: ${d.manageUrl}` : ""}`;
   return { subject, html, text };
 }
 
+export type ReviewRequestData = {
+  businessName: string;
+  customerName: string;
+  reviewUrl: string;
+  primaryColor?: string;
+};
+
+/** Email post-visita pidiendo una reseña. Solo se construye/envía si el
+ * negocio tiene configurado un enlace de reseña (Google/TripAdvisor...). */
+export function buildReviewRequestEmail(d: ReviewRequestData): { subject: string; html: string; text: string } {
+  const color = d.primaryColor || "#4f46e5";
+  const subject = `¿Qué tal tu visita a ${d.businessName}?`;
+  const html = `<!doctype html><html><body style="margin:0;background:#f1f5f9;padding:24px;font-family:system-ui,Segoe UI,Arial,sans-serif;color:#0f172a">
+  <div style="max-width:520px;margin:0 auto;background:#fff;border-radius:14px;overflow:hidden;border:1px solid #e2e8f0">
+    <div style="background:${color};color:#fff;padding:20px 24px">
+      <h1 style="margin:0;font-size:20px">${d.businessName}</h1>
+      <p style="margin:4px 0 0;opacity:.9">Gracias por tu visita</p>
+    </div>
+    <div style="padding:24px">
+      <p style="margin:0 0 16px">Hola ${d.customerName}, esperamos que lo hayas pasado genial. Si tienes un minuto, nos ayudaría muchísimo que dejaras tu opinión:</p>
+      <p style="text-align:center;margin:24px 0">
+        <a href="${d.reviewUrl}" style="background:${color};color:#fff;text-decoration:none;padding:12px 24px;border-radius:10px;font-weight:600;display:inline-block">Dejar una reseña</a>
+      </p>
+      <p style="margin:18px 0 0;color:#94a3b8;font-size:12px">Gracias por confiar en nosotros.</p>
+    </div>
+  </div></body></html>`;
+  const text = `Hola ${d.customerName}, gracias por tu visita a ${d.businessName}. Si tienes un minuto, déjanos tu opinión aquí: ${d.reviewUrl}`;
+  return { subject, html, text };
+}
+
 /**
  * Envía el email con Resend usando las credenciales del negocio si están
  * disponibles; si no, cae al RESEND_API_KEY/EMAIL_FROM globales (fallback).

@@ -21,6 +21,8 @@ export function Configuracion() {
   const [logoUrl, setLogoUrl] = useState(business?.logo_url ?? "");
   const [capacity, setCapacity] = useState(business?.default_capacity ?? 1);
   const [slotInterval, setSlotInterval] = useState(business?.slot_interval_min ?? 15);
+  const [reviewUrl, setReviewUrl] = useState(business?.google_review_url ?? "");
+  const [savingReview, setSavingReview] = useState(false);
 
   const [hours, setHours] = useState<Hour[] | null>(null);
   const [savingBranding, setSavingBranding] = useState(false);
@@ -48,6 +50,13 @@ export function Configuracion() {
     await supabase.from("businesses").update({ default_capacity: Number(capacity), slot_interval_min: Number(slotInterval) }).eq("id", bid);
     await refresh();
     setSavingRes(false); flash("Ajustes de reservas guardados");
+  }
+
+  async function saveReview() {
+    setSavingReview(true);
+    await supabase.from("businesses").update({ google_review_url: reviewUrl.trim() || null }).eq("id", bid);
+    await refresh();
+    setSavingReview(false); flash("Enlace de reseña guardado");
   }
 
   async function saveHours() {
@@ -140,6 +149,18 @@ export function Configuracion() {
       {/* Reglas generales de reserva (restaurante) */}
       {isRestaurant && <DiningSettingsSection bid={bid} flash={flash} />}
 
+      {/* Petición de reseña post-visita */}
+      <section className="card p-6">
+        <h2 className="font-semibold mb-1">Reseñas</h2>
+        <p className="text-sm text-slate-500 mb-4">
+          Si configuras un enlace, 1–3h después de que termine una reserva (y no haya sido cancelada/no-show) se envía
+          automáticamente un email pidiendo una reseña. Déjalo vacío para no enviar nada.
+        </p>
+        <label className="label">Enlace de reseña (Google, TripAdvisor…)</label>
+        <input className="input" value={reviewUrl} onChange={(e) => setReviewUrl(e.target.value)} placeholder="https://g.page/r/…/review" />
+        <button className="btn-primary mt-4" onClick={saveReview} disabled={savingReview}>{savingReview ? "Guardando…" : "Guardar"}</button>
+      </section>
+
       {/* Integraciones: email y WhatsApp por negocio */}
       <section className="card p-6">
         <h2 className="font-semibold mb-1">Integraciones (email y WhatsApp)</h2>
@@ -161,12 +182,22 @@ export function Configuracion() {
 
 function DiningSettingsSection({ bid, flash }: { bid: string; flash: (m: string) => void }) {
   const qc = useQueryClient();
+  const { business, refresh } = useAuth();
   const { data: settings, isLoading } = useDiningSettings();
   const [form, setForm] = useState({
     min_lead_minutes: 30, max_advance_days: 60, min_party_online: 1, max_party_online: 12,
     require_manual_confirmation: false,
   });
   const [busy, setBusy] = useState(false);
+  const [waitlistTemplate, setWaitlistTemplate] = useState(business?.waitlist_template_name ?? "");
+  const [savingTemplate, setSavingTemplate] = useState(false);
+
+  async function saveWaitlistTemplate() {
+    setSavingTemplate(true);
+    await supabase.from("businesses").update({ waitlist_template_name: waitlistTemplate.trim() || null }).eq("id", bid);
+    await refresh();
+    setSavingTemplate(false); flash("Plantilla guardada");
+  }
 
   useEffect(() => {
     if (!settings) return;
@@ -202,6 +233,13 @@ function DiningSettingsSection({ bid, flash }: { bid: string; flash: (m: string)
             Requerir confirmación manual de las reservas web (si no, se confirman al instante)
           </label>
           <button className="btn-primary mt-4" onClick={save} disabled={busy}>{busy ? "Guardando…" : "Guardar"}</button>
+
+          <div className="border-t mt-6 pt-4">
+            <label className="label">Plantilla de WhatsApp para "mesa lista" (lista de espera)</label>
+            <input className="input" value={waitlistTemplate} onChange={(e) => setWaitlistTemplate(e.target.value)} placeholder="lista_espera_mesa" />
+            <p className="text-xs text-slate-400 mt-1">Nombre de la plantilla aprobada en Meta con 2 variables: nombre del cliente y nombre del negocio.</p>
+            <button className="btn-ghost mt-2 text-xs" onClick={saveWaitlistTemplate} disabled={savingTemplate}>{savingTemplate ? "Guardando…" : "Guardar plantilla"}</button>
+          </div>
         </>
       )}
     </section>

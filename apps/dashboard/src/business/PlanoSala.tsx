@@ -4,7 +4,7 @@ import { supabase } from "../lib/supabase";
 import { useAuth } from "../lib/auth";
 import {
   useBusinessId, useDiningZones, useDiningTables, useDiningTableCombos, useDiningShifts,
-  useBookings, useBookingsRealtime, type Booking,
+  useBookings, useBookingsRealtime, useWaitlist, type Booking, type WaitlistEntry,
 } from "./hooks";
 import { ymdInTz, zonedDayRange, weekdayInTz, minutesOfDayInTz, formatTime } from "@reservas/shared";
 import { PageHeader, Spinner, Modal, EmptyState } from "../components/ui";
@@ -187,7 +187,127 @@ export function PlanoSala() {
           onDone={() => { qc.invalidateQueries({ queryKey: ["bookings", bid] }); setWalkinTable(null); }}
         />
       )}
+
+      <WaitlistSection bid={bid} currentShiftId={currentShift?.id ?? null} />
     </div>
+  );
+}
+
+function WaitlistSection({ bid, currentShiftId }: { bid: string; currentShiftId: string | null }) {
+  const qc = useQueryClient();
+  const { data: waitlist, isLoading } = useWaitlist();
+  const [adding, setAdding] = useState(false);
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  function invalidate() { qc.invalidateQueries({ queryKey: ["waitlist", bid] }); }
+
+  async function notify(entry: WaitlistEntry) {
+    setBusyId(entry.id); setError(null);
+    const { error } = await supabase.functions.invoke("notify-waitlist", { body: { waitlist_id: entry.id } });
+    setBusyId(null);
+    if (error) {
+      let msg = error.message;
+      try {
+        const ctx = (error as any).context;
+        if (ctx && typeof ctx.json === "function") {
+          const j = await ctx.json();
+          if (j?.error) msg = j.error;
+        }
+      } catch { /* noop */ }
+      setError(msg);
+      return;
+    }
+    invalidate();
+  }
+
+  async function cancel(entry: WaitlistEntry) {
+    setBusyId(entry.id);
+    await supabase.from("waitlist").update({ status: "cancelado" }).eq("id", entry.id);
+    setBusyId(null); invalidate();
+  }
+
+  async function seat(entry: WaitlistEntry) {
+    if (!currentShiftId) return;
+    setBusyId(entry.id); setError(null);
+    const { data, error } = await supabase.rpc("create_walkin_booking", {
+      p_business_id: bid, p_shift_id: currentShiftId, p_party_size: entry.party_size,
+      p_name: entry.name, p_phone: entry.phone ?? undefined, p_notes: entry.notes ?? undefined,
+    });
+    if (error) { setBusyId(null); setError(error.message); return; }
+    await supabase.from("waitlist").update({ status: "sentado", seated_booking_id: (data as any).id }).eq("id", entry.id);
+    setBusyId(null); invalidate();
+    qc.invalidateQueries({ queryKey: ["bookings", bid] });
+  }
+
+  return (
+    <div className="mt-8">
+      <PageHeader title="Lista de espera" subtitle="Clientes sin mesa libre ahora mismo"
+        actions={<button className="btn-primary" onClick={() => setAdding(true)}>+ Añadir</button>} />
+      {error && <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-3">{error}</div>}
+      {isLoading ? <Spinner /> : !waitlist?.length ? (
+        <EmptyState title="Sin nadie en espera" />
+      ) : (
+        <div className="card divide-y divide-slate-100">
+          {waitlist.map((w) => (
+            <div key={w.id} className="flex items-center gap-4 px-5 py-3">
+              <div className="flex-1 min-w-0">
+                <div className="font-medium truncate">{w.name} · {w.party_size} pers.</div>
+                <div className="text-xs text-slate-500">{w.phone ?? "sin teléfono"}{w.notes ? ` · ${w.notes}` : ""}</div>
+              </div>
+              <span className={`badge text-[11px] ${w.status === "avisado" ? "bg-amber-100 text-amber-700" : "bg-slate-100 text-slate-500"}`}>
+                {w.status === "avisado" ? "Avisado" : "Esperando"}
+              </span>
+              <div className="flex gap-1.5 shrink-0">
+                {w.phone && w.status === "esperando" && (
+                  <button className="btn-ghost text-xs" disabled={busyId === w.id} onClick={() => notify(w)}>Avisar</button>
+                )}
+                <button className="btn-ghost text-xs" disabled={busyId === w.id || !currentShiftId} onClick={() => seat(w)}>Sentar</button>
+                <button className="btn-ghost text-xs" disabled={busyId === w.id} onClick={() => cancel(w)}>Cancelar</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+      {adding && <AddWaitlistModal bid={bid} onClose={() => setAdding(false)} onDone={() => { invalidate(); setAdding(false); }} />}
+    </div>
+  );
+}
+
+function AddWaitlistModal({ bid, onClose, onDone }: { bid: string; onClose: () => void; onDone: () => void }) {
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [party, setParty] = useState(2);
+  const [notes, setNotes] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  async function save() {
+    setBusy(true);
+    await supabase.from("waitlist").insert({
+      business_id: bid, name: name.trim() || "Cliente", phone: phone.trim() || null,
+      party_size: party, notes: notes.trim() || null,
+    });
+    setBusy(false); onDone();
+  }
+
+  return (
+    <Modal open onClose={onClose} title="Añadir a la lista de espera">
+      <div className="space-y-4">
+        <div>
+          <label className="label">Comensales</label>
+          <div className="flex flex-wrap gap-2">
+            {PARTY_OPTIONS.map((n) => (
+              <button type="button" key={n} onClick={() => setParty(n)}
+                className={`w-10 h-10 rounded-lg border font-semibold ${party === n ? "bg-brand-500 text-white border-brand-500" : "bg-white border-slate-200"}`}>{n}</button>
+            ))}
+          </div>
+        </div>
+        <div><label className="label">Nombre</label><input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Nombre del cliente" /></div>
+        <div><label className="label">Teléfono (para avisar por WhatsApp)</label><input className="input" value={phone} onChange={(e) => setPhone(e.target.value)} /></div>
+        <div><label className="label">Notas (opcional)</label><input className="input" value={notes} onChange={(e) => setNotes(e.target.value)} /></div>
+        <div className="flex justify-end gap-2"><button className="btn-ghost" onClick={onClose}>Cancelar</button><button className="btn-primary" disabled={busy} onClick={save}>Añadir</button></div>
+      </div>
+    </Modal>
   );
 }
 

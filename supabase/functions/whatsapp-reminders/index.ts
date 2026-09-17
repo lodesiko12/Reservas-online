@@ -7,42 +7,13 @@
 // y, si tampoco existen, se omite.
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { json, handleOptions } from "../_shared/cors.ts";
+import { sendWhatsApp } from "../_shared/whatsapp.ts";
 
-function digits(phone: string): string {
-  return (phone || "").replace(/[^\d]/g, "");
-}
 function fmtDate(iso: string, tz: string): string {
   return new Intl.DateTimeFormat("es-ES", { weekday: "long", day: "numeric", month: "long", timeZone: tz }).format(new Date(iso));
 }
 function fmtTime(iso: string, tz: string): string {
   return new Intl.DateTimeFormat("es-ES", { hour: "2-digit", minute: "2-digit", timeZone: tz, hour12: false }).format(new Date(iso));
-}
-
-async function sendWhatsApp(
-  token: string,
-  phoneId: string,
-  toPhone: string,
-  templateName: string,
-  lang: string,
-  params: string[]
-): Promise<string> {
-  const res = await fetch(`https://graph.facebook.com/v20.0/${phoneId}/messages`, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      messaging_product: "whatsapp",
-      to: digits(toPhone),
-      type: "template",
-      template: {
-        name: templateName,
-        language: { code: lang },
-        components: [{ type: "body", parameters: params.map((t) => ({ type: "text", text: t })) }],
-      },
-    }),
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(`WhatsApp API ${res.status}: ${JSON.stringify(data)}`);
-  return data?.messages?.[0]?.id ?? "sent";
 }
 
 Deno.serve(async (req) => {

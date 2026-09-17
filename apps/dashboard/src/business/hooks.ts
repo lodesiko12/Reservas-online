@@ -13,6 +13,7 @@ export type DiningTable = Tables<"dining_tables">;
 export type DiningTableCombo = Tables<"dining_table_combos">;
 export type DiningSettings = Tables<"dining_settings">;
 export type DiningShift = Tables<"dining_shifts">;
+export type WaitlistEntry = Tables<"waitlist">;
 
 export function useBusinessId() {
   const { business } = useAuth();
@@ -143,6 +144,21 @@ export function useDiningShifts() {
       const { data, error } = await supabase.from("dining_shifts").select("*").eq("business_id", bid).order("start_time");
       if (error) throw error;
       return data as DiningShift[];
+    },
+  });
+}
+
+/** Lista de espera activa (no sentados ni cancelados) del negocio. */
+export function useWaitlist() {
+  const bid = useBusinessId();
+  return useQuery({
+    queryKey: ["waitlist", bid],
+    enabled: !!bid,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("waitlist").select("*")
+        .eq("business_id", bid).in("status", ["esperando", "avisado"]).order("created_at");
+      if (error) throw error;
+      return data as WaitlistEntry[];
     },
   });
 }

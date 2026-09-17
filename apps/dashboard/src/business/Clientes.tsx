@@ -8,10 +8,51 @@ import { PageHeader, Spinner, Modal, StatusBadge, EmptyState } from "../componen
 
 const AVAILABLE_TAGS = ["VIP", "Habitual", "Alérgico", "Prensa", "Problemático"];
 
+/** Parser CSV mínimo: soporta comillas, comas y saltos de línea dentro de campos. */
+function parseCsv(text: string): string[][] {
+  const rows: string[][] = [];
+  let row: string[] = [];
+  let field = "";
+  let inQuotes = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQuotes) {
+      if (c === '"') { if (text[i + 1] === '"') { field += '"'; i++; } else inQuotes = false; }
+      else field += c;
+    } else if (c === '"') inQuotes = true;
+    else if (c === ",") { row.push(field); field = ""; }
+    else if (c === "\n" || c === "\r") {
+      if (c === "\r" && text[i + 1] === "\n") i++;
+      row.push(field); field = "";
+      if (row.some((f) => f.trim() !== "")) rows.push(row);
+      row = [];
+    } else field += c;
+  }
+  if (field !== "" || row.length) { row.push(field); if (row.some((f) => f.trim() !== "")) rows.push(row); }
+  return rows;
+}
+
+const HEADER_ALIASES: Record<string, string[]> = {
+  full_name: ["nombre", "name"],
+  last_name: ["apellidos", "apellido", "last_name", "lastname"],
+  phone: ["telefono", "teléfono", "phone", "movil", "móvil"],
+  email: ["email", "correo"],
+  notes: ["notas", "notes"],
+};
+
+function matchHeader(header: string): string | null {
+  const h = header.trim().toLowerCase();
+  for (const [field, aliases] of Object.entries(HEADER_ALIASES)) {
+    if (aliases.includes(h)) return field;
+  }
+  return null;
+}
+
 export function Clientes() {
   const bid = useBusinessId();
   const [q, setQ] = useState("");
   const [sel, setSel] = useState<Customer | null>(null);
+  const [importing, setImporting] = useState(false);
 
   const { data: customers, isLoading } = useQuery({
     queryKey: ["customers", bid, q],
@@ -27,7 +68,8 @@ export function Clientes() {
 
   return (
     <div>
-      <PageHeader title="Clientes" subtitle="Histórico y ficha de cada cliente" />
+      <PageHeader title="Clientes" subtitle="Histórico y ficha de cada cliente"
+        actions={<button className="btn-ghost" onClick={() => setImporting(true)}>⬆ Importar CSV</button>} />
       <div className="mb-4 max-w-sm">
         <input className="input" placeholder="Buscar por nombre…" value={q} onChange={(e) => setQ(e.target.value)} />
       </div>
@@ -66,7 +108,91 @@ export function Clientes() {
         )}
 
       {sel && <CustomerModal customer={sel} onClose={() => setSel(null)} />}
+      {importing && <ImportCsvModal bid={bid} onClose={() => setImporting(false)} />}
     </div>
+  );
+}
+
+function ImportCsvModal({ bid, onClose }: { bid: string; onClose: () => void }) {
+  const qc = useQueryClient();
+  const [rows, setRows] = useState<{ full_name: string; last_name?: string; phone?: string; email?: string; notes?: string }[] | null>(null);
+  const [fileError, setFileError] = useState<string | null>(null);
+  const [importing, setImporting] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [done, setDone] = useState<{ ok: number; failed: number } | null>(null);
+
+  function onFile(file: File) {
+    setFileError(null); setRows(null); setDone(null);
+    file.text().then((text) => {
+      const table = parseCsv(text);
+      if (table.length < 2) { setFileError("El archivo no tiene filas de datos."); return; }
+      const header = table[0].map(matchHeader);
+      if (!header.includes("full_name")) { setFileError("Falta una columna de nombre (Nombre)."); return; }
+      const parsed = table.slice(1).map((r) => {
+        const obj: Record<string, string> = {};
+        header.forEach((field, i) => { if (field && r[i]) obj[field] = r[i].trim(); });
+        return obj as { full_name: string; last_name?: string; phone?: string; email?: string; notes?: string };
+      }).filter((r) => r.full_name);
+      if (!parsed.length) { setFileError("No se encontraron filas válidas."); return; }
+      setRows(parsed);
+    }).catch(() => setFileError("No se pudo leer el archivo."));
+  }
+
+  async function doImport() {
+    if (!rows) return;
+    setImporting(true); setProgress(0);
+    let ok = 0, failed = 0;
+    for (const r of rows) {
+      const { error } = await supabase.rpc("import_customer", {
+        p_business_id: bid, p_full_name: r.full_name, p_last_name: r.last_name || undefined,
+        p_phone: r.phone || undefined, p_email: r.email || undefined, p_notes: r.notes || undefined,
+      });
+      if (error) failed++; else ok++;
+      setProgress((p) => p + 1);
+    }
+    setImporting(false); setDone({ ok, failed });
+    qc.invalidateQueries({ queryKey: ["customers", bid] });
+  }
+
+  return (
+    <Modal open onClose={onClose} title="Importar clientes desde CSV">
+      <div className="space-y-4">
+        {!rows && (
+          <>
+            <p className="text-sm text-slate-500">
+              El archivo debe tener cabeceras. Columnas reconocidas: <strong>Nombre</strong> (obligatoria), Apellidos, Teléfono, Email, Notas.
+            </p>
+            <input type="file" accept=".csv,text/csv" onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])} />
+            {fileError && <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{fileError}</div>}
+          </>
+        )}
+
+        {rows && !done && (
+          <>
+            <p className="text-sm">{rows.length} clientes listos para importar.</p>
+            <div className="max-h-56 overflow-y-auto border rounded-lg divide-y divide-slate-100">
+              {rows.slice(0, 8).map((r, i) => (
+                <div key={i} className="px-3 py-1.5 text-sm">{r.full_name} {r.last_name ?? ""} · {r.phone ?? "sin teléfono"}</div>
+              ))}
+              {rows.length > 8 && <div className="px-3 py-1.5 text-xs text-slate-400">…y {rows.length - 8} más</div>}
+            </div>
+            {importing && <p className="text-sm text-slate-500">Importando {progress}/{rows.length}…</p>}
+            <div className="flex justify-end gap-2">
+              <button className="btn-ghost" onClick={() => setRows(null)} disabled={importing}>Elegir otro archivo</button>
+              <button className="btn-primary" onClick={doImport} disabled={importing}>{importing ? "Importando…" : `Importar ${rows.length}`}</button>
+            </div>
+          </>
+        )}
+
+        {done && (
+          <div className="text-center py-4">
+            <div className="text-3xl">✅</div>
+            <p className="mt-2 font-medium">{done.ok} importados{done.failed > 0 ? `, ${done.failed} con error` : ""}</p>
+            <button className="btn-primary mt-4" onClick={onClose}>Cerrar</button>
+          </div>
+        )}
+      </div>
+    </Modal>
   );
 }
 

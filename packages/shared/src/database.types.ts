@@ -296,6 +296,7 @@ export type Database = {
         Row: {
           created_at: string
           default_capacity: number
+          google_review_url: string | null
           id: string
           is_active: boolean
           logo_url: string | null
@@ -308,12 +309,14 @@ export type Database = {
           timezone: string
           type: Database["public"]["Enums"]["business_type"]
           updated_at: string
+          waitlist_template_name: string | null
           whatsapp_phone: string | null
           whatsapp_reminders_enabled: boolean
         }
         Insert: {
           created_at?: string
           default_capacity?: number
+          google_review_url?: string | null
           id?: string
           is_active?: boolean
           logo_url?: string | null
@@ -326,12 +329,14 @@ export type Database = {
           timezone?: string
           type: Database["public"]["Enums"]["business_type"]
           updated_at?: string
+          waitlist_template_name?: string | null
           whatsapp_phone?: string | null
           whatsapp_reminders_enabled?: boolean
         }
         Update: {
           created_at?: string
           default_capacity?: number
+          google_review_url?: string | null
           id?: string
           is_active?: boolean
           logo_url?: string | null
@@ -344,6 +349,7 @@ export type Database = {
           timezone?: string
           type?: Database["public"]["Enums"]["business_type"]
           updated_at?: string
+          waitlist_template_name?: string | null
           whatsapp_phone?: string | null
           whatsapp_reminders_enabled?: boolean
         }
@@ -785,6 +791,51 @@ export type Database = {
         }
         Relationships: []
       }
+      review_requests_log: {
+        Row: {
+          booking_id: string
+          business_id: string
+          error: string | null
+          id: string
+          provider_message_id: string | null
+          sent_at: string
+          status: string
+        }
+        Insert: {
+          booking_id: string
+          business_id: string
+          error?: string | null
+          id?: string
+          provider_message_id?: string | null
+          sent_at?: string
+          status?: string
+        }
+        Update: {
+          booking_id?: string
+          business_id?: string
+          error?: string | null
+          id?: string
+          provider_message_id?: string | null
+          sent_at?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "review_requests_log_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: true
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "review_requests_log_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       service_availability: {
         Row: {
           end_time: string
@@ -870,6 +921,60 @@ export type Database = {
             columns: ["professional_id"]
             isOneToOne: false
             referencedRelation: "professionals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      waitlist: {
+        Row: {
+          business_id: string
+          created_at: string
+          id: string
+          name: string
+          notes: string | null
+          notified_at: string | null
+          party_size: number
+          phone: string | null
+          seated_booking_id: string | null
+          status: Database["public"]["Enums"]["waitlist_status"]
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          id?: string
+          name: string
+          notes?: string | null
+          notified_at?: string | null
+          party_size: number
+          phone?: string | null
+          seated_booking_id?: string | null
+          status?: Database["public"]["Enums"]["waitlist_status"]
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          notified_at?: string | null
+          party_size?: number
+          phone?: string | null
+          seated_booking_id?: string | null
+          status?: Database["public"]["Enums"]["waitlist_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "waitlist_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "waitlist_seated_booking_id_fkey"
+            columns: ["seated_booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
             referencedColumns: ["id"]
           },
         ]
@@ -1080,6 +1185,31 @@ export type Database = {
         Returns: boolean
       }
       generate_locator: { Args: never; Returns: string }
+      import_customer: {
+        Args: {
+          p_business_id: string
+          p_email?: string
+          p_full_name: string
+          p_last_name?: string
+          p_notes?: string
+          p_phone?: string
+        }
+        Returns: {
+          bookings_count: number
+          business_id: string
+          created_at: string
+          email: string | null
+          full_name: string
+          id: string
+          last_name: string | null
+          no_show_count: number
+          notes: string | null
+          phone: string | null
+          phone_norm: string | null
+          tags: string[]
+          updated_at: string
+        }
+      }
       get_available_dining_slots: {
         Args: {
           p_business_id: string
@@ -1205,6 +1335,7 @@ export type Database = {
         | "sentada"
       business_type: "citas" | "restaurante"
       business_user_role: "owner" | "staff"
+      waitlist_status: "esperando" | "avisado" | "sentado" | "cancelado"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1344,6 +1475,7 @@ export const Constants = {
       ],
       business_type: ["citas", "restaurante"],
       business_user_role: ["owner", "staff"],
+      waitlist_status: ["esperando", "avisado", "sentado", "cancelado"],
     },
   },
 } as const

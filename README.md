@@ -66,6 +66,8 @@ Todo el backend vive en **Supabase** (Postgres + Auth + RLS + Edge Functions + S
 │   │   ├── create-booking/         # Público: crea reserva + envía email
 │   │   ├── send-confirmation-email/# Reenvía email de confirmación
 │   │   ├── whatsapp-reminders/     # Cron: recordatorios 24h
+│   │   ├── notify-waitlist/        # Panel: avisa por WhatsApp que hay mesa
+│   │   ├── request-reviews/        # Cron: pide reseña 1-3h post-visita
 │   │   └── admin-create-business/  # Super-admin: alta de negocio + staff
 │   └── seed.sql                # Datos demo (negocio "citas" completo)
 ├── .env.example
@@ -93,6 +95,8 @@ Todo el backend vive en **Supabase** (Postgres + Auth + RLS + Edge Functions + S
 | `0012_add_sentada_status.sql` | Nuevo estado `sentada` en `booking_status` (cliente en la mesa) |
 | `0013_add_walkin_channel.sql` | Nuevo canal `walkin` en `booking_channel` |
 | `0014_walkins_and_realtime.sql` | Notas/etiquetas de cliente, motor de asignación de mesa reutilizable (`dining_assign_table`), `create_walkin_booking` (walk-ins con el mismo motor de aforo/best-fit) y Realtime activado en `bookings` para el plano de sala |
+| `0015_waitlist_and_reviews.sql` | Lista de espera (`waitlist`), enlace de reseña y plantilla de WhatsApp por negocio, `review_requests_log` |
+| `0016_import_customer_rpc.sql` | `import_customer`: upsert seguro por teléfono normalizado para la importación CSV desde el panel (PostgREST no puede hacer `ON CONFLICT` sobre el índice parcial) |
 
 ---
 
@@ -167,8 +171,8 @@ supabase secrets set RESEND_API_KEY=... EMAIL_FROM="Reservas <reservas@tudominio
   CRON_SECRET=$(openssl rand -hex 32)
 ```
 
-### 7. Programar el cron de recordatorios
-En el dashboard de Supabase → **Database → Cron** (extensión `pg_cron`), o con `pg_cron`:
+### 7. Programar los cron de recordatorios y reseñas
+En el dashboard de Supabase → **Database → Cron** (extensión `pg_cron`), o con SQL:
 ```sql
 select cron.schedule(
   'whatsapp-reminders-hourly', '0 * * * *',
@@ -177,7 +181,16 @@ select cron.schedule(
        headers:= jsonb_build_object('x-cron-secret', 'EL_MISMO_CRON_SECRET')
      ); $$
 );
+
+select cron.schedule(
+  'request-reviews-hourly', '0 * * * *',
+  $$ select net.http_post(
+       url    := 'https://TU_PROJECT_REF.functions.supabase.co/request-reviews',
+       headers:= jsonb_build_object('x-cron-secret', 'EL_MISMO_CRON_SECRET')
+     ); $$
+);
 ```
+`request-reviews` solo envía si el negocio tiene configurado un enlace de reseña (`Panel → Configuración → Reseñas`); si no, no hace nada para ese negocio.
 
 ---
 
@@ -355,8 +368,14 @@ Widget demo local: `http://localhost:5174/?slug=barberia-demo`.
 - **Ficha de cliente con notas y etiquetas** (`Panel → Clientes`): etiquetas rápidas (VIP, Habitual, Alérgico, Prensa, Problemático) y notas privadas editables, visibles también en el listado.
 - Recordatorio WhatsApp 24h e informes básicos ya estaban cubiertos desde la Fase 1.
 
+**Fase 3 — sin Stripe (completada):** doble turno con limpieza y combinaciones de mesas ya se adelantaron a la Fase 1. De lo que quedaba:
+- **Lista de espera** (`Panel → Plano de sala → Lista de espera`): alta con nombre/teléfono/comensales, botón **Avisar** (envía plantilla de WhatsApp "mesa lista" vía la Edge Function `notify-waitlist`, con las mismas credenciales por negocio que los recordatorios) y botón **Sentar** (crea la reserva con el motor de walk-ins). Plantilla configurable por negocio en Configuración.
+- **Importación de clientes por CSV** (`Panel → Clientes → Importar CSV`): parser propio (soporta comillas/comas), reconoce columnas Nombre/Apellidos/Teléfono/Email/Notas, y hace upsert seguro por teléfono normalizado vía el RPC `import_customer` (el upsert de PostgREST no soporta el índice único parcial de `customers`).
+- **Petición de reseña post-visita**: cron `request-reviews` (mismo patrón que `whatsapp-reminders`) que envía un email 1–3h después de que termine una reserva no cancelada, solo si el negocio configuró un enlace de reseña en `Panel → Configuración → Reseñas`. Idempotente vía `review_requests_log`.
+- **Huella bancaria y prepago con Stripe**: pendiente — requiere que el negocio tenga cuenta de Stripe (el usuario indicó no tenerla aún); se retoma cuando haya claves de API, aunque sean de test.
+
 **Siguientes fases (ver `docs/` para el roadmap completo tipo TheFork):**
+- Huella bancaria/prepago con Stripe (`SetupIntent`/`PaymentIntent`, con el aviso legal de política de cancelación que exige el documento de referencia).
 - Editor visual de posiciones de mesa (drag&drop sobre un croquis) — de momento el plano es una cuadrícula por zona, no un mapa libre.
-- Huella bancaria/prepago con Stripe, lista de espera con aviso automático (Fase 3).
 - Arrastrar-soltar para reprogramar en la rejilla semanal de Agenda.
 - Multi-idioma del widget y más proveedores de email/SMS.
