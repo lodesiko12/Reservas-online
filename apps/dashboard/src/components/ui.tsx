@@ -44,8 +44,8 @@ export function Modal({ open, onClose, title, children, width = "max-w-lg" }: {
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-50 grid place-items-center p-4 bg-slate-900/40" onClick={onClose}>
-      <div className={`card w-full ${width} p-6`} onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between mb-4">
+      <div className={`card w-full ${width} max-h-[85vh] overflow-y-auto p-6`} onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-4 sticky -top-6 -mt-6 pt-6 bg-white">
           <h2 className="text-lg font-bold">{title}</h2>
           <button className="text-slate-400 hover:text-slate-600 text-xl leading-none" onClick={onClose}>×</button>
         </div>
