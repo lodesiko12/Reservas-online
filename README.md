@@ -27,6 +27,7 @@ Todo el backend vive en **Supabase** (Postgres + Auth + RLS + Edge Functions + S
 - [Seguridad y RLS](#seguridad-y-rls)
 - [Datos de demostración](#datos-de-demostración)
 - [Estado y roadmap](#estado-y-roadmap)
+- [Pendientes](#pendientes)
 
 ---
 
@@ -380,10 +381,29 @@ Widget demo local: `http://localhost:5174/?slug=barberia-demo`.
 - **API/webhooks**: no es prioritario todavía; no se ha construido.
 - **Resumen de reseñas con IA**: pendiente, igual que Stripe — requiere que el negocio tenga acceso a la API de Google Business Profile (y una API de IA para resumir), de los que el usuario no dispone aún.
 
-**Siguientes fases (ver `docs/` para el roadmap completo tipo TheFork):**
-- Huella bancaria/prepago con Stripe (`SetupIntent`/`PaymentIntent`, con el aviso legal de política de cancelación que exige el documento de referencia) — pendiente de cuenta Stripe.
-- Resumen de reseñas con IA — pendiente de acceso a Google Business Profile.
-- API pública/webhooks para integraciones a medida — sin priorizar aún.
-- Editor visual de posiciones de mesa (drag&drop sobre un croquis) — de momento el plano es una cuadrícula por zona, no un mapa libre.
-- Arrastrar-soltar para reprogramar en la rejilla semanal de Agenda.
-- Multi-idioma del widget y más proveedores de email/SMS.
+---
+
+## Pendientes
+
+Lista única y actualizada de lo que falta. Si retomas el proyecto en otra conversación, empieza por aquí.
+
+### Bloqueados por algo externo (el usuario debe traer la credencial/cuenta)
+
+| Pendiente | Bloqueado por | Al desbloquear |
+|---|---|---|
+| **Huella bancaria y prepago (Stripe)** | El negocio necesita una cuenta de Stripe (aunque sea de test) | `SetupIntent` para huella bancaria, `PaymentIntent` para prepago; hay que añadir también el aviso legal de política de cancelación (ventana gratuita, importe, aceptación expresa) antes de confirmar — ver la nota legal del documento de referencia en la sección 4 |
+| **Resumen de reseñas con IA** | Acceso a la API de Google Business Profile del negocio + una API de IA (p.ej. Claude) para resumir | Leer reseñas vía Google Business Profile API, resumirlas y mostrarlas en Reportes |
+
+### Sin priorizar (el usuario dijo que no hace falta todavía)
+
+- **API pública / webhooks** para integraciones a medida (claves de API por negocio + webhooks salientes al crear/cambiar una reserva). No depende de nada externo; se puede construir en cualquier momento si un cliente lo pide.
+- **Dashboard agregado multi-local** (KPIs de varios negocios de un mismo dueño en una sola vista). El selector de negocio actual (`Layout.tsx`) ya permite gestionar varios negocios de forma aislada; esto solo sumaría una vista conjunta.
+
+### Mejoras menores pendientes (sin bloqueo, cuestión de tiempo)
+
+- **Editor visual de posiciones de mesa**: arrastrar y soltar mesas sobre un croquis real de la sala (ya existen las columnas `pos_x`/`pos_y` en `dining_tables`, sin usar todavía). Hoy el Plano de sala es una cuadrícula por zona, no un mapa libre — decisión explícita para entregar antes, ver conversación de la Fase 2.
+- **Reasignación manual de mesa para reservas con combinación**: en la Agenda, cambiar de mesa está bloqueado a propósito cuando la reserva usa una combinación (`table_combo_id`); solo funciona para mesas individuales.
+- **Arrastrar y soltar en la rejilla semanal de Agenda** para reprogramar reservas visualmente.
+- **Multi-idioma del widget** y más proveedores de email/SMS aparte de Resend/WhatsApp.
+- **Programar los cron de `whatsapp-reminders` y `request-reviews`** en `pg_cron` — están documentados (sección "Programar los cron…" más arriba) pero no se han activado desde esta sesión (requiere acceso al dashboard de Supabase, que esta sesión de trabajo no tiene).
+- **Netlify**: no hay conector disponible en las sesiones de trabajo para desplegar o comprobar el estado directamente. Si los dos sitios (widget y panel) ya están conectados por Git a este repo, cada push a `main` los despliega solo; si no, hay que crearlos a mano siguiendo la sección "Desplegar online (Netlify)".
