@@ -359,8 +359,10 @@ export type Database = {
           id: string
           last_name: string | null
           no_show_count: number
+          notes: string | null
           phone: string | null
           phone_norm: string | null
+          tags: string[]
           updated_at: string
         }
         Insert: {
@@ -372,8 +374,10 @@ export type Database = {
           id?: string
           last_name?: string | null
           no_show_count?: number
+          notes?: string | null
           phone?: string | null
           phone_norm?: string | null
+          tags?: string[]
           updated_at?: string
         }
         Update: {
@@ -385,8 +389,10 @@ export type Database = {
           id?: string
           last_name?: string | null
           no_show_count?: number
+          notes?: string | null
           phone?: string | null
           phone_norm?: string | null
+          tags?: string[]
           updated_at?: string
         }
         Relationships: [
@@ -1001,6 +1007,60 @@ export type Database = {
           updated_at: string
         }
       }
+      create_walkin_booking: {
+        Args: {
+          p_business_id: string
+          p_name: string
+          p_notes?: string
+          p_party_size: number
+          p_phone?: string
+          p_shift_id: string
+          p_table_id?: string
+        }
+        Returns: {
+          business_id: string
+          channel: Database["public"]["Enums"]["booking_channel"]
+          created_at: string
+          customer_email: string | null
+          customer_id: string | null
+          customer_last_name: string | null
+          customer_name: string
+          customer_phone: string | null
+          dining_shift_id: string | null
+          dining_table_id: string | null
+          ends_at: string
+          id: string
+          locator: string
+          notes: string | null
+          party_size: number | null
+          professional_id: string | null
+          service_id: string | null
+          starts_at: string
+          status: Database["public"]["Enums"]["booking_status"]
+          table_combo_id: string | null
+          type: Database["public"]["Enums"]["business_type"]
+          updated_at: string
+        }
+      }
+      dining_assign_table: {
+        Args: {
+          p_allow_double_turn: boolean
+          p_business_id: string
+          p_channel: Database["public"]["Enums"]["booking_channel"]
+          p_cleanup_min: number
+          p_date: string
+          p_ends_at: string
+          p_party_size: number
+          p_shift_id: string
+          p_starts_at: string
+          p_table_id?: string
+          p_tz: string
+        }
+        Returns: {
+          combo_id: string
+          table_id: string
+        }[]
+      }
       dining_duration_for: {
         Args: { p_party_size: number; p_shift_id: string }
         Returns: number
@@ -1135,13 +1195,14 @@ export type Database = {
     }
     Enums: {
       block_scope: "business" | "professional"
-      booking_channel: "web" | "manual"
+      booking_channel: "web" | "manual" | "walkin"
       booking_status:
         | "confirmada"
         | "cancelada"
         | "completada"
         | "no_show"
         | "pendiente"
+        | "sentada"
       business_type: "citas" | "restaurante"
       business_user_role: "owner" | "staff"
     }
@@ -1272,13 +1333,14 @@ export const Constants = {
   public: {
     Enums: {
       block_scope: ["business", "professional"],
-      booking_channel: ["web", "manual"],
+      booking_channel: ["web", "manual", "walkin"],
       booking_status: [
         "confirmada",
         "cancelada",
         "completada",
         "no_show",
         "pendiente",
+        "sentada",
       ],
       business_type: ["citas", "restaurante"],
       business_user_role: ["owner", "staff"],

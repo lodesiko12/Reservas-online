@@ -1,4 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../lib/auth";
 import type { Tables } from "@reservas/shared";
@@ -69,6 +70,25 @@ export function useBookings(fromISO: string, toISO: string) {
       })[];
     },
   });
+}
+
+/** Suscripción en vivo a cambios de reservas del negocio (para el plano de
+ * sala y cualquier otra vista que necesite refrescarse sin recargar). */
+export function useBookingsRealtime() {
+  const bid = useBusinessId();
+  const qc = useQueryClient();
+  useEffect(() => {
+    if (!bid) return;
+    const channel = supabase
+      .channel(`bookings-${bid}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "bookings", filter: `business_id=eq.${bid}` },
+        () => qc.invalidateQueries({ queryKey: ["bookings", bid] })
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [bid, qc]);
 }
 
 /** Zonas de sala del negocio (tipo restaurante). */

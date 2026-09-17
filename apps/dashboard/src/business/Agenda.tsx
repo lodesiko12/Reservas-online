@@ -9,12 +9,13 @@ import {
 } from "@reservas/shared";
 import { PageHeader, Spinner, StatusBadge, Modal, EmptyState } from "../components/ui";
 
-const STATUSES: Booking["status"][] = ["confirmada", "completada", "no_show", "cancelada"];
+const STATUSES: Booking["status"][] = ["confirmada", "sentada", "completada", "no_show", "cancelada"];
 
 // Color de fondo/borde del bloque de reserva según estado.
 const BLOCK_STYLE: Record<string, { bg: string; border: string; text: string }> = {
   pendiente: { bg: "#fffbeb", border: "#f59e0b", text: "#78350f" },
   confirmada: { bg: "#eff6ff", border: "#3b82f6", text: "#1e3a8a" },
+  sentada: { bg: "#ecfdf5", border: "#10b981", text: "#065f46" },
   completada: { bg: "#f0fdf4", border: "#22c55e", text: "#14532d" },
   no_show: { bg: "#fef2f2", border: "#ef4444", text: "#7f1d1d" },
   cancelada: { bg: "#f8fafc", border: "#94a3b8", text: "#475569" },
@@ -325,7 +326,7 @@ function Row({ k, v }: { k: string; v: React.ReactNode }) {
   return <div className="flex justify-between gap-4"><span className="text-slate-500">{k}</span><span className="font-medium text-right">{v}</span></div>;
 }
 function label(s: string) {
-  return ({ pendiente: "pendiente", confirmada: "confirmada", completada: "completada", no_show: "no-show", cancelada: "cancelada" } as any)[s];
+  return ({ pendiente: "pendiente", confirmada: "confirmada", sentada: "sentada", completada: "completada", no_show: "no-show", cancelada: "cancelada" } as any)[s];
 }
 function fmtShort(ymd: string, tz: string): string {
   return new Intl.DateTimeFormat("es-ES", { day: "numeric", month: "short", timeZone: tz }).format(new Date(zonedDayRange(ymd, tz)[0]));

@@ -104,14 +104,18 @@ export function shortTime(t: string): string {
 }
 
 export const STATUS_LABEL: Record<string, string> = {
+  pendiente: "Pendiente de confirmación",
   confirmada: "Confirmada",
+  sentada: "En mesa",
   cancelada: "Cancelada",
   completada: "Completada",
   no_show: "No-show",
 };
 
 export const STATUS_COLOR: Record<string, string> = {
+  pendiente: "#f59e0b",
   confirmada: "#0ea5e9",
+  sentada: "#16a34a",
   cancelada: "#94a3b8",
   completada: "#16a34a",
   no_show: "#dc2626",

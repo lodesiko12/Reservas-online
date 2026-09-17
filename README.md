@@ -90,6 +90,9 @@ Todo el backend vive en **Supabase** (Postgres + Auth + RLS + Edge Functions + S
 | `0010_add_pendiente_status.sql` | Nuevo estado `pendiente` en `booking_status` (confirmación manual) |
 | `0011_dining_settings.sql` | Ajustes de restaurante 100% personalizables por negocio: `dining_settings` (antelación mín/máx, mín/máx comensales online, confirmación manual), nuevas columnas en `dining_shifts` (última hora de reserva, stock por slot activable, stock online, doblar mesa, limpieza), `dining_table_combos` (combinaciones de mesas para grupos grandes) |
 | `0011b_harden_new_function_grants.sql` | Endurece permisos de `dining_table_busy` y `get_dining_table_options` |
+| `0012_add_sentada_status.sql` | Nuevo estado `sentada` en `booking_status` (cliente en la mesa) |
+| `0013_add_walkin_channel.sql` | Nuevo canal `walkin` en `booking_channel` |
+| `0014_walkins_and_realtime.sql` | Notas/etiquetas de cliente, motor de asignación de mesa reutilizable (`dining_assign_table`), `create_walkin_booking` (walk-ins con el mismo motor de aforo/best-fit) y Realtime activado en `bookings` para el plano de sala |
 
 ---
 
@@ -345,8 +348,15 @@ Widget demo local: `http://localhost:5174/?slug=barberia-demo`.
 - **Excepciones** (cierres puntuales, vacaciones, horario especial): ya se gestionaban con `Bloqueos`, editable por el propio negocio; no requirió cambios.
 - El widget respeta el rango de comensales online (oculta los tamaños de grupo fuera de rango) y muestra el mensaje correcto según si la reserva quedó confirmada o pendiente de confirmación.
 
+**Fase 2 — Plano de sala en vivo (completada):**
+- **Plano de sala** (`Panel → Plano de sala`, solo restaurante): cuadrícula de mesas en tiempo real (Supabase Realtime sobre `bookings`), coloreada por estado — libre / reservada pronto / debería llegar / retrasada / sentada / a punto de terminar. Acciones directas: sentar, marcar no-show, liberar mesa. Se actualiza sola aunque el cambio lo haga otro dispositivo.
+- **Walk-ins**: botón "+ Walk-in" en cualquier mesa libre; usa el mismo motor de asignación/aforo que una reserva normal (`create_walkin_booking` reutiliza `dining_assign_table`, compartido con `create_public_dining_booking`), sin exigir que "ahora" caiga en un slot de la rejilla, y la reserva queda directamente en estado `sentada`.
+- **Estado "sentada"**: nuevo estado del ciclo de vida junto a confirmada/pendiente/completada/no-show/cancelada.
+- **Ficha de cliente con notas y etiquetas** (`Panel → Clientes`): etiquetas rápidas (VIP, Habitual, Alérgico, Prensa, Problemático) y notas privadas editables, visibles también en el listado.
+- Recordatorio WhatsApp 24h e informes básicos ya estaban cubiertos desde la Fase 1.
+
 **Siguientes fases (ver `docs/` para el roadmap completo tipo TheFork):**
-- Plano de sala visual con drag&drop en tiempo real y estados sentada/no-show (Fase 2).
-- Huella bancaria/prepago con Stripe, lista de espera (Fase 3).
-- Arrastrar-soltar para reprogramar en la rejilla semanal.
+- Editor visual de posiciones de mesa (drag&drop sobre un croquis) — de momento el plano es una cuadrícula por zona, no un mapa libre.
+- Huella bancaria/prepago con Stripe, lista de espera con aviso automático (Fase 3).
+- Arrastrar-soltar para reprogramar en la rejilla semanal de Agenda.
 - Multi-idioma del widget y más proveedores de email/SMS.

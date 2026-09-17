@@ -1,10 +1,12 @@
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../lib/auth";
 import { useBusinessId, type Customer } from "./hooks";
 import { formatDateTime } from "@reservas/shared";
 import { PageHeader, Spinner, Modal, StatusBadge, EmptyState } from "../components/ui";
+
+const AVAILABLE_TAGS = ["VIP", "Habitual", "Alérgico", "Prensa", "Problemático"];
 
 export function Clientes() {
   const bid = useBusinessId();
@@ -39,6 +41,7 @@ export function Clientes() {
                 <tr>
                   <th className="px-5 py-3 font-medium">Nombre</th>
                   <th className="px-5 py-3 font-medium">Teléfono</th>
+                  <th className="px-5 py-3 font-medium">Etiquetas</th>
                   <th className="px-5 py-3 font-medium">Reservas</th>
                   <th className="px-5 py-3 font-medium">No-shows</th>
                 </tr>
@@ -48,6 +51,11 @@ export function Clientes() {
                   <tr key={c.id} className="hover:bg-slate-50 cursor-pointer" onClick={() => setSel(c)}>
                     <td className="px-5 py-3 font-medium">{c.full_name} {c.last_name ?? ""}</td>
                     <td className="px-5 py-3 text-slate-500">{c.phone ?? "—"}</td>
+                    <td className="px-5 py-3">
+                      <div className="flex flex-wrap gap-1">
+                        {c.tags?.map((t) => <span key={t} className="badge bg-brand-50 text-brand-700 text-[11px]">{t}</span>)}
+                      </div>
+                    </td>
                     <td className="px-5 py-3">{c.bookings_count}</td>
                     <td className="px-5 py-3">{c.no_show_count > 0 ? <span className="text-red-600 font-semibold">{c.no_show_count}</span> : 0}</td>
                   </tr>
@@ -65,6 +73,8 @@ export function Clientes() {
 function CustomerModal({ customer, onClose }: { customer: Customer; onClose: () => void }) {
   const { business } = useAuth();
   const tz = business?.timezone ?? "Europe/Madrid";
+  const qc = useQueryClient();
+  const bid = useBusinessId();
   const { data: history, isLoading } = useQuery({
     queryKey: ["customer-history", customer.id],
     queryFn: async () => {
@@ -76,6 +86,26 @@ function CustomerModal({ customer, onClose }: { customer: Customer; onClose: () 
     },
   });
 
+  const [notes, setNotes] = useState(customer.notes ?? "");
+  const [tags, setTags] = useState<string[]>(customer.tags ?? []);
+  const [savingNotes, setSavingNotes] = useState(false);
+
+  useEffect(() => { setNotes(customer.notes ?? ""); setTags(customer.tags ?? []); }, [customer]);
+
+  function toggleTag(tag: string) {
+    const next = tags.includes(tag) ? tags.filter((t) => t !== tag) : [...tags, tag];
+    setTags(next);
+    supabase.from("customers").update({ tags: next }).eq("id", customer.id)
+      .then(() => qc.invalidateQueries({ queryKey: ["customers", bid] }));
+  }
+
+  async function saveNotes() {
+    setSavingNotes(true);
+    await supabase.from("customers").update({ notes: notes.trim() || null }).eq("id", customer.id);
+    qc.invalidateQueries({ queryKey: ["customers", bid] });
+    setSavingNotes(false);
+  }
+
   return (
     <Modal open onClose={onClose} title={`${customer.full_name} ${customer.last_name ?? ""}`} width="max-w-xl">
       <div className="grid grid-cols-3 gap-3 mb-4">
@@ -83,6 +113,22 @@ function CustomerModal({ customer, onClose }: { customer: Customer; onClose: () 
         <div className="card p-3 text-center"><div className="text-2xl font-bold text-red-600">{customer.no_show_count}</div><div className="text-xs text-slate-500">No-shows</div></div>
         <div className="card p-3 text-center"><div className="text-sm font-semibold mt-1">{customer.phone ?? "—"}</div><div className="text-xs text-slate-500">{customer.email ?? "Sin email"}</div></div>
       </div>
+
+      <label className="label">Etiquetas</label>
+      <div className="flex flex-wrap gap-1.5 mb-4">
+        {AVAILABLE_TAGS.map((tag) => (
+          <button key={tag} type="button" onClick={() => toggleTag(tag)}
+            className={`badge text-[11px] ${tags.includes(tag) ? "bg-brand-500 text-white" : "bg-slate-100 text-slate-500"}`}>
+            {tag}
+          </button>
+        ))}
+      </div>
+
+      <label className="label">Notas privadas</label>
+      <textarea className="input mb-1" rows={2} value={notes} onChange={(e) => setNotes(e.target.value)}
+        placeholder="Mesa preferida, alergias, preferencias…" />
+      <button className="btn-ghost text-xs mb-4" onClick={saveNotes} disabled={savingNotes}>{savingNotes ? "Guardando…" : "Guardar notas"}</button>
+
       <h3 className="font-semibold text-sm mb-2">Historial</h3>
       {isLoading ? <Spinner /> : !history?.length ? <p className="text-sm text-slate-400">Sin reservas.</p> : (
         <ul className="divide-y divide-slate-100 max-h-72 overflow-y-auto">
