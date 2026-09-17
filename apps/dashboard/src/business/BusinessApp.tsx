@@ -10,6 +10,7 @@ import { Servicios } from "./Servicios";
 import { Reportes } from "./Reportes";
 import { Configuracion } from "./Configuracion";
 import { Franjas } from "./Franjas";
+import { Mesas } from "./Mesas";
 
 export function BusinessApp() {
   const { business } = useAuth();
@@ -23,6 +24,7 @@ export function BusinessApp() {
     isRestaurant
       ? { to: "/app/franjas", label: "Franjas y aforo", icon: "🍽️" }
       : { to: "/app/servicios", label: "Servicios", icon: "✂️" },
+    ...(isRestaurant ? [{ to: "/app/mesas", label: "Mesas y zonas", icon: "🪑" }] : []),
     { to: "/app/bloqueos", label: "Bloqueos", icon: "🚫" },
     { to: "/app/reportes", label: "Reportes", icon: "📈" },
     { to: "/app/config", label: "Configuración", icon: "⚙️" },
@@ -37,6 +39,7 @@ export function BusinessApp() {
         <Route path="clientes" element={<Clientes />} />
         <Route path="servicios" element={<Servicios />} />
         <Route path="franjas" element={<Franjas />} />
+        <Route path="mesas" element={<Mesas />} />
         <Route path="bloqueos" element={<Bloqueos />} />
         <Route path="reportes" element={<Reportes />} />
         <Route path="config" element={<Configuracion />} />

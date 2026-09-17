@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../lib/auth";
-import { useBusinessId } from "./hooks";
+import { useBusinessId, useDiningSettings } from "./hooks";
 import { WEEKDAYS_ES, shortTime } from "@reservas/shared";
 import { PageHeader, Spinner } from "../components/ui";
 import { IntegrationsForm } from "../components/IntegrationsForm";
@@ -137,6 +137,9 @@ export function Configuracion() {
         </section>
       )}
 
+      {/* Reglas generales de reserva (restaurante) */}
+      {isRestaurant && <DiningSettingsSection bid={bid} flash={flash} />}
+
       {/* Integraciones: email y WhatsApp por negocio */}
       <section className="card p-6">
         <h2 className="font-semibold mb-1">Integraciones (email y WhatsApp)</h2>
@@ -153,5 +156,54 @@ export function Configuracion() {
         <a className="btn-ghost mt-3 ml-2" href={`${WIDGET_URL}/?slug=${business?.slug}`} target="_blank" rel="noreferrer">Previsualizar widget ↗</a>
       </section>
     </div>
+  );
+}
+
+function DiningSettingsSection({ bid, flash }: { bid: string; flash: (m: string) => void }) {
+  const qc = useQueryClient();
+  const { data: settings, isLoading } = useDiningSettings();
+  const [form, setForm] = useState({
+    min_lead_minutes: 30, max_advance_days: 60, min_party_online: 1, max_party_online: 12,
+    require_manual_confirmation: false,
+  });
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (!settings) return;
+    setForm({
+      min_lead_minutes: settings.min_lead_minutes, max_advance_days: settings.max_advance_days,
+      min_party_online: settings.min_party_online, max_party_online: settings.max_party_online,
+      require_manual_confirmation: settings.require_manual_confirmation,
+    });
+  }, [settings]);
+
+  async function save() {
+    setBusy(true);
+    await supabase.from("dining_settings").upsert({ business_id: bid, ...form });
+    qc.invalidateQueries({ queryKey: ["dining_settings", bid] });
+    setBusy(false); flash("Ajustes de reserva guardados");
+  }
+
+  return (
+    <section className="card p-6">
+      <h2 className="font-semibold mb-1">Reglas de reserva</h2>
+      <p className="text-sm text-slate-500 mb-4">Antelación, tamaño de grupo permitido online y confirmación de las reservas.</p>
+      {isLoading ? <Spinner /> : (
+        <>
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div><label className="label">Antelación mínima (min)</label><input type="number" min={0} step={5} className="input" value={form.min_lead_minutes} onChange={(e) => setForm({ ...form, min_lead_minutes: +e.target.value })} /></div>
+            <div><label className="label">Antelación máxima (días)</label><input type="number" min={1} className="input" value={form.max_advance_days} onChange={(e) => setForm({ ...form, max_advance_days: +e.target.value })} /></div>
+            <div><label className="label">Mín. comensales online</label><input type="number" min={1} className="input" value={form.min_party_online} onChange={(e) => setForm({ ...form, min_party_online: +e.target.value })} /></div>
+            <div><label className="label">Máx. comensales online</label><input type="number" min={1} className="input" value={form.max_party_online} onChange={(e) => setForm({ ...form, max_party_online: +e.target.value })} /></div>
+          </div>
+          <p className="text-xs text-slate-400 mt-2">Grupos fuera de este rango solo se pueden dar de alta manualmente desde el panel (teléfono/contacto directo). La antelación y estos límites no aplican a las reservas manuales del staff.</p>
+          <label className="flex items-center gap-2 text-sm mt-4">
+            <input type="checkbox" checked={form.require_manual_confirmation} onChange={(e) => setForm({ ...form, require_manual_confirmation: e.target.checked })} />
+            Requerir confirmación manual de las reservas web (si no, se confirman al instante)
+          </label>
+          <button className="btn-primary mt-4" onClick={save} disabled={busy}>{busy ? "Guardando…" : "Guardar"}</button>
+        </>
+      )}
+    </section>
   );
 }

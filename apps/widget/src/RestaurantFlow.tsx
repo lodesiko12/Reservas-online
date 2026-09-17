@@ -1,16 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
 import {
-  fetchDiningSlots, createBooking,
-  type PublicBusiness, type DiningSlot, type BookingResult,
+  fetchDiningSlots, fetchDiningSettings, createBooking,
+  type PublicBusiness, type DiningSlot, type BookingResult, type DiningSettings,
 } from "./api";
 import { formatDate, formatTime, WEEKDAYS_SHORT_ES, ymdInTz, weekdayInTz } from "@reservas/shared";
 
 type Step = "party" | "when" | "form" | "done";
-const PARTY_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8, 10, 12];
+const ALL_PARTY_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8, 10, 12];
 
 export function RestaurantFlow({ business, onLookup }: { business: PublicBusiness; onLookup: () => void }) {
   const tz = business.timezone;
   const [step, setStep] = useState<Step>("party");
+  const [settings, setSettings] = useState<DiningSettings>({ min_party_online: 1, max_party_online: 12 });
   const [party, setParty] = useState(2);
   const [date, setDate] = useState("");
   const [slots, setSlots] = useState<DiningSlot[]>([]);
@@ -18,6 +19,19 @@ export function RestaurantFlow({ business, onLookup }: { business: PublicBusines
   const [slot, setSlot] = useState<DiningSlot | null>(null);
   const [result, setResult] = useState<BookingResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchDiningSettings(business.id).then(setSettings).catch(() => {});
+  }, [business.id]);
+
+  const PARTY_OPTIONS = useMemo(
+    () => ALL_PARTY_OPTIONS.filter((n) => n >= settings.min_party_online && n <= settings.max_party_online),
+    [settings]
+  );
+
+  useEffect(() => {
+    if (PARTY_OPTIONS.length && !PARTY_OPTIONS.includes(party)) setParty(PARTY_OPTIONS[0]);
+  }, [PARTY_OPTIONS]);
 
   const dates = useMemo(() => {
     const out: { ymd: string; d: Date }[] = [];
@@ -69,9 +83,12 @@ export function RestaurantFlow({ business, onLookup }: { business: PublicBusines
               </button>
             ))}
           </div>
-          <button className="btn" style={{ marginTop: 16 }} onClick={() => { setDate(dates[0].ymd); setStep("when"); }}>
+          <button className="btn" style={{ marginTop: 16 }} disabled={!PARTY_OPTIONS.length} onClick={() => { setDate(dates[0].ymd); setStep("when"); }}>
             Continuar con {party} {party === 1 ? "persona" : "personas"}
           </button>
+          {settings.max_party_online < 12 && (
+            <p className="hint" style={{ marginTop: 10 }}>¿Grupo de más de {settings.max_party_online} personas? Llámanos o escríbenos directamente.</p>
+          )}
         </>
       )}
 
@@ -121,9 +138,9 @@ export function RestaurantFlow({ business, onLookup }: { business: PublicBusines
 
       {step === "done" && result && (
         <div className="center">
-          <div className="ok-icon">✅</div>
-          <p className="section-title" style={{ marginTop: 8 }}>¡Mesa reservada!</p>
-          <p className="hint">Te hemos enviado un email con los detalles.</p>
+          <div className="ok-icon">{result.status === "pendiente" ? "⏳" : "✅"}</div>
+          <p className="section-title" style={{ marginTop: 8 }}>{result.status === "pendiente" ? "Solicitud recibida" : "¡Mesa reservada!"}</p>
+          <p className="hint">{result.status === "pendiente" ? "El restaurante confirmará tu reserva en breve. Te avisaremos por email." : "Te hemos enviado un email con los detalles."}</p>
           <div className="locator">{result.locator}</div>
           <div className="summary" style={{ textAlign: "left" }}>
             <div className="line"><span className="k">Comensales</span><span>{party}</span></div>

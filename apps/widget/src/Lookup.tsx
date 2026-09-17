@@ -39,7 +39,7 @@ export function Lookup({ initialLocator, onBack }: { initialLocator: string; onB
     }
   }
 
-  const canCancel = booking && booking.status === "confirmada" && new Date(booking.starts_at) > new Date();
+  const canCancel = booking && (booking.status === "confirmada" || booking.status === "pendiente") && new Date(booking.starts_at) > new Date();
 
   return (
     <>

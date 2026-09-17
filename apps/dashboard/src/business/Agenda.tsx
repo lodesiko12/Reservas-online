@@ -13,15 +13,20 @@ const STATUSES: Booking["status"][] = ["confirmada", "completada", "no_show", "c
 
 // Color de fondo/borde del bloque de reserva según estado.
 const BLOCK_STYLE: Record<string, { bg: string; border: string; text: string }> = {
+  pendiente: { bg: "#fffbeb", border: "#f59e0b", text: "#78350f" },
   confirmada: { bg: "#eff6ff", border: "#3b82f6", text: "#1e3a8a" },
   completada: { bg: "#f0fdf4", border: "#22c55e", text: "#14532d" },
   no_show: { bg: "#fef2f2", border: "#ef4444", text: "#7f1d1d" },
   cancelada: { bg: "#f8fafc", border: "#94a3b8", text: "#475569" },
 };
 
+function tableLabel(b: any): string {
+  if (b.table_combo_id) return b.dining_table_combos?.name ?? "Combinación";
+  return b.dining_tables?.name ?? "Sin mesa";
+}
 function detail(b: any): string {
   return b.type === "restaurante"
-    ? `Mesa · ${b.party_size} pers.`
+    ? `${tableLabel(b)} · ${b.party_size} pers.`
     : `${b.services?.name ?? ""}${b.professionals?.name ? ` · ${b.professionals.name}` : ""}`;
 }
 
@@ -208,11 +213,31 @@ function BookingModal({ booking, tz, onClose, onChanged }: {
   const [reschedule, setReschedule] = useState(false);
   const [newStart, setNewStart] = useState(toLocalInput(booking.starts_at, tz));
   const durationMin = (new Date(booking.ends_at).getTime() - new Date(booking.starts_at).getTime()) / 60000;
+  const [tableOptions, setTableOptions] = useState<{ id: string; name: string; zone_name: string | null; is_free: boolean }[] | null>(null);
+  const [tableId, setTableId] = useState(booking.dining_table_id ?? "");
+  const [savingTable, setSavingTable] = useState(false);
+
+  async function loadTableOptions() {
+    const { data } = await supabase.rpc("get_dining_table_options", {
+      p_business_id: booking.business_id, p_shift_id: booking.dining_shift_id, p_starts_at: booking.starts_at, p_ends_at: booking.ends_at,
+      p_party_size: booking.party_size, p_exclude_booking_id: booking.id,
+    });
+    setTableOptions((data as any[]) ?? []);
+  }
+  async function saveTable() {
+    setSavingTable(true);
+    const { error } = await supabase.from("bookings").update({ dining_table_id: tableId || null }).eq("id", booking.id);
+    setSavingTable(false);
+    if (error) { alert("Esa mesa ya está ocupada en ese horario."); return; }
+    qc.invalidateQueries(); onChanged();
+  }
 
   async function setStatus(status: Booking["status"]) {
     setBusy(true);
-    await supabase.from("bookings").update({ status }).eq("id", booking.id);
-    qc.invalidateQueries(); setBusy(false); onChanged();
+    const { error } = await supabase.from("bookings").update({ status }).eq("id", booking.id);
+    setBusy(false);
+    if (error) { alert(error.message); return; }
+    qc.invalidateQueries(); onChanged();
   }
   async function remove() {
     if (!confirm("¿Eliminar esta reserva definitivamente?")) return;
@@ -224,15 +249,17 @@ function BookingModal({ booking, tz, onClose, onChanged }: {
     setBusy(true);
     const start = fromLocalInput(newStart, tz);
     const end = new Date(new Date(start).getTime() + durationMin * 60000).toISOString();
-    await supabase.from("bookings").update({ starts_at: start, ends_at: end }).eq("id", booking.id);
-    qc.invalidateQueries(); setBusy(false); onChanged();
+    const { error } = await supabase.from("bookings").update({ starts_at: start, ends_at: end }).eq("id", booking.id);
+    setBusy(false);
+    if (error) { alert(booking.type === "restaurante" ? "Esa mesa ya está ocupada en ese horario." : error.message); return; }
+    qc.invalidateQueries(); onChanged();
   }
 
   return (
     <Modal open onClose={onClose} title={`${booking.customer_name} ${booking.customer_last_name ?? ""}`}>
       <div className="space-y-2 text-sm">
         {booking.type === "restaurante"
-          ? <Row k="Mesa" v={`${booking.party_size} comensales`} />
+          ? <Row k="Mesa" v={`${tableLabel(booking)} · ${booking.party_size} comensales`} />
           : <Row k="Servicio" v={booking.services?.name ?? "—"} />}
         {booking.professionals?.name && <Row k="Profesional" v={booking.professionals.name} />}
         <Row k="Fecha" v={formatDate(booking.starts_at, tz)} />
@@ -243,6 +270,33 @@ function BookingModal({ booking, tz, onClose, onChanged }: {
         <Row k="Estado" v={<StatusBadge status={booking.status} />} />
         {booking.notes && <Row k="Notas" v={booking.notes} />}
       </div>
+
+      {booking.type === "restaurante" && booking.table_combo_id && (
+        <p className="text-xs text-slate-400 mt-4 border-t pt-4">Mesa combinada asignada automáticamente; la reasignación manual de combinaciones no está disponible desde aquí.</p>
+      )}
+
+      {booking.type === "restaurante" && !booking.table_combo_id && (
+        <div className="mt-4 border-t pt-4">
+          {tableOptions === null ? (
+            <button className="btn-ghost text-xs" onClick={loadTableOptions}>Cambiar mesa</button>
+          ) : (
+            <>
+              <label className="label">Mesa</label>
+              <div className="flex gap-2">
+                <select className="input" value={tableId} onChange={(e) => setTableId(e.target.value)}>
+                  <option value="">Sin mesa</option>
+                  {tableOptions.map((t) => (
+                    <option key={t.id} value={t.id} disabled={!t.is_free && t.id !== booking.dining_table_id}>
+                      {t.name}{t.zone_name ? ` · ${t.zone_name}` : ""}{!t.is_free && t.id !== booking.dining_table_id ? " — ocupada" : ""}
+                    </option>
+                  ))}
+                </select>
+                <button className="btn-primary shrink-0" disabled={savingTable} onClick={saveTable}>Guardar</button>
+              </div>
+            </>
+          )}
+        </div>
+      )}
 
       {reschedule ? (
         <div className="mt-4 border-t pt-4">
@@ -271,7 +325,7 @@ function Row({ k, v }: { k: string; v: React.ReactNode }) {
   return <div className="flex justify-between gap-4"><span className="text-slate-500">{k}</span><span className="font-medium text-right">{v}</span></div>;
 }
 function label(s: string) {
-  return ({ confirmada: "confirmada", completada: "completada", no_show: "no-show", cancelada: "cancelada" } as any)[s];
+  return ({ pendiente: "pendiente", confirmada: "confirmada", completada: "completada", no_show: "no-show", cancelada: "cancelada" } as any)[s];
 }
 function fmtShort(ymd: string, tz: string): string {
   return new Intl.DateTimeFormat("es-ES", { day: "numeric", month: "short", timeZone: tz }).format(new Date(zonedDayRange(ymd, tz)[0]));

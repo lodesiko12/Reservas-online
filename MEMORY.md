@@ -1,1 +1,2 @@
 - [SaaS Reservas (proyecto)](memory/project-reservas-saas.md) — infra Supabase en vivo, credenciales demo y decisiones de arquitectura
+- [RPC overloads en Supabase](memory/feedback-supabase-rpc-overloads.md) — nunca cambiar la firma de un RPC expuesto sin dropear la firma vieja

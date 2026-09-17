@@ -88,7 +88,7 @@ export function Dashboard() {
     if (!data) return [];
     const now = Date.now();
     return data.today
-      .filter((b) => b.status === "confirmada" && new Date(b.starts_at).getTime() >= now)
+      .filter((b) => (b.status === "confirmada" || b.status === "pendiente") && new Date(b.starts_at).getTime() >= now)
       .slice(0, 6);
   }, [data]);
 

@@ -10,6 +10,7 @@ export type ConfirmationData = {
   customerName: string;
   manageUrl?: string; // enlace a "Mi reserva"
   primaryColor?: string;
+  isPending?: boolean; // el negocio requiere confirmación manual
 };
 
 function fmtDate(iso: string, tz: string): string {
@@ -27,7 +28,12 @@ export function buildConfirmationEmail(d: ConfirmationData): { subject: string; 
   const color = d.primaryColor || "#4f46e5";
   const date = fmtDate(d.startsAt, d.timezone);
   const time = fmtTime(d.startsAt, d.timezone);
-  const subject = `Reserva confirmada · ${d.businessName}`;
+  const pending = !!d.isPending;
+  const subject = pending ? `Solicitud recibida · ${d.businessName}` : `Reserva confirmada · ${d.businessName}`;
+  const heading = pending ? "Pendiente de confirmación" : "Reserva confirmada";
+  const intro = pending
+    ? `Hola ${d.customerName}, hemos recibido tu solicitud de reserva. El negocio la confirmará en breve. Estos son los detalles:`
+    : `Hola ${d.customerName}, tu reserva está confirmada. Estos son los detalles:`;
 
   const manage = d.manageUrl
     ? `<p style="margin:16px 0 0">Puedes consultar o cancelar tu reserva aquí:<br>
@@ -38,10 +44,10 @@ export function buildConfirmationEmail(d: ConfirmationData): { subject: string; 
   <div style="max-width:520px;margin:0 auto;background:#fff;border-radius:14px;overflow:hidden;border:1px solid #e2e8f0">
     <div style="background:${color};color:#fff;padding:20px 24px">
       <h1 style="margin:0;font-size:20px">${d.businessName}</h1>
-      <p style="margin:4px 0 0;opacity:.9">Reserva confirmada</p>
+      <p style="margin:4px 0 0;opacity:.9">${heading}</p>
     </div>
     <div style="padding:24px">
-      <p style="margin:0 0 12px">Hola ${d.customerName}, tu reserva está confirmada. Estos son los detalles:</p>
+      <p style="margin:0 0 12px">${intro}</p>
       <table style="width:100%;border-collapse:collapse;font-size:15px">
         ${d.serviceName ? `<tr><td style="padding:6px 0;color:#64748b">Detalle</td><td style="padding:6px 0;text-align:right"><strong>${d.serviceName}</strong></td></tr>` : ""}
         <tr><td style="padding:6px 0;color:#64748b">Fecha</td><td style="padding:6px 0;text-align:right"><strong>${date}</strong></td></tr>
@@ -56,7 +62,7 @@ export function buildConfirmationEmail(d: ConfirmationData): { subject: string; 
     </div>
   </div></body></html>`;
 
-  const text = `Reserva confirmada en ${d.businessName}
+  const text = `${pending ? "Solicitud de reserva recibida en" : "Reserva confirmada en"} ${d.businessName}
 ${d.serviceName ? `Detalle: ${d.serviceName}\n` : ""}Fecha: ${date}
 Hora: ${time}
 Código localizador: ${d.locator}

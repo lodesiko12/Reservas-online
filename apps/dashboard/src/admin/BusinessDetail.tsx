@@ -97,7 +97,7 @@ function BusinessDashboard({ business }: { business: Business }) {
       webPct: r.length ? Math.round((web / r.length) * 100) : 0,
       absPct: active.length ? Math.round((noShow / active.length) * 100) : 0,
       lastCreated, chart,
-      byStatus: ["confirmada", "completada", "no_show", "cancelada"].map((s) => ({ s, n: r.filter((b: any) => b.status === s).length })),
+      byStatus: ["pendiente", "confirmada", "completada", "no_show", "cancelada"].map((s) => ({ s, n: r.filter((b: any) => b.status === s).length })),
     };
   }, [data, todayYmd, tz]);
 

@@ -145,9 +145,11 @@ function NuevaReservaRestaurante() {
 
   const [party, setParty] = useState(2);
   const [date, setDate] = useState(ymdInTz(new Date(), tz));
-  const [slots, setSlots] = useState<{ slot_start: string; shift_id: string; shift_name: string }[]>([]);
-  const [slot, setSlot] = useState<{ slot_start: string; shift_id: string } | null>(null);
+  const [slots, setSlots] = useState<{ slot_start: string; slot_end: string; shift_id: string; shift_name: string }[]>([]);
+  const [slot, setSlot] = useState<{ slot_start: string; slot_end: string; shift_id: string } | null>(null);
   const [loadingSlots, setLoadingSlots] = useState(false);
+  const [tableOptions, setTableOptions] = useState<{ id: string; name: string; zone_name: string | null; fits: boolean; is_free: boolean }[]>([]);
+  const [tableId, setTableId] = useState<string>(""); // "" = automático
   const [form, setForm] = useState({ name: "", last_name: "", phone: "", email: "", notes: "" });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -157,10 +159,23 @@ function NuevaReservaRestaurante() {
     if (!date) { setSlots([]); return; }
     setLoadingSlots(true); setSlot(null);
     (async () => {
-      const { data } = await supabase.rpc("get_available_dining_slots", { p_business_id: bid, p_date: date, p_party_size: party });
+      // Canal "manual": el staff ve el aforo completo (sin límites de stock
+      // online, antelación ni mín/máx de comensales pensados para la web).
+      const { data } = await supabase.rpc("get_available_dining_slots", { p_business_id: bid, p_date: date, p_party_size: party, p_channel: "manual" });
       setSlots((data as any[]) ?? []); setLoadingSlots(false);
     })();
   }, [date, party, bid]);
+
+  useEffect(() => {
+    setTableId("");
+    if (!slot) { setTableOptions([]); return; }
+    (async () => {
+      const { data } = await supabase.rpc("get_dining_table_options", {
+        p_business_id: bid, p_shift_id: slot.shift_id, p_starts_at: slot.slot_start, p_ends_at: slot.slot_end, p_party_size: party,
+      });
+      setTableOptions((data as any[]) ?? []);
+    })();
+  }, [slot, party, bid]);
 
   const grouped = Object.values(
     slots.reduce((acc: Record<string, { name: string; slots: typeof slots }>, s) => {
@@ -177,6 +192,7 @@ function NuevaReservaRestaurante() {
       p_name: form.name.trim(), p_last_name: form.last_name.trim(),
       p_phone: form.phone.trim(), p_email: form.email.trim(),
       p_notes: form.notes.trim() || undefined, p_channel: "manual",
+      p_table_id: tableId || undefined,
     });
     setSaving(false);
     if (error) { setError(error.message); return; }
@@ -218,6 +234,20 @@ function NuevaReservaRestaurante() {
                 </div>
               </div>
             ))
+          )}
+
+          {slot && !!tableOptions.length && (
+            <div className="mt-4 border-t pt-4">
+              <label className="label">Mesa</label>
+              <select className="input" value={tableId} onChange={(e) => setTableId(e.target.value)}>
+                <option value="">Automático (mejor mesa disponible)</option>
+                {tableOptions.map((t) => (
+                  <option key={t.id} value={t.id} disabled={!t.is_free}>
+                    {t.name}{t.zone_name ? ` · ${t.zone_name}` : ""}{!t.fits ? " (no encaja)" : ""}{!t.is_free ? " — ocupada" : ""}
+                  </option>
+                ))}
+              </select>
+            </div>
           )}
         </div>
         <CustomerFields form={form} setForm={setForm} />

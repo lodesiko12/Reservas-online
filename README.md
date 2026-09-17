@@ -83,6 +83,13 @@ Todo el backend vive en **Supabase** (Postgres + Auth + RLS + Edge Functions + S
 | `0005_storage_logos.sql` | Bucket público `logos` + políticas de escritura por miembro |
 | `0006_restaurant_logic.sql` | Motor de aforo de restaurante (`dining_shifts`, disponibilidad y creación de reserva de mesa) |
 | `0007_business_integrations.sql` | Credenciales de email/WhatsApp **por negocio** (secretos protegidos con RLS + RPCs) |
+| `0008_customer_phone_normalization.sql` | Agrupa clientes por teléfono normalizado (evita fichas duplicadas) |
+| `0009_dining_tables.sql` | Mesas físicas y zonas de sala (`dining_zones`, `dining_tables`), duración según nº de comensales (`dining_duration_rules`) y asignación automática best-fit + override manual en `create_public_dining_booking` |
+| `0009b_harden_dining_duration_grant.sql` | Endurece permisos de `dining_duration_for` (helper interno, sin acceso público) |
+| `0009c_drop_old_dining_booking_overload.sql` | Elimina una sobrecarga fantasma de `create_public_dining_booking` (ver nota de sobrecargas de RPC más abajo) |
+| `0010_add_pendiente_status.sql` | Nuevo estado `pendiente` en `booking_status` (confirmación manual) |
+| `0011_dining_settings.sql` | Ajustes de restaurante 100% personalizables por negocio: `dining_settings` (antelación mín/máx, mín/máx comensales online, confirmación manual), nuevas columnas en `dining_shifts` (última hora de reserva, stock por slot activable, stock online, doblar mesa, limpieza), `dining_table_combos` (combinaciones de mesas para grupos grandes) |
+| `0011b_harden_new_function_grants.sql` | Endurece permisos de `dining_table_busy` y `get_dining_table_options` |
 
 ---
 
@@ -322,7 +329,24 @@ Widget demo local: `http://localhost:5174/?slug=barberia-demo`.
 
 **Agenda:** vista **Día** (lista) y **Semana** (rejilla de calendario con eje horario, columnas por día, bloques por reserva coloreados por estado y edición al clic).
 
-**Siguientes fases:**
+**Mesas físicas y asignación automática (completado):** siguiendo el modelo de TheFork Manager, el tipo restaurante ahora tiene, además del aforo agregado por franja (`max_covers`, capa 2), un nivel físico de mesas (capa 3):
+- **Zonas y mesas** (`Panel → Mesas y zonas`): zonas de sala (interior, terraza…) con `reservable_online`, y mesas con capacidad mín/máx, prioridad y zona.
+- **Duración según nº de comensales** (`Panel → Franjas y aforo → Editar franja`): reglas opcionales tipo "7–12 pax → 150 min" por franja; si ninguna encaja se usa la duración por defecto.
+- **Asignación best-fit automática**: al crear una reserva (web o manual) se elige la mesa libre con menor desperdicio de plazas, luego por prioridad configurada, luego por nombre.
+- **Override manual**: en "Nueva reserva" el staff puede elegir mesa en vez de automático; desde la Agenda puede reasignar la mesa de una reserva existente en cualquier momento.
+- **Sin mesas cargadas = comportamiento anterior**: si un negocio de tipo restaurante no tiene ninguna mesa en `dining_tables`, el motor sigue funcionando solo con el aforo agregado (retrocompatible).
+- Doble cinturón de seguridad ante reservas concurrentes: `pg_advisory_xact_lock` + revalidación en el RPC, y una constraint `EXCLUDE` en Postgres que impide físicamente dos reservas solapadas en la misma mesa.
+- Datos de ejemplo cargados para *Restaurante La Plaza*: zonas Interior/Terraza con 10 mesas.
+
+**Restaurante 100% configurable por negocio (completado):** todo el motor de reservas de restaurante es ajustable desde el panel y editable en cualquier momento, sin tocar código:
+- **Franjas y aforo** (`Panel → Franjas y aforo → Editar franja`): horario, granularidad de slots, aforo total, duración por defecto y por nº de comensales, **última hora de reserva**, **stock por slot** (activable: máx. comensales y máx. reservas por slot — para negocios que solo quieren aforo total, se deja desactivado), **stock online** (mesas reservadas para teléfono/walk-in), **doblar mesa** (activable/desactivable) y **tiempo de limpieza** entre reservas de una misma mesa.
+- **Mesas y zonas** (`Panel → Mesas y zonas`): zonas, mesas físicas y ahora también **combinaciones de mesas** para grupos grandes (se definen a mano, p.ej. "Mesa 5 + Mesa 6").
+- **Reglas de reserva** (`Panel → Configuración → Reglas de reserva`): antelación mínima y máxima, mín/máx comensales para reservas online, y **confirmación manual** activable (por defecto la reserva se confirma al instante; si se activa, las reservas web quedan en estado `pendiente` hasta que el negocio las confirma desde la Agenda). Estos límites y la antelación **no aplican a las reservas manuales del staff**, que siempre ven el aforo completo.
+- **Excepciones** (cierres puntuales, vacaciones, horario especial): ya se gestionaban con `Bloqueos`, editable por el propio negocio; no requirió cambios.
+- El widget respeta el rango de comensales online (oculta los tamaños de grupo fuera de rango) y muestra el mensaje correcto según si la reserva quedó confirmada o pendiente de confirmación.
+
+**Siguientes fases (ver `docs/` para el roadmap completo tipo TheFork):**
+- Plano de sala visual con drag&drop en tiempo real y estados sentada/no-show (Fase 2).
+- Huella bancaria/prepago con Stripe, lista de espera (Fase 3).
 - Arrastrar-soltar para reprogramar en la rejilla semanal.
-- Gestión de mesas individuales (no solo aforo agregado) y combinables.
 - Multi-idioma del widget y más proveedores de email/SMS.

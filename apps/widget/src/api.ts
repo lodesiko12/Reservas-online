@@ -68,6 +68,14 @@ export async function fetchDiningSlots(
   return (data ?? []) as DiningSlot[];
 }
 
+export type DiningSettings = { min_party_online: number; max_party_online: number };
+
+export async function fetchDiningSettings(businessId: string): Promise<DiningSettings> {
+  const { data, error } = await supabase.rpc("get_public_dining_settings", { p_business_id: businessId });
+  if (error) throw error;
+  return (data && data.length ? data[0] : { min_party_online: 1, max_party_online: 12 }) as DiningSettings;
+}
+
 export type BookingInput = {
   business_id: string;
   // citas:
@@ -90,6 +98,7 @@ export type BookingResult = {
   ends_at: string;
   service_name: string | null;
   business_name: string;
+  status: "confirmada" | "pendiente";
 };
 
 /** Crea la reserva a través de la Edge Function (envía también el email). */
@@ -114,7 +123,7 @@ export async function createBooking(input: BookingInput): Promise<BookingResult>
 
 export type BookingLookup = {
   locator: string;
-  status: "confirmada" | "cancelada" | "completada" | "no_show";
+  status: "confirmada" | "cancelada" | "completada" | "no_show" | "pendiente";
   type: "citas" | "restaurante";
   starts_at: string;
   ends_at: string;

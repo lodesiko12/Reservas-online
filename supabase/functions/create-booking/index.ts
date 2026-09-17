@@ -107,6 +107,7 @@ Deno.serve(async (req) => {
       customerName: name.trim(),
       manageUrl,
       primaryColor: biz?.primary_color,
+      isPending: booking.status === "pendiente",
     });
     await sendEmail(email.trim(), mail.subject, mail.html, mail.text, integ?.resend_api_key, integ?.email_from);
   } catch (e) {
@@ -119,5 +120,6 @@ Deno.serve(async (req) => {
     ends_at: booking.ends_at,
     service_name: serviceLabel,
     business_name: biz?.name ?? "",
+    status: booking.status,
   });
 });

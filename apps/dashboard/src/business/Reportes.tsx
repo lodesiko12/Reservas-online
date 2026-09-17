@@ -7,7 +7,7 @@ import { useBusinessId } from "./hooks";
 import { ymdInTz, addDaysYmd, zonedDayRange, formatDateTime } from "@reservas/shared";
 import { PageHeader, StatCard, Spinner } from "../components/ui";
 
-const COLORS = { web: "#4f46e5", manual: "#0ea5e9", confirmada: "#0ea5e9", completada: "#16a34a", no_show: "#dc2626", cancelada: "#94a3b8" };
+const COLORS = { web: "#4f46e5", manual: "#0ea5e9", pendiente: "#f59e0b", confirmada: "#0ea5e9", completada: "#16a34a", no_show: "#dc2626", cancelada: "#94a3b8" };
 
 export function Reportes() {
   const bid = useBusinessId();
@@ -55,7 +55,7 @@ export function Reportes() {
       { name: "Web", value: web, key: "web" },
       { name: "Manual", value: total - web, key: "manual" },
     ];
-    const statusPie = ["confirmada", "completada", "no_show", "cancelada"].map((s) => ({
+    const statusPie = ["pendiente", "confirmada", "completada", "no_show", "cancelada"].map((s) => ({
       name: s, value: rows.filter((r) => r.status === s).length, key: s,
     })).filter((x) => x.value > 0);
 

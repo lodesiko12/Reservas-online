@@ -7,6 +7,8 @@ export type Json =
   | Json[]
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
@@ -46,7 +48,22 @@ export type Database = {
           scope?: Database["public"]["Enums"]["block_scope"]
           starts_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "blocks_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "blocks_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "professionals"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       bookings: {
         Row: {
@@ -59,6 +76,7 @@ export type Database = {
           customer_name: string
           customer_phone: string | null
           dining_shift_id: string | null
+          dining_table_id: string | null
           ends_at: string
           id: string
           locator: string
@@ -68,6 +86,7 @@ export type Database = {
           service_id: string | null
           starts_at: string
           status: Database["public"]["Enums"]["booking_status"]
+          table_combo_id: string | null
           type: Database["public"]["Enums"]["business_type"]
           updated_at: string
         }
@@ -81,6 +100,7 @@ export type Database = {
           customer_name: string
           customer_phone?: string | null
           dining_shift_id?: string | null
+          dining_table_id?: string | null
           ends_at: string
           id?: string
           locator: string
@@ -90,6 +110,7 @@ export type Database = {
           service_id?: string | null
           starts_at: string
           status?: Database["public"]["Enums"]["booking_status"]
+          table_combo_id?: string | null
           type: Database["public"]["Enums"]["business_type"]
           updated_at?: string
         }
@@ -103,6 +124,7 @@ export type Database = {
           customer_name?: string
           customer_phone?: string | null
           dining_shift_id?: string | null
+          dining_table_id?: string | null
           ends_at?: string
           id?: string
           locator?: string
@@ -112,28 +134,163 @@ export type Database = {
           service_id?: string | null
           starts_at?: string
           status?: Database["public"]["Enums"]["booking_status"]
+          table_combo_id?: string | null
           type?: Database["public"]["Enums"]["business_type"]
           updated_at?: string
         }
-        Relationships: []
-      }
-      business_integrations: {
-        Row: { business_id: string; email_from: string | null; resend_api_key: string | null; whatsapp_phone_number_id: string | null; whatsapp_token: string | null; created_at: string; updated_at: string }
-        Insert: { business_id: string; email_from?: string | null; resend_api_key?: string | null; whatsapp_phone_number_id?: string | null; whatsapp_token?: string | null; created_at?: string; updated_at?: string }
-        Update: { business_id?: string; email_from?: string | null; resend_api_key?: string | null; whatsapp_phone_number_id?: string | null; whatsapp_token?: string | null; created_at?: string; updated_at?: string }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "bookings_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_dining_shift_id_fkey"
+            columns: ["dining_shift_id"]
+            isOneToOne: false
+            referencedRelation: "dining_shifts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_dining_table_id_fkey"
+            columns: ["dining_table_id"]
+            isOneToOne: false
+            referencedRelation: "dining_tables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "professionals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_table_combo_id_fkey"
+            columns: ["table_combo_id"]
+            isOneToOne: false
+            referencedRelation: "dining_table_combos"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       business_hours: {
-        Row: { business_id: string; close_time: string; id: string; open_time: string; weekday: number }
-        Insert: { business_id: string; close_time: string; id?: string; open_time: string; weekday: number }
-        Update: { business_id?: string; close_time?: string; id?: string; open_time?: string; weekday?: number }
-        Relationships: []
+        Row: {
+          business_id: string
+          close_time: string
+          id: string
+          open_time: string
+          weekday: number
+        }
+        Insert: {
+          business_id: string
+          close_time: string
+          id?: string
+          open_time: string
+          weekday: number
+        }
+        Update: {
+          business_id?: string
+          close_time?: string
+          id?: string
+          open_time?: string
+          weekday?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_hours_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      business_integrations: {
+        Row: {
+          business_id: string
+          created_at: string
+          email_from: string | null
+          resend_api_key: string | null
+          updated_at: string
+          whatsapp_phone_number_id: string | null
+          whatsapp_token: string | null
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          email_from?: string | null
+          resend_api_key?: string | null
+          updated_at?: string
+          whatsapp_phone_number_id?: string | null
+          whatsapp_token?: string | null
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          email_from?: string | null
+          resend_api_key?: string | null
+          updated_at?: string
+          whatsapp_phone_number_id?: string | null
+          whatsapp_token?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_integrations_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: true
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       business_users: {
-        Row: { business_id: string; created_at: string; id: string; role: Database["public"]["Enums"]["business_user_role"]; user_id: string }
-        Insert: { business_id: string; created_at?: string; id?: string; role?: Database["public"]["Enums"]["business_user_role"]; user_id: string }
-        Update: { business_id?: string; created_at?: string; id?: string; role?: Database["public"]["Enums"]["business_user_role"]; user_id?: string }
-        Relationships: []
+        Row: {
+          business_id: string
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["business_user_role"]
+          user_id: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["business_user_role"]
+          user_id: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["business_user_role"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_users_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       businesses: {
         Row: {
@@ -203,6 +360,7 @@ export type Database = {
           last_name: string | null
           no_show_count: number
           phone: string | null
+          phone_norm: string | null
           updated_at: string
         }
         Insert: {
@@ -215,6 +373,7 @@ export type Database = {
           last_name?: string | null
           no_show_count?: number
           phone?: string | null
+          phone_norm?: string | null
           updated_at?: string
         }
         Update: {
@@ -227,78 +386,430 @@ export type Database = {
           last_name?: string | null
           no_show_count?: number
           phone?: string | null
+          phone_norm?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "customers_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dining_duration_rules: {
+        Row: {
+          dining_shift_id: string
+          duration_min: number
+          id: string
+          pax_max: number
+          pax_min: number
+        }
+        Insert: {
+          dining_shift_id: string
+          duration_min: number
+          id?: string
+          pax_max: number
+          pax_min: number
+        }
+        Update: {
+          dining_shift_id?: string
+          duration_min?: number
+          id?: string
+          pax_max?: number
+          pax_min?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dining_duration_rules_dining_shift_id_fkey"
+            columns: ["dining_shift_id"]
+            isOneToOne: false
+            referencedRelation: "dining_shifts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dining_settings: {
+        Row: {
+          business_id: string
+          created_at: string
+          max_advance_days: number
+          max_party_online: number
+          min_lead_minutes: number
+          min_party_online: number
+          require_manual_confirmation: boolean
+          updated_at: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          max_advance_days?: number
+          max_party_online?: number
+          min_lead_minutes?: number
+          min_party_online?: number
+          require_manual_confirmation?: boolean
+          updated_at?: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          max_advance_days?: number
+          max_party_online?: number
+          min_lead_minutes?: number
+          min_party_online?: number
+          require_manual_confirmation?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dining_settings_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: true
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       dining_shifts: {
         Row: {
           active_weekdays: number[]
+          allow_double_turn: boolean
           booking_duration_min: number
           business_id: string
+          cleanup_min: number
           created_at: string
           end_time: string
           id: string
           is_active: boolean
+          last_call_time: string | null
+          max_bookings_per_slot: number | null
           max_covers: number
+          max_covers_per_slot: number | null
           name: string
+          online_max_covers: number | null
+          pacing_enabled: boolean
           slot_interval_min: number
           start_time: string
           updated_at: string
         }
         Insert: {
           active_weekdays?: number[]
+          allow_double_turn?: boolean
           booking_duration_min?: number
           business_id: string
+          cleanup_min?: number
           created_at?: string
           end_time: string
           id?: string
           is_active?: boolean
+          last_call_time?: string | null
+          max_bookings_per_slot?: number | null
           max_covers: number
+          max_covers_per_slot?: number | null
           name: string
+          online_max_covers?: number | null
+          pacing_enabled?: boolean
           slot_interval_min?: number
           start_time: string
           updated_at?: string
         }
         Update: {
           active_weekdays?: number[]
+          allow_double_turn?: boolean
           booking_duration_min?: number
           business_id?: string
+          cleanup_min?: number
           created_at?: string
           end_time?: string
           id?: string
           is_active?: boolean
+          last_call_time?: string | null
+          max_bookings_per_slot?: number | null
           max_covers?: number
+          max_covers_per_slot?: number | null
           name?: string
+          online_max_covers?: number | null
+          pacing_enabled?: boolean
           slot_interval_min?: number
           start_time?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "dining_shifts_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dining_table_combos: {
+        Row: {
+          business_id: string
+          cap_max: number
+          cap_min: number
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string | null
+          priority: number
+          table_ids: string[]
+        }
+        Insert: {
+          business_id: string
+          cap_max: number
+          cap_min: number
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string | null
+          priority?: number
+          table_ids: string[]
+        }
+        Update: {
+          business_id?: string
+          cap_max?: number
+          cap_min?: number
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string | null
+          priority?: number
+          table_ids?: string[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dining_table_combos_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dining_tables: {
+        Row: {
+          business_id: string
+          cap_max: number
+          cap_min: number
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          pos_x: number | null
+          pos_y: number | null
+          priority: number
+          shape: string
+          updated_at: string
+          zone_id: string | null
+        }
+        Insert: {
+          business_id: string
+          cap_max: number
+          cap_min: number
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          pos_x?: number | null
+          pos_y?: number | null
+          priority?: number
+          shape?: string
+          updated_at?: string
+          zone_id?: string | null
+        }
+        Update: {
+          business_id?: string
+          cap_max?: number
+          cap_min?: number
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          pos_x?: number | null
+          pos_y?: number | null
+          priority?: number
+          shape?: string
+          updated_at?: string
+          zone_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dining_tables_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dining_tables_zone_id_fkey"
+            columns: ["zone_id"]
+            isOneToOne: false
+            referencedRelation: "dining_zones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dining_zones: {
+        Row: {
+          business_id: string
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          reservable_online: boolean
+          sort_order: number
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          reservable_online?: boolean
+          sort_order?: number
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          reservable_online?: boolean
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dining_zones_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       professional_hours: {
-        Row: { end_time: string; id: string; professional_id: string; start_time: string; weekday: number }
-        Insert: { end_time: string; id?: string; professional_id: string; start_time: string; weekday: number }
-        Update: { end_time?: string; id?: string; professional_id?: string; start_time?: string; weekday?: number }
-        Relationships: []
+        Row: {
+          end_time: string
+          id: string
+          professional_id: string
+          start_time: string
+          weekday: number
+        }
+        Insert: {
+          end_time: string
+          id?: string
+          professional_id: string
+          start_time: string
+          weekday: number
+        }
+        Update: {
+          end_time?: string
+          id?: string
+          professional_id?: string
+          start_time?: string
+          weekday?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "professional_hours_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "professionals"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       professionals: {
-        Row: { business_id: string; created_at: string; id: string; is_active: boolean; name: string; updated_at: string }
-        Insert: { business_id: string; created_at?: string; id?: string; is_active?: boolean; name: string; updated_at?: string }
-        Update: { business_id?: string; created_at?: string; id?: string; is_active?: boolean; name?: string; updated_at?: string }
-        Relationships: []
+        Row: {
+          business_id: string
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "professionals_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
-        Row: { created_at: string; full_name: string | null; id: string; is_super_admin: boolean }
-        Insert: { created_at?: string; full_name?: string | null; id: string; is_super_admin?: boolean }
-        Update: { created_at?: string; full_name?: string | null; id?: string; is_super_admin?: boolean }
+        Row: {
+          created_at: string
+          full_name: string | null
+          id: string
+          is_super_admin: boolean
+        }
+        Insert: {
+          created_at?: string
+          full_name?: string | null
+          id: string
+          is_super_admin?: boolean
+        }
+        Update: {
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          is_super_admin?: boolean
+        }
         Relationships: []
       }
       service_availability: {
-        Row: { end_time: string; id: string; service_id: string; start_time: string; weekday: number }
-        Insert: { end_time: string; id?: string; service_id: string; start_time: string; weekday: number }
-        Update: { end_time?: string; id?: string; service_id?: string; start_time?: string; weekday?: number }
-        Relationships: []
+        Row: {
+          end_time: string
+          id: string
+          service_id: string
+          start_time: string
+          weekday: number
+        }
+        Insert: {
+          end_time: string
+          id?: string
+          service_id: string
+          start_time: string
+          weekday: number
+        }
+        Update: {
+          end_time?: string
+          id?: string
+          service_id?: string
+          start_time?: string
+          weekday?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_availability_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       services: {
         Row: {
@@ -340,7 +851,22 @@ export type Database = {
           sort_order?: number
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "services_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "services_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "professionals"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       whatsapp_reminders_log: {
         Row: {
@@ -373,12 +899,32 @@ export type Database = {
           sent_at?: string
           status?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_reminders_log_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_reminders_log_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
-    Views: { [_ in never]: never }
+    Views: {
+      [_ in never]: never
+    }
     Functions: {
-      cancel_booking_by_locator: { Args: { p_locator: string }; Returns: boolean }
+      cancel_booking_by_locator: {
+        Args: { p_locator: string }
+        Returns: boolean
+      }
       create_public_booking: {
         Args: {
           p_business_id: string
@@ -391,31 +937,109 @@ export type Database = {
           p_service_id: string
           p_starts_at: string
         }
-        Returns: Database["public"]["Tables"]["bookings"]["Row"]
-      }
-      generate_locator: { Args: Record<string, never>; Returns: string }
-      get_available_slots: {
-        Args: { p_business_id: string; p_date: string; p_service_id: string }
-        Returns: { slot_end: string; slot_start: string }[]
-      }
-      get_available_dining_slots: {
-        Args: { p_business_id: string; p_date: string; p_party_size: number }
-        Returns: { slot_start: string; slot_end: string; shift_id: string; shift_name: string }[]
+        Returns: {
+          business_id: string
+          channel: Database["public"]["Enums"]["booking_channel"]
+          created_at: string
+          customer_email: string | null
+          customer_id: string | null
+          customer_last_name: string | null
+          customer_name: string
+          customer_phone: string | null
+          dining_shift_id: string | null
+          dining_table_id: string | null
+          ends_at: string
+          id: string
+          locator: string
+          notes: string | null
+          party_size: number | null
+          professional_id: string | null
+          service_id: string | null
+          starts_at: string
+          status: Database["public"]["Enums"]["booking_status"]
+          table_combo_id: string | null
+          type: Database["public"]["Enums"]["business_type"]
+          updated_at: string
+        }
       }
       create_public_dining_booking: {
         Args: {
           p_business_id: string
+          p_channel?: Database["public"]["Enums"]["booking_channel"]
+          p_email: string
+          p_last_name: string
+          p_name: string
+          p_notes?: string
+          p_party_size: number
+          p_phone: string
           p_shift_id: string
           p_starts_at: string
-          p_party_size: number
-          p_name: string
-          p_last_name: string
-          p_phone: string
-          p_email: string
-          p_notes?: string
-          p_channel?: Database["public"]["Enums"]["booking_channel"]
+          p_table_id?: string
         }
-        Returns: Database["public"]["Tables"]["bookings"]["Row"]
+        Returns: {
+          business_id: string
+          channel: Database["public"]["Enums"]["booking_channel"]
+          created_at: string
+          customer_email: string | null
+          customer_id: string | null
+          customer_last_name: string | null
+          customer_name: string
+          customer_phone: string | null
+          dining_shift_id: string | null
+          dining_table_id: string | null
+          ends_at: string
+          id: string
+          locator: string
+          notes: string | null
+          party_size: number | null
+          professional_id: string | null
+          service_id: string | null
+          starts_at: string
+          status: Database["public"]["Enums"]["booking_status"]
+          table_combo_id: string | null
+          type: Database["public"]["Enums"]["business_type"]
+          updated_at: string
+        }
+      }
+      dining_duration_for: {
+        Args: { p_party_size: number; p_shift_id: string }
+        Returns: number
+      }
+      dining_table_busy: {
+        Args: {
+          p_allow_double_turn: boolean
+          p_cleanup_min: number
+          p_date: string
+          p_end: string
+          p_exclude_booking_id?: string
+          p_shift_id: string
+          p_start: string
+          p_table_id: string
+          p_tz: string
+        }
+        Returns: boolean
+      }
+      generate_locator: { Args: never; Returns: string }
+      get_available_dining_slots: {
+        Args: {
+          p_business_id: string
+          p_channel?: Database["public"]["Enums"]["booking_channel"]
+          p_date: string
+          p_party_size: number
+        }
+        Returns: {
+          shift_id: string
+          shift_name: string
+          slot_end: string
+          slot_start: string
+        }[]
+      }
+      get_available_slots: {
+        Args: { p_business_id: string; p_date: string; p_service_id: string }
+        Returns: {
+          slot_end: string
+          slot_start: string
+        }[]
       }
       get_booking_by_locator: {
         Args: { p_locator: string }
@@ -434,6 +1058,34 @@ export type Database = {
           type: Database["public"]["Enums"]["business_type"]
         }[]
       }
+      get_business_integration: {
+        Args: { p_business_id: string }
+        Returns: {
+          email_from: string
+          has_resend_key: boolean
+          has_whatsapp_token: boolean
+          whatsapp_phone_number_id: string
+        }[]
+      }
+      get_dining_table_options: {
+        Args: {
+          p_business_id: string
+          p_ends_at: string
+          p_exclude_booking_id?: string
+          p_party_size: number
+          p_shift_id: string
+          p_starts_at: string
+        }
+        Returns: {
+          cap_max: number
+          cap_min: number
+          fits: boolean
+          id: string
+          is_free: boolean
+          name: string
+          zone_name: string
+        }[]
+      }
       get_public_business: {
         Args: { p_slug: string }
         Returns: {
@@ -444,6 +1096,13 @@ export type Database = {
           slot_interval_min: number
           timezone: string
           type: Database["public"]["Enums"]["business_type"]
+        }[]
+      }
+      get_public_dining_settings: {
+        Args: { p_business_id: string }
+        Returns: {
+          max_party_online: number
+          min_party_online: number
         }[]
       }
       get_public_services: {
@@ -458,36 +1117,171 @@ export type Database = {
         }[]
       }
       is_business_member: { Args: { b: string }; Returns: boolean }
-      is_super_admin: { Args: Record<string, never>; Returns: boolean }
-      get_business_integration: {
-        Args: { p_business_id: string }
-        Returns: { email_from: string; whatsapp_phone_number_id: string; has_resend_key: boolean; has_whatsapp_token: boolean }[]
-      }
+      is_super_admin: { Args: never; Returns: boolean }
+      normalize_phone: { Args: { p: string }; Returns: string }
+      recount_customer: { Args: { cid: string }; Returns: undefined }
       set_business_integration: {
         Args: {
           p_business_id: string
           p_email_from: string
-          p_whatsapp_phone_number_id: string
           p_resend_api_key?: string
+          p_whatsapp_phone_number_id: string
           p_whatsapp_token?: string
         }
         Returns: undefined
       }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
     }
     Enums: {
       block_scope: "business" | "professional"
       booking_channel: "web" | "manual"
-      booking_status: "confirmada" | "cancelada" | "completada" | "no_show"
+      booking_status:
+        | "confirmada"
+        | "cancelada"
+        | "completada"
+        | "no_show"
+        | "pendiente"
       business_type: "citas" | "restaurante"
       business_user_role: "owner" | "staff"
     }
-    CompositeTypes: { [_ in never]: never }
+    CompositeTypes: {
+      [_ in never]: never
+    }
   }
 }
 
-type PublicSchema = Database["public"]
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
 
-export type Tables<T extends keyof PublicSchema["Tables"]> = PublicSchema["Tables"][T]["Row"]
-export type TablesInsert<T extends keyof PublicSchema["Tables"]> = PublicSchema["Tables"][T]["Insert"]
-export type TablesUpdate<T extends keyof PublicSchema["Tables"]> = PublicSchema["Tables"][T]["Update"]
-export type Enums<T extends keyof PublicSchema["Enums"]> = PublicSchema["Enums"][T]
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never) = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
+
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never) = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never) = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never) = never,
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never) = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
+
+export const Constants = {
+  public: {
+    Enums: {
+      block_scope: ["business", "professional"],
+      booking_channel: ["web", "manual"],
+      booking_status: [
+        "confirmada",
+        "cancelada",
+        "completada",
+        "no_show",
+        "pendiente",
+      ],
+      business_type: ["citas", "restaurante"],
+      business_user_role: ["owner", "staff"],
+    },
+  },
+} as const
