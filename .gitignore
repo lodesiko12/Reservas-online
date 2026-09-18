@@ -3,6 +3,9 @@ dist/
 .env
 .env.*
 !.env.example
+# Solo valores públicos (URL y clave anon publicable), sin secretos:
+!apps/widget/.env.production
+!apps/dashboard/.env.production
 *.local
 .claude/settings.local.json
 
