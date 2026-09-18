@@ -53,6 +53,7 @@ export function Clientes() {
   const [q, setQ] = useState("");
   const [sel, setSel] = useState<Customer | null>(null);
   const [importing, setImporting] = useState(false);
+  const [creating, setCreating] = useState(false);
 
   const { data: customers, isLoading } = useQuery({
     queryKey: ["customers", bid, q],
@@ -69,7 +70,12 @@ export function Clientes() {
   return (
     <div>
       <PageHeader title="Clientes" subtitle="Histórico y ficha de cada cliente"
-        actions={<button className="btn-ghost" onClick={() => setImporting(true)}>⬆ Importar CSV</button>} />
+        actions={
+          <div className="flex gap-2">
+            <button className="btn-ghost" onClick={() => setImporting(true)}>⬆ Importar CSV</button>
+            <button className="btn-primary" onClick={() => setCreating(true)}>+ Nuevo cliente</button>
+          </div>
+        } />
       <div className="mb-4 max-w-sm">
         <input className="input" placeholder="Buscar por nombre…" value={q} onChange={(e) => setQ(e.target.value)} />
       </div>
@@ -109,7 +115,48 @@ export function Clientes() {
 
       {sel && <CustomerModal customer={sel} onClose={() => setSel(null)} />}
       {importing && <ImportCsvModal bid={bid} onClose={() => setImporting(false)} />}
+      {creating && <NewCustomerModal bid={bid} onClose={() => setCreating(false)} />}
     </div>
+  );
+}
+
+function NewCustomerModal({ bid, onClose }: { bid: string; onClose: () => void }) {
+  const qc = useQueryClient();
+  const [form, setForm] = useState({ full_name: "", last_name: "", phone: "", email: "", notes: "" });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function save() {
+    setSaving(true); setError(null);
+    const { error } = await supabase.rpc("import_customer", {
+      p_business_id: bid, p_full_name: form.full_name.trim(), p_last_name: form.last_name.trim() || undefined,
+      p_phone: form.phone.trim() || undefined, p_email: form.email.trim() || undefined, p_notes: form.notes.trim() || undefined,
+    });
+    setSaving(false);
+    if (error) { setError(error.message); return; }
+    qc.invalidateQueries({ queryKey: ["customers", bid] });
+    onClose();
+  }
+
+  return (
+    <Modal open onClose={onClose} title="Nuevo cliente">
+      <div className="space-y-4">
+        <div className="grid grid-cols-2 gap-3">
+          <div><label className="label">Nombre *</label><input className="input" value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} /></div>
+          <div><label className="label">Apellidos</label><input className="input" value={form.last_name} onChange={(e) => setForm({ ...form, last_name: e.target.value })} /></div>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div><label className="label">Teléfono</label><input className="input" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></div>
+          <div><label className="label">Email</label><input type="email" className="input" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
+        </div>
+        <div><label className="label">Notas</label><textarea className="input" rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></div>
+        {error && <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</div>}
+        <div className="flex justify-end gap-2">
+          <button className="btn-ghost" onClick={onClose}>Cancelar</button>
+          <button className="btn-primary" disabled={!form.full_name.trim() || saving} onClick={save}>{saving ? "Guardando…" : "Crear cliente"}</button>
+        </div>
+      </div>
+    </Modal>
   );
 }
 

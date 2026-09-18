@@ -1,12 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../lib/auth";
 import { useServices, useProfessionals, useServiceProfessionals, useBusinessId, type Service, type Professional } from "./hooks";
-import { WEEKDAYS_ES, formatDuration, formatCurrency, shortTime } from "@reservas/shared";
+import { formatDuration, formatCurrency, shortTime } from "@reservas/shared";
 import { PageHeader, Spinner, Modal, EmptyState } from "../components/ui";
-
-type Win = { weekday: number; start_time: string; end_time: string };
+import { WindowsEditor, type Win } from "../components/WindowsEditor";
 
 const DEFAULT_COLORS = [
   "#3b82f6", "#ef4444", "#22c55e", "#f59e0b", "#a855f7",
@@ -14,9 +13,25 @@ const DEFAULT_COLORS = [
 ];
 
 export function Servicios() {
+  const [toast, setToast] = useState<string | null>(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("google") === "connected") setToast("Google Calendar conectado ✅");
+    else if (params.get("google_error")) setToast("No se pudo conectar Google Calendar: " + params.get("google_error"));
+    if (params.has("google") || params.has("google_error")) {
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+  }, []);
+
   return (
     <div className="space-y-8">
       <PageHeader title="Servicios y profesionales" subtitle="Catálogo, duración, disponibilidad y equipo" />
+      {toast && (
+        <div className="fixed top-4 right-4 bg-slate-900 text-white text-sm px-4 py-2 rounded-lg shadow-lg z-50 cursor-pointer" onClick={() => setToast(null)}>
+          {toast}
+        </div>
+      )}
       <ProfessionalsSection />
       <ServicesSection />
     </div>
@@ -151,9 +166,75 @@ function ProfessionalModal({ bid, professional, nextColor, onClose, onSaved }: {
           <label className="label">Horario de trabajo</label>
           {loaded ? <WindowsEditor wins={wins} onChange={setWins} /> : <Spinner />}
         </div>
+        {professional && <GoogleCalendarSection professionalId={professional.id} />}
         <div className="flex justify-end gap-2"><button className="btn-ghost" onClick={onClose}>Cancelar</button><button className="btn-primary" disabled={!name.trim() || busy} onClick={save}>Guardar</button></div>
       </div>
     </Modal>
+  );
+}
+
+/** Conexión de este profesional con su Google Calendar (exportar citas +
+ * bloquear huecos que tenga ocupados allí). Solo aplica al editar un
+ * profesional ya creado (necesita su id). */
+function GoogleCalendarSection({ professionalId }: { professionalId: string }) {
+  const [status, setStatus] = useState<{ connected: boolean; google_email: string | null; sync_enabled: boolean } | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function load() {
+    const { data } = await supabase.rpc("get_professional_google_status", { p_professional_id: professionalId });
+    const row = (data as any[])?.[0];
+    setStatus(row ?? { connected: false, google_email: null, sync_enabled: true });
+  }
+
+  useEffect(() => { load(); }, [professionalId]);
+
+  async function connect() {
+    setBusy(true); setError(null);
+    const { data, error } = await supabase.functions.invoke("google-oauth-start", { body: { professional_id: professionalId } });
+    setBusy(false);
+    if (error || (data as any)?.error) { setError((data as any)?.error ?? error!.message); return; }
+    window.location.href = (data as any).url;
+  }
+
+  async function disconnect() {
+    if (!confirm("¿Desconectar Google Calendar de este profesional?")) return;
+    setBusy(true);
+    await supabase.rpc("disconnect_professional_google", { p_professional_id: professionalId });
+    setBusy(false);
+    load();
+  }
+
+  async function toggleSync(enabled: boolean) {
+    setBusy(true);
+    await supabase.rpc("set_professional_google_sync", { p_professional_id: professionalId, p_enabled: enabled });
+    setBusy(false);
+    load();
+  }
+
+  if (!status) return null;
+
+  return (
+    <div>
+      <label className="label">Google Calendar</label>
+      {status.connected ? (
+        <div className="flex items-center justify-between border border-slate-200 rounded-lg px-3 py-2">
+          <div className="text-sm">
+            <div className="font-medium text-green-700">Conectado{status.google_email ? ` · ${status.google_email}` : ""}</div>
+            <label className="flex items-center gap-1.5 text-xs text-slate-500 mt-1">
+              <input type="checkbox" checked={status.sync_enabled} onChange={(e) => toggleSync(e.target.checked)} disabled={busy} />
+              Sincronizar (exportar citas y bloquear huecos ocupados en Google)
+            </label>
+          </div>
+          <button type="button" className="btn-ghost text-xs" disabled={busy} onClick={disconnect}>Desconectar</button>
+        </div>
+      ) : (
+        <button type="button" className="btn-ghost text-xs" disabled={busy} onClick={connect}>
+          Conectar con Google Calendar
+        </button>
+      )}
+      {error && <p className="text-xs text-red-600 mt-1">{error}</p>}
+    </div>
   );
 }
 
@@ -317,26 +398,3 @@ function ServiceModal({ bid, service, pros, onClose, onSaved }: {
   );
 }
 
-/* ------------------------------ Editor de franjas ------------------------------ */
-function WindowsEditor({ wins, onChange }: { wins: Win[]; onChange: (w: Win[]) => void }) {
-  function add() { onChange([...wins, { weekday: 1, start_time: "09:00", end_time: "14:00" }]); }
-  function update(i: number, patch: Partial<Win>) { onChange(wins.map((w, j) => (j === i ? { ...w, ...patch } : w))); }
-  function del(i: number) { onChange(wins.filter((_, j) => j !== i)); }
-
-  return (
-    <div className="space-y-2">
-      {wins.map((w, i) => (
-        <div key={i} className="flex items-center gap-2">
-          <select className="input py-1.5" value={w.weekday} onChange={(e) => update(i, { weekday: +e.target.value })}>
-            {WEEKDAYS_ES.map((d, idx) => <option key={idx} value={idx}>{d}</option>)}
-          </select>
-          <input type="time" className="input py-1.5 w-28" value={w.start_time} onChange={(e) => update(i, { start_time: e.target.value })} />
-          <span className="text-slate-400">–</span>
-          <input type="time" className="input py-1.5 w-28" value={w.end_time} onChange={(e) => update(i, { end_time: e.target.value })} />
-          <button className="text-slate-400 hover:text-red-600" onClick={() => del(i)}>✕</button>
-        </div>
-      ))}
-      <button type="button" className="btn-ghost text-xs" onClick={add}>+ Añadir franja</button>
-    </div>
-  );
-}

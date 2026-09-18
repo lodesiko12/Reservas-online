@@ -3,12 +3,12 @@ import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../lib/auth";
 import { useBusinessId, useDiningSettings } from "./hooks";
-import { WEEKDAYS_ES, shortTime } from "@reservas/shared";
+import { shortTime } from "@reservas/shared";
 import { PageHeader, Spinner } from "../components/ui";
 import { IntegrationsForm } from "../components/IntegrationsForm";
+import { WindowsEditor, type Win } from "../components/WindowsEditor";
 
 const WIDGET_URL = ((import.meta.env.VITE_WIDGET_URL as string) || "").replace(/\/+$/, "");
-type Hour = { weekday: number; open_time: string; close_time: string };
 
 export function Configuracion() {
   const bid = useBusinessId();
@@ -21,10 +21,11 @@ export function Configuracion() {
   const [logoUrl, setLogoUrl] = useState(business?.logo_url ?? "");
   const [capacity, setCapacity] = useState(business?.default_capacity ?? 1);
   const [slotInterval, setSlotInterval] = useState(business?.slot_interval_min ?? 15);
+  const [maxAdvanceDays, setMaxAdvanceDays] = useState<string>(business?.max_advance_days?.toString() ?? "");
   const [reviewUrl, setReviewUrl] = useState(business?.google_review_url ?? "");
   const [savingReview, setSavingReview] = useState(false);
 
-  const [hours, setHours] = useState<Hour[] | null>(null);
+  const [hours, setHours] = useState<Win[] | null>(null);
   const [savingBranding, setSavingBranding] = useState(false);
   const [savingHours, setSavingHours] = useState(false);
   const [savingRes, setSavingRes] = useState(false);
@@ -33,7 +34,7 @@ export function Configuracion() {
 
   useEffect(() => {
     supabase.from("business_hours").select("weekday, open_time, close_time").eq("business_id", bid).order("weekday")
-      .then(({ data }) => setHours((data ?? []).map((h) => ({ weekday: h.weekday, open_time: shortTime(h.open_time), close_time: shortTime(h.close_time) }))));
+      .then(({ data }) => setHours((data ?? []).map((h) => ({ weekday: h.weekday, start_time: shortTime(h.open_time), end_time: shortTime(h.close_time) }))));
   }, [bid]);
 
   function flash(m: string) { setToast(m); setTimeout(() => setToast(null), 2500); }
@@ -47,7 +48,10 @@ export function Configuracion() {
 
   async function saveReservas() {
     setSavingRes(true);
-    await supabase.from("businesses").update({ default_capacity: Number(capacity), slot_interval_min: Number(slotInterval) }).eq("id", bid);
+    await supabase.from("businesses").update({
+      default_capacity: Number(capacity), slot_interval_min: Number(slotInterval),
+      max_advance_days: maxAdvanceDays.trim() ? Number(maxAdvanceDays) : null,
+    }).eq("id", bid);
     await refresh();
     setSavingRes(false); flash("Ajustes de reservas guardados");
   }
@@ -63,7 +67,11 @@ export function Configuracion() {
     if (!hours) return;
     setSavingHours(true);
     await supabase.from("business_hours").delete().eq("business_id", bid);
-    if (hours.length) await supabase.from("business_hours").insert(hours.map((h) => ({ business_id: bid, ...h })));
+    if (hours.length) {
+      await supabase.from("business_hours").insert(
+        hours.map((h) => ({ business_id: bid, weekday: h.weekday, open_time: h.start_time, close_time: h.end_time }))
+      );
+    }
     setSavingHours(false); flash("Horario guardado");
   }
 
@@ -114,20 +122,7 @@ export function Configuracion() {
         <h2 className="font-semibold mb-4">Horario de apertura</h2>
         {hours === null ? <Spinner /> : (
           <>
-            <div className="space-y-2">
-              {hours.map((h, i) => (
-                <div key={i} className="flex items-center gap-2">
-                  <select className="input py-1.5" value={h.weekday} onChange={(e) => setHours(hours.map((x, j) => j === i ? { ...x, weekday: +e.target.value } : x))}>
-                    {WEEKDAYS_ES.map((d, idx) => <option key={idx} value={idx}>{d}</option>)}
-                  </select>
-                  <input type="time" className="input py-1.5 w-28" value={h.open_time} onChange={(e) => setHours(hours.map((x, j) => j === i ? { ...x, open_time: e.target.value } : x))} />
-                  <span className="text-slate-400">–</span>
-                  <input type="time" className="input py-1.5 w-28" value={h.close_time} onChange={(e) => setHours(hours.map((x, j) => j === i ? { ...x, close_time: e.target.value } : x))} />
-                  <button className="text-slate-400 hover:text-red-600" onClick={() => setHours(hours.filter((_, j) => j !== i))}>✕</button>
-                </div>
-              ))}
-            </div>
-            <button type="button" className="btn-ghost text-xs mt-2" onClick={() => setHours([...hours, { weekday: 1, open_time: "09:00", close_time: "18:00" }])}>+ Añadir franja</button>
+            <WindowsEditor wins={hours} onChange={setHours} />
             {isRestaurant && <p className="text-xs text-slate-400 mt-2">El aforo por franja se gestiona en “Franjas y aforo”.</p>}
             <div><button className="btn-primary mt-4" onClick={saveHours} disabled={savingHours}>{savingHours ? "Guardando…" : "Guardar horario"}</button></div>
           </>
@@ -141,6 +136,11 @@ export function Configuracion() {
           <div className="grid sm:grid-cols-2 gap-4">
             <div><label className="label">Aforo por defecto (servicios sin profesional)</label><input type="number" min={1} className="input" value={capacity} onChange={(e) => setCapacity(+e.target.value)} /></div>
             <div><label className="label">Granularidad de huecos (min)</label><input type="number" min={5} step={5} className="input" value={slotInterval} onChange={(e) => setSlotInterval(+e.target.value)} /></div>
+            <div>
+              <label className="label">Antelación máxima de reserva (días)</label>
+              <input type="number" min={1} className="input" value={maxAdvanceDays} onChange={(e) => setMaxAdvanceDays(e.target.value)} placeholder="Sin límite" />
+              <p className="text-xs text-slate-400 mt-1">Vacío = sin límite. Ej. 90 = no se puede reservar con más de 3 meses de antelación. Solo afecta a las reservas web, no a las que crea el staff manualmente.</p>
+            </div>
           </div>
           <button className="btn-primary mt-4" onClick={saveReservas} disabled={savingRes}>{savingRes ? "Guardando…" : "Guardar"}</button>
         </section>

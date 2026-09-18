@@ -24,6 +24,7 @@ export type Database = {
           professional_id: string | null
           reason: string | null
           scope: Database["public"]["Enums"]["block_scope"]
+          source: string
           starts_at: string
         }
         Insert: {
@@ -35,6 +36,7 @@ export type Database = {
           professional_id?: string | null
           reason?: string | null
           scope?: Database["public"]["Enums"]["block_scope"]
+          source?: string
           starts_at: string
         }
         Update: {
@@ -46,6 +48,7 @@ export type Database = {
           professional_id?: string | null
           reason?: string | null
           scope?: Database["public"]["Enums"]["block_scope"]
+          source?: string
           starts_at?: string
         }
         Relationships: [
@@ -78,6 +81,7 @@ export type Database = {
           dining_shift_id: string | null
           dining_table_id: string | null
           ends_at: string
+          google_event_id: string | null
           id: string
           locator: string
           notes: string | null
@@ -102,6 +106,7 @@ export type Database = {
           dining_shift_id?: string | null
           dining_table_id?: string | null
           ends_at: string
+          google_event_id?: string | null
           id?: string
           locator: string
           notes?: string | null
@@ -126,6 +131,7 @@ export type Database = {
           dining_shift_id?: string | null
           dining_table_id?: string | null
           ends_at?: string
+          google_event_id?: string | null
           id?: string
           locator?: string
           notes?: string | null
@@ -227,6 +233,8 @@ export type Database = {
           business_id: string
           created_at: string
           email_from: string | null
+          google_client_id: string | null
+          google_client_secret: string | null
           resend_api_key: string | null
           updated_at: string
           whatsapp_phone_number_id: string | null
@@ -236,6 +244,8 @@ export type Database = {
           business_id: string
           created_at?: string
           email_from?: string | null
+          google_client_id?: string | null
+          google_client_secret?: string | null
           resend_api_key?: string | null
           updated_at?: string
           whatsapp_phone_number_id?: string | null
@@ -245,6 +255,8 @@ export type Database = {
           business_id?: string
           created_at?: string
           email_from?: string | null
+          google_client_id?: string | null
+          google_client_secret?: string | null
           resend_api_key?: string | null
           updated_at?: string
           whatsapp_phone_number_id?: string | null
@@ -300,6 +312,7 @@ export type Database = {
           id: string
           is_active: boolean
           logo_url: string | null
+          max_advance_days: number | null
           name: string
           primary_color: string
           reminder_lang: string
@@ -320,6 +333,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           logo_url?: string | null
+          max_advance_days?: number | null
           name: string
           primary_color?: string
           reminder_lang?: string
@@ -340,6 +354,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           logo_url?: string | null
+          max_advance_days?: number | null
           name?: string
           primary_color?: string
           reminder_lang?: string
@@ -699,6 +714,50 @@ export type Database = {
             columns: ["business_id"]
             isOneToOne: false
             referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      professional_google_accounts: {
+        Row: {
+          access_token: string | null
+          calendar_id: string
+          created_at: string
+          google_email: string | null
+          professional_id: string
+          refresh_token: string | null
+          sync_enabled: boolean
+          token_expires_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          access_token?: string | null
+          calendar_id?: string
+          created_at?: string
+          google_email?: string | null
+          professional_id: string
+          refresh_token?: string | null
+          sync_enabled?: boolean
+          token_expires_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          access_token?: string | null
+          calendar_id?: string
+          created_at?: string
+          google_email?: string | null
+          professional_id?: string
+          refresh_token?: string | null
+          sync_enabled?: boolean
+          token_expires_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "professional_google_accounts_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: true
+            referencedRelation: "professionals"
             referencedColumns: ["id"]
           },
         ]
@@ -1087,6 +1146,7 @@ export type Database = {
           dining_shift_id: string | null
           dining_table_id: string | null
           ends_at: string
+          google_event_id: string | null
           id: string
           locator: string
           notes: string | null
@@ -1132,6 +1192,7 @@ export type Database = {
           dining_shift_id: string | null
           dining_table_id: string | null
           ends_at: string
+          google_event_id: string | null
           id: string
           locator: string
           notes: string | null
@@ -1173,6 +1234,7 @@ export type Database = {
           dining_shift_id: string | null
           dining_table_id: string | null
           ends_at: string
+          google_event_id: string | null
           id: string
           locator: string
           notes: string | null
@@ -1229,6 +1291,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      disconnect_professional_google: {
+        Args: { p_professional_id: string }
+        Returns: undefined
+      }
       generate_locator: { Args: never; Returns: string }
       get_available_dining_slots: {
         Args: {
@@ -1247,6 +1313,7 @@ export type Database = {
       get_available_slots: {
         Args: {
           p_business_id: string
+          p_channel?: Database["public"]["Enums"]["booking_channel"]
           p_date: string
           p_professional_id?: string
           p_service_id: string
@@ -1299,6 +1366,21 @@ export type Database = {
           is_free: boolean
           name: string
           zone_name: string
+        }[]
+      }
+      get_google_credentials_status: {
+        Args: { p_business_id: string }
+        Returns: {
+          google_client_id: string
+          has_google_client_secret: boolean
+        }[]
+      }
+      get_professional_google_status: {
+        Args: { p_professional_id: string }
+        Returns: {
+          connected: boolean
+          google_email: string
+          sync_enabled: boolean
         }[]
       }
       get_public_business: {
@@ -1373,6 +1455,18 @@ export type Database = {
           p_whatsapp_phone_number_id: string
           p_whatsapp_token?: string
         }
+        Returns: undefined
+      }
+      set_google_credentials: {
+        Args: {
+          p_business_id: string
+          p_client_id: string
+          p_client_secret?: string
+        }
+        Returns: undefined
+      }
+      set_professional_google_sync: {
+        Args: { p_enabled: boolean; p_professional_id: string }
         Returns: undefined
       }
       show_limit: { Args: never; Returns: number }

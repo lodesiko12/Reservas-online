@@ -247,16 +247,27 @@ function BookingModal({ booking, tz, onClose, onChanged }: {
     qc.invalidateQueries(); onChanged();
   }
 
+  // Sincroniza (fire-and-forget) el evento de Google Calendar del
+  // profesional, si lo tiene conectado; nunca bloquea la acción del panel.
+  function syncGoogle(action: "upsert" | "delete") {
+    if (booking.type !== "citas") return;
+    supabase.functions.invoke("sync-google-event", { body: { booking_id: booking.id, action } }).catch(() => {});
+  }
+
   async function setStatus(status: Booking["status"]) {
     setBusy(true);
     const { error } = await supabase.from("bookings").update({ status }).eq("id", booking.id);
     setBusy(false);
     if (error) { alert(error.message); return; }
+    syncGoogle(status === "cancelada" ? "delete" : "upsert");
     qc.invalidateQueries(); onChanged();
   }
   async function remove() {
     if (!confirm("¿Eliminar esta reserva definitivamente?")) return;
     setBusy(true);
+    // Borra primero el evento de Google (necesita leer la reserva, que
+    // desaparece en cuanto la eliminamos) y luego la reserva en sí.
+    syncGoogle("delete");
     await supabase.from("bookings").delete().eq("id", booking.id);
     qc.invalidateQueries(); setBusy(false); onChanged();
   }
@@ -267,6 +278,7 @@ function BookingModal({ booking, tz, onClose, onChanged }: {
     const { error } = await supabase.from("bookings").update({ starts_at: start, ends_at: end }).eq("id", booking.id);
     setBusy(false);
     if (error) { alert(booking.type === "restaurante" ? "Esa mesa ya está ocupada en ese horario." : error.message); return; }
+    syncGoogle("upsert");
     qc.invalidateQueries(); onChanged();
   }
 

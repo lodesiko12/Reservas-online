@@ -116,6 +116,16 @@ Deno.serve(async (req) => {
     console.error("Email no enviado:", (e as Error).message);
   }
 
+  // 4) Exportar a Google Calendar si el profesional lo tiene conectado
+  // (no bloquea el éxito de la reserva si falla o no aplica).
+  if (!isRestaurant) {
+    try {
+      await supabase.functions.invoke("sync-google-event", { body: { booking_id: booking.id, action: "upsert" } });
+    } catch (e) {
+      console.error("Sync Google Calendar no enviado:", (e as Error).message);
+    }
+  }
+
   return json({
     locator: booking.locator,
     starts_at: booking.starts_at,

@@ -78,7 +78,9 @@ function NuevaReservaCitas() {
     if (!serviceId || !date) { setSlots([]); return; }
     setLoadingSlots(true); setSlot("");
     (async () => {
-      const { data } = await supabase.rpc("get_available_slots", { p_business_id: bid, p_service_id: serviceId, p_date: date });
+      // Canal "manual": el staff no está sujeto al límite de antelación máxima
+      // pensado para reservas web.
+      const { data } = await supabase.rpc("get_available_slots", { p_business_id: bid, p_service_id: serviceId, p_date: date, p_channel: "manual" });
       setSlots((data as any[]) ?? []); setLoadingSlots(false);
     })();
   }, [serviceId, date, bid]);
