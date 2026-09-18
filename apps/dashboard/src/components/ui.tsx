@@ -64,7 +64,7 @@ const STATUS_STYLES: Record<string, string> = {
   no_show: "bg-red-100 text-red-700",
 };
 const STATUS_TEXT: Record<string, string> = {
-  pendiente: "Pendiente", confirmada: "Confirmada", sentada: "En mesa", cancelada: "Cancelada", completada: "Completada", no_show: "No-show",
+  pendiente: "Pendiente", confirmada: "Confirmada", sentada: "En mesa", cancelada: "Cancelada", completada: "Completada", no_show: "Ausente",
 };
 export function StatusBadge({ status }: { status: string }) {
   return <span className={`badge ${STATUS_STYLES[status] ?? "bg-slate-100"}`}>{STATUS_TEXT[status] ?? status}</span>;

@@ -6,8 +6,6 @@ import { useBusinessId, type Customer } from "./hooks";
 import { formatDateTime } from "@reservas/shared";
 import { PageHeader, Spinner, Modal, StatusBadge, EmptyState } from "../components/ui";
 
-const AVAILABLE_TAGS = ["VIP", "Habitual", "Alérgico", "Prensa", "Problemático"];
-
 /** Parser CSV mínimo: soporta comillas, comas y saltos de línea dentro de campos. */
 function parseCsv(text: string): string[][] {
   const rows: string[][] = [];
@@ -51,6 +49,7 @@ function matchHeader(header: string): string | null {
 export function Clientes() {
   const bid = useBusinessId();
   const [q, setQ] = useState("");
+  const qc = useQueryClient();
   const [sel, setSel] = useState<Customer | null>(null);
   const [importing, setImporting] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -66,6 +65,12 @@ export function Clientes() {
       return data as Customer[];
     },
   });
+
+  async function removeCustomer(c: Customer) {
+    if (!confirm(`¿Eliminar a ${c.full_name}? Su historial de reservas se conserva, pero dejará de estar vinculado a esta ficha.`)) return;
+    await supabase.from("customers").delete().eq("id", c.id);
+    qc.invalidateQueries({ queryKey: ["customers", bid] });
+  }
 
   return (
     <div>
@@ -89,23 +94,21 @@ export function Clientes() {
                 <tr>
                   <th className="px-5 py-3 font-medium">Nombre</th>
                   <th className="px-5 py-3 font-medium">Teléfono</th>
-                  <th className="px-5 py-3 font-medium">Etiquetas</th>
                   <th className="px-5 py-3 font-medium">Reservas</th>
                   <th className="px-5 py-3 font-medium">No-shows</th>
+                  <th className="px-5 py-3"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {customers.map((c) => (
-                  <tr key={c.id} className="hover:bg-slate-50 cursor-pointer" onClick={() => setSel(c)}>
-                    <td className="px-5 py-3 font-medium">{c.full_name} {c.last_name ?? ""}</td>
-                    <td className="px-5 py-3 text-slate-500">{c.phone ?? "—"}</td>
-                    <td className="px-5 py-3">
-                      <div className="flex flex-wrap gap-1">
-                        {c.tags?.map((t) => <span key={t} className="badge bg-brand-50 text-brand-700 text-[11px]">{t}</span>)}
-                      </div>
+                  <tr key={c.id} className="hover:bg-slate-50">
+                    <td className="px-5 py-3 font-medium cursor-pointer" onClick={() => setSel(c)}>{c.full_name} {c.last_name ?? ""}</td>
+                    <td className="px-5 py-3 text-slate-500 cursor-pointer" onClick={() => setSel(c)}>{c.phone ?? "—"}</td>
+                    <td className="px-5 py-3 cursor-pointer" onClick={() => setSel(c)}>{c.bookings_count}</td>
+                    <td className="px-5 py-3 cursor-pointer" onClick={() => setSel(c)}>{c.no_show_count > 0 ? <span className="text-red-600 font-semibold">{c.no_show_count}</span> : 0}</td>
+                    <td className="px-5 py-3 text-right">
+                      <button className="btn-ghost text-xs" onClick={() => removeCustomer(c)}>🗑</button>
                     </td>
-                    <td className="px-5 py-3">{c.bookings_count}</td>
-                    <td className="px-5 py-3">{c.no_show_count > 0 ? <span className="text-red-600 font-semibold">{c.no_show_count}</span> : 0}</td>
                   </tr>
                 ))}
               </tbody>
@@ -113,7 +116,7 @@ export function Clientes() {
           </div>
         )}
 
-      {sel && <CustomerModal customer={sel} onClose={() => setSel(null)} />}
+      {sel && <CustomerModal customer={sel} onClose={() => setSel(null)} onDeleted={() => setSel(null)} />}
       {importing && <ImportCsvModal bid={bid} onClose={() => setImporting(false)} />}
       {creating && <NewCustomerModal bid={bid} onClose={() => setCreating(false)} />}
     </div>
@@ -243,7 +246,7 @@ function ImportCsvModal({ bid, onClose }: { bid: string; onClose: () => void }) 
   );
 }
 
-function CustomerModal({ customer, onClose }: { customer: Customer; onClose: () => void }) {
+function CustomerModal({ customer, onClose, onDeleted }: { customer: Customer; onClose: () => void; onDeleted: () => void }) {
   const { business } = useAuth();
   const tz = business?.timezone ?? "Europe/Madrid";
   const qc = useQueryClient();
@@ -260,16 +263,18 @@ function CustomerModal({ customer, onClose }: { customer: Customer; onClose: () 
   });
 
   const [notes, setNotes] = useState(customer.notes ?? "");
-  const [tags, setTags] = useState<string[]>(customer.tags ?? []);
   const [savingNotes, setSavingNotes] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
-  useEffect(() => { setNotes(customer.notes ?? ""); setTags(customer.tags ?? []); }, [customer]);
+  useEffect(() => { setNotes(customer.notes ?? ""); }, [customer]);
 
-  function toggleTag(tag: string) {
-    const next = tags.includes(tag) ? tags.filter((t) => t !== tag) : [...tags, tag];
-    setTags(next);
-    supabase.from("customers").update({ tags: next }).eq("id", customer.id)
-      .then(() => qc.invalidateQueries({ queryKey: ["customers", bid] }));
+  async function remove() {
+    if (!confirm(`¿Eliminar a ${customer.full_name}? Su historial de reservas se conserva, pero dejará de estar vinculado a esta ficha.`)) return;
+    setDeleting(true);
+    await supabase.from("customers").delete().eq("id", customer.id);
+    qc.invalidateQueries({ queryKey: ["customers", bid] });
+    setDeleting(false);
+    onDeleted();
   }
 
   async function saveNotes() {
@@ -285,16 +290,6 @@ function CustomerModal({ customer, onClose }: { customer: Customer; onClose: () 
         <div className="card p-3 text-center"><div className="text-2xl font-bold">{customer.bookings_count}</div><div className="text-xs text-slate-500">Reservas</div></div>
         <div className="card p-3 text-center"><div className="text-2xl font-bold text-red-600">{customer.no_show_count}</div><div className="text-xs text-slate-500">No-shows</div></div>
         <div className="card p-3 text-center"><div className="text-sm font-semibold mt-1">{customer.phone ?? "—"}</div><div className="text-xs text-slate-500">{customer.email ?? "Sin email"}</div></div>
-      </div>
-
-      <label className="label">Etiquetas</label>
-      <div className="flex flex-wrap gap-1.5 mb-4">
-        {AVAILABLE_TAGS.map((tag) => (
-          <button key={tag} type="button" onClick={() => toggleTag(tag)}
-            className={`badge text-[11px] ${tags.includes(tag) ? "bg-brand-500 text-white" : "bg-slate-100 text-slate-500"}`}>
-            {tag}
-          </button>
-        ))}
       </div>
 
       <label className="label">Notas privadas</label>
@@ -313,6 +308,10 @@ function CustomerModal({ customer, onClose }: { customer: Customer; onClose: () 
           ))}
         </ul>
       )}
+
+      <div className="mt-5 border-t pt-4">
+        <button className="btn-danger" disabled={deleting} onClick={remove}>{deleting ? "Eliminando…" : "Eliminar cliente"}</button>
+      </div>
     </Modal>
   );
 }

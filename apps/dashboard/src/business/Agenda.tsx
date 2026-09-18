@@ -9,7 +9,10 @@ import {
 } from "@reservas/shared";
 import { PageHeader, Spinner, StatusBadge, Modal, EmptyState } from "../components/ui";
 
-const STATUSES: Booking["status"][] = ["confirmada", "sentada", "completada", "no_show", "cancelada"];
+// Restaurante usa el ciclo completo (sentada, confirmada...); citas solo
+// necesita marcar el desenlace de la cita: completada, cancelada o ausente.
+const STATUSES_RESTAURANTE: Booking["status"][] = ["confirmada", "sentada", "completada", "no_show", "cancelada"];
+const STATUSES_CITAS: Booking["status"][] = ["completada", "cancelada", "no_show"];
 
 // Color de fondo/borde del bloque de reserva según estado.
 const BLOCK_STYLE: Record<string, { bg: string; border: string; text: string }> = {
@@ -447,7 +450,7 @@ function BookingModal({ booking, tz, onClose, onChanged }: {
         </div>
       ) : (
         <div className="mt-5 border-t pt-4 flex flex-wrap gap-2">
-          {STATUSES.filter((s) => s !== booking.status).map((s) => (
+          {(booking.type === "restaurante" ? STATUSES_RESTAURANTE : STATUSES_CITAS).filter((s) => s !== booking.status).map((s) => (
             <button key={s} className="btn-ghost" disabled={busy} onClick={() => setStatus(s)}>Marcar {label(s)}</button>
           ))}
           <button className="btn-ghost" onClick={() => setReschedule(true)}>Reprogramar</button>
@@ -462,7 +465,7 @@ function Row({ k, v }: { k: string; v: React.ReactNode }) {
   return <div className="flex justify-between gap-4"><span className="text-slate-500">{k}</span><span className="font-medium text-right">{v}</span></div>;
 }
 function label(s: string) {
-  return ({ pendiente: "pendiente", confirmada: "confirmada", sentada: "sentada", completada: "completada", no_show: "no-show", cancelada: "cancelada" } as any)[s];
+  return ({ pendiente: "pendiente", confirmada: "confirmada", sentada: "sentada", completada: "completada", no_show: "ausente", cancelada: "cancelada" } as any)[s];
 }
 function fmtShort(ymd: string, tz: string): string {
   return new Intl.DateTimeFormat("es-ES", { day: "numeric", month: "short", timeZone: tz }).format(new Date(zonedDayRange(ymd, tz)[0]));
