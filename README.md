@@ -12,6 +12,12 @@ Dos tipos de tenant:
 
 Todo el backend vive en **Supabase** (Postgres + Auth + RLS + Edge Functions + Storage). No hay servidor adicional.
 
+> **Desplegado en producción en Cloudflare Workers** (Workers Builds conectado por Git — cada push a
+> `main` despliega solo): panel `https://turnigo-panel.lodesiko12.workers.dev/` y widget
+> `https://turnigo-widget.lodesiko12.workers.dev/?slug=<slug>`. Ver [`CLAUDE.md`](CLAUDE.md) para el
+> flujo de verificación (siempre contra estas URLs, nunca solo `localhost`) y los secretos de Edge
+> Functions pendientes de configurar.
+
 ---
 
 ## Índice
@@ -63,13 +69,17 @@ Todo el backend vive en **Supabase** (Postgres + Auth + RLS + Edge Functions + S
 ├── supabase/
 │   ├── migrations/             # Esquema + RLS + lógica (0001..0005)
 │   ├── functions/              # Edge Functions (Deno)
-│   │   ├── _shared/            # CORS + constructor de email (compartido)
-│   │   ├── create-booking/         # Público: crea reserva + envía email
+│   │   ├── _shared/            # CORS + email + helpers de Google Calendar (compartido)
+│   │   ├── create-booking/         # Público: crea reserva + envía email + exporta a Google
 │   │   ├── send-confirmation-email/# Reenvía email de confirmación
 │   │   ├── whatsapp-reminders/     # Cron: recordatorios 24h
 │   │   ├── notify-waitlist/        # Panel: avisa por WhatsApp que hay mesa
 │   │   ├── request-reviews/        # Cron: pide reseña 1-3h post-visita
-│   │   └── admin-create-business/  # Super-admin: alta de negocio + staff
+│   │   ├── admin-create-business/  # Super-admin: alta de negocio + staff
+│   │   ├── google-oauth-start/     # Autenticado: URL de consentimiento de Google (state firmado)
+│   │   ├── google-oauth-callback/  # Público: redirect_uri de Google, guarda tokens
+│   │   ├── sync-google-event/      # Autenticado: exporta una reserva a Google Calendar
+│   │   └── sync-google-busy/       # Cron: importa huecos ocupados de Google como `blocks`
 │   └── seed.sql                # Datos demo (negocio "citas" completo)
 ├── .env.example
 └── README.md
@@ -98,6 +108,12 @@ Todo el backend vive en **Supabase** (Postgres + Auth + RLS + Edge Functions + S
 | `0014_walkins_and_realtime.sql` | Notas/etiquetas de cliente, motor de asignación de mesa reutilizable (`dining_assign_table`), `create_walkin_booking` (walk-ins con el mismo motor de aforo/best-fit) y Realtime activado en `bookings` para el plano de sala |
 | `0015_waitlist_and_reviews.sql` | Lista de espera (`waitlist`), enlace de reseña y plantilla de WhatsApp por negocio, `review_requests_log` |
 | `0016_import_customer_rpc.sql` | `import_customer`: upsert seguro por teléfono normalizado para la importación CSV desde el panel (PostgREST no puede hacer `ON CONFLICT` sobre el índice parcial) |
+| `0017_service_professionals.sql` | Relación **muchos-a-muchos** servicios↔profesionales (tabla `service_professionals`, sustituye a `services.professional_id`) + `professionals.color` (paleta automática por negocio) |
+| `0018_professional_selection_rpcs.sql` | `get_available_slots`/`create_public_booking`/`get_public_services` adaptados al modelo N:N: el cliente puede elegir un profesional concreto o "cualquiera disponible" (unión de huecos vía `lateral`) |
+| `0019_fix_customer_upsert_regression.sql` | Corrige una regresión de la 0018 (había vuelto a usar el índice `(business_id, phone)`, inexistente, en vez de `(business_id, phone_norm)`) |
+| `0020_max_advance_days.sql` | `businesses.max_advance_days`: antelación máxima de reserva online para negocios **citas** (mismo patrón que `dining_settings.max_advance_days`); nuevo parámetro `p_channel` en `get_available_slots`/`create_public_booking` para que el límite no aplique a reservas manuales del staff |
+| `0021_google_calendar.sql` | `professional_google_accounts` (tokens OAuth por profesional) + `business_integrations.google_client_id/secret` + `bookings.google_event_id` + `blocks.source`; RPCs de conexión/estado |
+| `0022_google_busy_sync_cron.sql` | Programa (`pg_cron`+`pg_net`) la llamada cada 15 min a `sync-google-busy` |
 
 ---
 
@@ -325,11 +341,17 @@ Tras aplicar `seed.sql`:
 
 | Rol | Email | Contraseña |
 |---|---|---|
-| Super-admin | `admin@reservas.test` | `Admin1234!` |
 | Staff (Barbería, citas) | `staff@barberia.test` | `Barberia1234!` |
 | Staff (Restaurante) | `staff@restaurante.test` | `Restaurante1234!` |
 
-- Negocio demo **tipo citas**: *Barbería El Corte* (`slug: barberia-demo`) con horario, 2 profesionales (Ana con jornada partida 9–14 / 16–20, Luis 10–20), 4 servicios (uno, *Tinte*, con disponibilidad propia Mar–Jue y sin profesional, usando aforo del negocio) y reservas de ejemplo (web/manual, futuras y pasadas incluyendo un no-show).
+> **Super-admin**: en el proyecto de producción el único super-admin es la cuenta real del dueño
+> (`lodesiko12@gmail.com`); `seed.sql` intenta crear también un `admin@reservas.test` pero esa cuenta
+> **no existe** en la base de datos en vivo (no se re-ejecutó ese seed ahí). No hay credenciales de
+> prueba con contraseña conocida para super-admin en producción — para probar algo que requiera ese
+> rol, pídele al dueño que inicie sesión él mismo.
+
+- El negocio demo `barberia-demo` suele quedar con `is_active=false` entre sesiones de trabajo; si necesitas probar el widget con él, pide al super-admin que lo active un momento desde **Negocios**.
+- Negocio demo **tipo citas**: *Barbería El Corte* (`slug: barberia-demo`) con horario, 2 profesionales (Ana con jornada partida 9–14 / 16–20, Luis 10–20), 4 servicios (uno, *Tinte*, con disponibilidad propia Mar–Jue y sin profesional dedicado, usando aforo del negocio; puede tener varios profesionales asignados a la vez) y reservas de ejemplo (web/manual, futuras y pasadas incluyendo un no-show).
 - Negocio demo **tipo restaurante**: *Restaurante La Plaza* (`slug: restaurante-la-plaza`) con dos franjas — *Comida* (13–16, aforo 40) y *Cena* (20–23:30, aforo 50) — y reservas de mesa de ejemplo. Widget: `http://localhost:5174/?slug=restaurante-la-plaza`.
 
 Flujo completo probado: **widget → reserva → email → panel (agenda/estado) → bloqueo con cancelación → reportes**.
@@ -381,6 +403,17 @@ Widget demo local: `http://localhost:5174/?slug=barberia-demo`.
 - **API/webhooks**: no es prioritario todavía; no se ha construido.
 - **Resumen de reseñas con IA**: pendiente, igual que Stripe — requiere que el negocio tenga acceso a la API de Google Business Profile (y una API de IA para resumir), de los que el usuario no dispone aún.
 
+**Fase 5 — Profesionales N:N, borrado de negocios, horarios rápidos, antelación máxima, clientes manuales y Google Calendar (completada, 2026-09-18):**
+- **Profesionales↔servicios muchos-a-muchos** (antes 1-a-1): tabla `service_professionals`; un servicio puede tener varios profesionales y viceversa. Checkboxes en ambos sentidos (`Panel → Servicios y profesionales`).
+- **Color por profesional**: se asigna automáticamente al crear (paleta fija) y es editable. Se usa como borde de las citas en la **Agenda** (con leyenda) y como punto de color en el widget y en las tablas del panel.
+- **Selector de profesional en el widget**: si el servicio elegido tiene más de un profesional asignado, el cliente elige uno concreto o "Cualquiera disponible" (el backend asigna el primero libre bajo el mismo lock transaccional). Con 0 o 1 profesional no se muestra el paso (comportamiento idéntico a antes).
+- **Borrado de negocios (super-admin)**: además de Activar/Desactivar (soft-delete, ya existía), ahora hay un borrado **definitivo** con confirmación escrita (hay que teclear el nombre exacto del negocio). Usa el `DELETE` directo permitido por la RLS `businesses_delete` + los `on delete cascade` ya presentes en el esquema.
+- **Horarios más rápidos de rellenar**: el editor de franjas (`WindowsEditor`, antes duplicado en 3 sitios) ahora es un componente compartido (`apps/dashboard/src/components/WindowsEditor.tsx`) con botón "copiar esta franja a todos los días" por fila y un panel de relleno rápido (marcar días activos + una franja común, sustituye el horario). Se usa en horario de apertura del negocio, horario de cada profesional y disponibilidad propia de cada servicio.
+- **Antelación máxima de reserva** (tipo citas): `businesses.max_advance_days`, configurable en `Configuración → Reservas`. Solo limita el canal web; las reservas manuales del staff no tienen límite (mismo patrón que ya existía para restaurante).
+- **Alta manual de clientes**: botón "+ Nuevo cliente" en `Panel → Clientes`, reutiliza la RPC `import_customer` ya existente (misma que usa la importación CSV).
+- **Sincronización con Google Calendar** (credenciales OAuth propias por negocio, igual patrón que Resend/WhatsApp): cada negocio pega su Client ID/Secret de Google Cloud en `Configuración → Integraciones`; cada profesional conecta su propia cuenta desde su ficha en `Servicios`. Exporta las citas como eventos (`sync-google-event`, invocada desde `create-booking` y desde la Agenda al cambiar estado/reprogramar/eliminar) e importa los huecos ocupados de Google como `blocks` cada 15 min (`sync-google-busy`, cron vía `pg_cron`+`pg_net`). **Código desplegado pero inerte**: faltan 3 secretos de Edge Functions por configurar manualmente en el dashboard de Supabase — ver [`CLAUDE.md`](CLAUDE.md).
+- Bug real encontrado y corregido en esta fase: la migración 0018 había revertido sin querer una corrección de la 0008 en el upsert de clientes (ver 0019 en la tabla de migraciones).
+
 ---
 
 ## Pendientes
@@ -391,6 +424,7 @@ Lista única y actualizada de lo que falta. Si retomas el proyecto en otra conve
 
 | Pendiente | Bloqueado por | Al desbloquear |
 |---|---|---|
+| **Google Calendar operativo** | 3 secretos de Edge Functions sin configurar (`GOOGLE_STATE_SECRET`, `DASHBOARD_URL`, `GOOGLE_SYNC_CRON_SECRET`) — solo el usuario puede hacerlo desde el dashboard de Supabase | Ver instrucciones exactas (incluido el valor ya usado en el cron) en [`CLAUDE.md`](CLAUDE.md) → sección "Google Calendar" |
 | **Huella bancaria y prepago (Stripe)** | El negocio necesita una cuenta de Stripe (aunque sea de test) | `SetupIntent` para huella bancaria, `PaymentIntent` para prepago; hay que añadir también el aviso legal de política de cancelación (ventana gratuita, importe, aceptación expresa) antes de confirmar — ver la nota legal del documento de referencia en la sección 4 |
 | **Resumen de reseñas con IA** | Acceso a la API de Google Business Profile del negocio + una API de IA (p.ej. Claude) para resumir | Leer reseñas vía Google Business Profile API, resumirlas y mostrarlas en Reportes |
 
@@ -405,5 +439,5 @@ Lista única y actualizada de lo que falta. Si retomas el proyecto en otra conve
 - **Reasignación manual de mesa para reservas con combinación**: en la Agenda, cambiar de mesa está bloqueado a propósito cuando la reserva usa una combinación (`table_combo_id`); solo funciona para mesas individuales.
 - **Arrastrar y soltar en la rejilla semanal de Agenda** para reprogramar reservas visualmente.
 - **Multi-idioma del widget** y más proveedores de email/SMS aparte de Resend/WhatsApp.
-- **Programar los cron de `whatsapp-reminders` y `request-reviews`** en `pg_cron` — están documentados (sección "Programar los cron…" más arriba) pero no se han activado desde esta sesión (requiere acceso al dashboard de Supabase, que esta sesión de trabajo no tiene).
-- **Netlify**: no hay conector disponible en las sesiones de trabajo para desplegar o comprobar el estado directamente. Si los dos sitios (widget y panel) ya están conectados por Git a este repo, cada push a `main` los despliega solo; si no, hay que crearlos a mano siguiendo la sección "Desplegar online (Netlify)".
+- **Programar los cron de `whatsapp-reminders` y `request-reviews`** en `pg_cron` — siguen sin programarse (solo se programó `sync-google-busy` en la Fase 5). **Ya no hace falta el dashboard de Supabase para esto**: las sesiones con acceso al MCP de Supabase pueden ejecutar `cron.schedule(...)` directamente por SQL (ver migración `0022_google_busy_sync_cron.sql` como ejemplo del patrón con `net.http_post`, más simple que `ALTER DATABASE ... SET` porque este plan gestionado no permite parámetros custom — el secreto va embebido literal en el comando del cron job, nunca commiteado al repo).
+- **Despliegue real = Cloudflare Workers, no Netlify.** La sección "Desplegar online (Netlify)" de abajo describe una alternativa válida pero ya no es como está desplegado el proyecto de referencia; ver la nota de Cloudflare al principio de este README y [`CLAUDE.md`](CLAUDE.md) para el flujo de despliegue y verificación reales (push a `main` → Cloudflare Workers Builds despliega solo).
