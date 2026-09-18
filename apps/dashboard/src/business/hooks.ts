@@ -48,6 +48,23 @@ export function useProfessionals() {
   });
 }
 
+/** Relación servicio<->profesional del negocio (tabla puente service_professionals). */
+export function useServiceProfessionals() {
+  const bid = useBusinessId();
+  return useQuery({
+    queryKey: ["service_professionals", bid],
+    enabled: !!bid,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("service_professionals")
+        .select("service_id, professional_id, services!inner(business_id)")
+        .eq("services.business_id", bid);
+      if (error) throw error;
+      return (data ?? []) as { service_id: string; professional_id: string }[];
+    },
+  });
+}
+
 /** Reservas en un rango [fromISO, toISO). */
 export function useBookings(fromISO: string, toISO: string) {
   const bid = useBusinessId();
@@ -57,7 +74,7 @@ export function useBookings(fromISO: string, toISO: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("bookings")
-        .select("*, services(name), professionals(name), dining_tables(name), dining_table_combos(name)")
+        .select("*, services(name), professionals(name, color), dining_tables(name), dining_table_combos(name)")
         .eq("business_id", bid)
         .gte("starts_at", fromISO)
         .lt("starts_at", toISO)
@@ -65,7 +82,7 @@ export function useBookings(fromISO: string, toISO: string) {
       if (error) throw error;
       return data as unknown as (Booking & {
         services: { name: string } | null;
-        professionals: { name: string } | null;
+        professionals: { name: string; color: string } | null;
         dining_tables: { name: string } | null;
         dining_table_combos: { name: string | null } | null;
       })[];

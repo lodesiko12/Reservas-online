@@ -738,6 +738,7 @@ export type Database = {
       professionals: {
         Row: {
           business_id: string
+          color: string
           created_at: string
           id: string
           is_active: boolean
@@ -746,6 +747,7 @@ export type Database = {
         }
         Insert: {
           business_id: string
+          color?: string
           created_at?: string
           id?: string
           is_active?: boolean
@@ -754,6 +756,7 @@ export type Database = {
         }
         Update: {
           business_id?: string
+          color?: string
           created_at?: string
           id?: string
           is_active?: boolean
@@ -868,6 +871,39 @@ export type Database = {
           },
         ]
       }
+      service_professionals: {
+        Row: {
+          created_at: string
+          professional_id: string
+          service_id: string
+        }
+        Insert: {
+          created_at?: string
+          professional_id: string
+          service_id: string
+        }
+        Update: {
+          created_at?: string
+          professional_id?: string
+          service_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_professionals_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "professionals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_professionals_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       services: {
         Row: {
           buffer_min: number
@@ -878,7 +914,6 @@ export type Database = {
           is_active: boolean
           name: string
           price: number | null
-          professional_id: string | null
           sort_order: number
           updated_at: string
         }
@@ -891,7 +926,6 @@ export type Database = {
           is_active?: boolean
           name: string
           price?: number | null
-          professional_id?: string | null
           sort_order?: number
           updated_at?: string
         }
@@ -904,7 +938,6 @@ export type Database = {
           is_active?: boolean
           name?: string
           price?: number | null
-          professional_id?: string | null
           sort_order?: number
           updated_at?: string
         }
@@ -914,13 +947,6 @@ export type Database = {
             columns: ["business_id"]
             isOneToOne: false
             referencedRelation: "businesses"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "services_professional_id_fkey"
-            columns: ["professional_id"]
-            isOneToOne: false
-            referencedRelation: "professionals"
             referencedColumns: ["id"]
           },
         ]
@@ -1045,6 +1071,7 @@ export type Database = {
           p_name: string
           p_notes?: string
           p_phone: string
+          p_professional_id?: string
           p_service_id: string
           p_starts_at: string
         }
@@ -1071,6 +1098,12 @@ export type Database = {
           table_combo_id: string | null
           type: Database["public"]["Enums"]["business_type"]
           updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "bookings"
+          isOneToOne: true
+          isSetofReturn: false
         }
       }
       create_public_dining_booking: {
@@ -1111,6 +1144,12 @@ export type Database = {
           type: Database["public"]["Enums"]["business_type"]
           updated_at: string
         }
+        SetofOptions: {
+          from: "*"
+          to: "bookings"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       create_walkin_booking: {
         Args: {
@@ -1145,6 +1184,12 @@ export type Database = {
           table_combo_id: string | null
           type: Database["public"]["Enums"]["business_type"]
           updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "bookings"
+          isOneToOne: true
+          isSetofReturn: false
         }
       }
       dining_assign_table: {
@@ -1185,31 +1230,6 @@ export type Database = {
         Returns: boolean
       }
       generate_locator: { Args: never; Returns: string }
-      import_customer: {
-        Args: {
-          p_business_id: string
-          p_email?: string
-          p_full_name: string
-          p_last_name?: string
-          p_notes?: string
-          p_phone?: string
-        }
-        Returns: {
-          bookings_count: number
-          business_id: string
-          created_at: string
-          email: string | null
-          full_name: string
-          id: string
-          last_name: string | null
-          no_show_count: number
-          notes: string | null
-          phone: string | null
-          phone_norm: string | null
-          tags: string[]
-          updated_at: string
-        }
-      }
       get_available_dining_slots: {
         Args: {
           p_business_id: string
@@ -1225,7 +1245,12 @@ export type Database = {
         }[]
       }
       get_available_slots: {
-        Args: { p_business_id: string; p_date: string; p_service_id: string }
+        Args: {
+          p_business_id: string
+          p_date: string
+          p_professional_id?: string
+          p_service_id: string
+        }
         Returns: {
           slot_end: string
           slot_start: string
@@ -1302,9 +1327,39 @@ export type Database = {
           id: string
           name: string
           price: number
-          professional_id: string
-          professional_name: string
+          professionals: Json
         }[]
+      }
+      import_customer: {
+        Args: {
+          p_business_id: string
+          p_email?: string
+          p_full_name: string
+          p_last_name?: string
+          p_notes?: string
+          p_phone?: string
+        }
+        Returns: {
+          bookings_count: number
+          business_id: string
+          created_at: string
+          email: string | null
+          full_name: string
+          id: string
+          last_name: string | null
+          no_show_count: number
+          notes: string | null
+          phone: string | null
+          phone_norm: string | null
+          tags: string[]
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "customers"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       is_business_member: { Args: { b: string }; Returns: boolean }
       is_super_admin: { Args: never; Returns: boolean }

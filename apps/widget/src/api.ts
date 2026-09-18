@@ -16,13 +16,14 @@ export type PublicBusiness = {
   slot_interval_min: number;
 };
 
+export type PublicProfessional = { id: string; name: string; color: string };
+
 export type PublicService = {
   id: string;
   name: string;
   duration_min: number;
   price: number | null;
-  professional_id: string | null;
-  professional_name: string | null;
+  professionals: PublicProfessional[];
 };
 
 export type Slot = { slot_start: string; slot_end: string };
@@ -43,12 +44,14 @@ export async function fetchServices(businessId: string): Promise<PublicService[]
 export async function fetchSlots(
   businessId: string,
   serviceId: string,
-  date: string
+  date: string,
+  professionalId?: string | null
 ): Promise<Slot[]> {
   const { data, error } = await supabase.rpc("get_available_slots", {
     p_business_id: businessId,
     p_service_id: serviceId,
     p_date: date,
+    p_professional_id: professionalId || undefined,
   });
   if (error) throw error;
   return (data ?? []) as Slot[];
@@ -80,6 +83,7 @@ export type BookingInput = {
   business_id: string;
   // citas:
   service_id?: string;
+  professional_id?: string | null;
   // restaurante:
   dining_shift_id?: string;
   party_size?: number;

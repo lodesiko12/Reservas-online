@@ -48,6 +48,8 @@ export function Businesses() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "businesses"] }),
   });
 
+  const [deleting, setDeleting] = useState<Business | null>(null);
+
   return (
     <div>
       <PageHeader
@@ -115,6 +117,9 @@ export function Businesses() {
                     >
                       {b.is_active ? "Desactivar" : "Activar"}
                     </button>
+                    <button className="btn-ghost ml-2 text-red-600 hover:text-red-700" onClick={() => setDeleting(b)}>
+                      Borrar
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -124,7 +129,63 @@ export function Businesses() {
       )}
 
       <NewBusinessModal open={open} onClose={() => setOpen(false)} onCreated={() => qc.invalidateQueries({ queryKey: ["admin", "businesses"] })} />
+      {deleting && (
+        <DeleteBusinessModal
+          business={deleting}
+          onClose={() => setDeleting(null)}
+          onDeleted={() => { setDeleting(null); qc.invalidateQueries({ queryKey: ["admin", "businesses"] }); }}
+        />
+      )}
     </div>
+  );
+}
+
+/**
+ * Borrado definitivo de un negocio (superadmin). La RLS `businesses_delete`
+ * ya restringe esta operación a super-admins; el resto de tablas del negocio
+ * (profesionales, servicios, reservas, clientes, etc.) caen por `on delete
+ * cascade`. Exige escribir el nombre exacto del negocio como confirmación,
+ * porque es irreversible y borra todo el historial.
+ */
+export function DeleteBusinessModal({ business, onClose, onDeleted }: {
+  business: Business; onClose: () => void; onDeleted: () => void;
+}) {
+  const [confirmText, setConfirmText] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const matches = confirmText.trim() === business.name;
+
+  async function remove() {
+    setBusy(true); setError(null);
+    const { error } = await supabase.from("businesses").delete().eq("id", business.id);
+    setBusy(false);
+    if (error) { setError(error.message); return; }
+    onDeleted();
+  }
+
+  return (
+    <Modal open onClose={onClose} title="Borrar negocio definitivamente">
+      <div className="space-y-4">
+        <div className="text-sm bg-red-50 border border-red-200 text-red-700 rounded-lg px-3 py-2">
+          Esta acción es <strong>irreversible</strong>. Se borrará <strong>{business.name}</strong> y todos sus datos:
+          profesionales, servicios, reservas, clientes, integraciones y todo su historial. No hay vuelta atrás.
+        </div>
+        <p className="text-sm text-slate-500">
+          Si solo quieres pausar el negocio sin perder datos, cierra esto y usa <strong>Desactivar</strong> en su lugar.
+        </p>
+        <div>
+          <label className="label">Escribe "{business.name}" para confirmar</label>
+          <input className="input" value={confirmText} onChange={(e) => setConfirmText(e.target.value)} autoFocus />
+        </div>
+        {error && <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</div>}
+        <div className="flex justify-end gap-2">
+          <button className="btn-ghost" onClick={onClose}>Cancelar</button>
+          <button className="btn-danger" disabled={!matches || busy} onClick={remove}>
+            {busy ? "Borrando…" : "Borrar definitivamente"}
+          </button>
+        </div>
+      </div>
+    </Modal>
   );
 }
 

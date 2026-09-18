@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { supabase } from "../lib/supabase";
@@ -7,6 +7,7 @@ import type { Tables } from "@reservas/shared";
 import { ymdInTz, addDaysYmd, zonedDayRange, formatDateTime } from "@reservas/shared";
 import { PageHeader, StatCard, Spinner, StatusBadge } from "../components/ui";
 import { IntegrationsForm } from "../components/IntegrationsForm";
+import { DeleteBusinessModal } from "./Businesses";
 
 type Business = Tables<"businesses">;
 const WIDGET_URL = ((import.meta.env.VITE_WIDGET_URL as string) || "").replace(/\/+$/, "");
@@ -201,6 +202,29 @@ function EditBusiness({ business, onSaved }: { business: Business; onSaved: () =
       {err && <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mt-4">{err}</div>}
       {msg && <div className="text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2 mt-4">{msg}</div>}
       <button className="btn-primary mt-5" onClick={save} disabled={saving}>{saving ? "Guardando…" : "Guardar cambios"}</button>
+
+      <DangerZone business={business} />
+    </div>
+  );
+}
+
+/* ------------------------------ Zona de peligro: borrado definitivo ------------------------------ */
+function DangerZone({ business }: { business: Business }) {
+  const navigate = useNavigate();
+  const [deleting, setDeleting] = useState(false);
+
+  return (
+    <div className="mt-8 pt-5 border-t border-red-200">
+      <h3 className="font-semibold text-red-700 mb-1">Zona de peligro</h3>
+      <p className="text-sm text-slate-500 mb-3">Borra este negocio y todos sus datos de forma permanente e irreversible.</p>
+      <button className="btn-danger" onClick={() => setDeleting(true)}>Borrar negocio definitivamente</button>
+      {deleting && (
+        <DeleteBusinessModal
+          business={business}
+          onClose={() => setDeleting(false)}
+          onDeleted={() => navigate("/admin")}
+        />
+      )}
     </div>
   );
 }

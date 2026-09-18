@@ -9,6 +9,7 @@ type Body = {
   business_id?: string;
   // citas:
   service_id?: string;
+  professional_id?: string;
   // restaurante:
   dining_shift_id?: string;
   party_size?: number;
@@ -72,6 +73,7 @@ Deno.serve(async (req) => {
         p_email: email.trim(),
         p_notes: body.notes?.trim() || undefined,
         p_channel: "web",
+        p_professional_id: body.professional_id || undefined,
       });
 
   if (error) {

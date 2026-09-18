@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../lib/auth";
-import { useBookings, type Booking } from "./hooks";
+import { useBookings, useProfessionals, type Booking } from "./hooks";
 import {
   ymdInTz, addDaysYmd, zonedDayRange, formatTime, formatDate,
   minutesOfDayInTz, WEEKDAYS_SHORT_ES,
@@ -50,6 +50,8 @@ export function Agenda() {
     : [zonedDayRange(weekDays[0], tz)[0], zonedDayRange(weekDays[6], tz)[1]];
 
   const { data: bookings, isLoading, refetch } = useBookings(from, to);
+  const { data: professionals } = useProfessionals();
+  const activePros = (professionals ?? []).filter((p) => p.is_active);
 
   const step = view === "day" ? 1 : 7;
   const title = view === "day"
@@ -73,6 +75,17 @@ export function Agenda() {
           </div>
         }
       />
+
+      {business?.type !== "restaurante" && activePros.length > 0 && (
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mb-3 text-xs text-slate-500">
+          {activePros.map((p) => (
+            <span key={p.id} className="inline-flex items-center gap-1.5">
+              <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ background: p.color }} />
+              {p.name}
+            </span>
+          ))}
+        </div>
+      )}
 
       {isLoading ? (
         <div className="grid place-items-center py-20"><Spinner /></div>
@@ -183,13 +196,14 @@ function WeekGrid({ weekDays, tz, bookings, today, onSelect }: {
                 const top = ((s - startH * 60) / 60) * HOUR;
                 const height = Math.max(20, ((e - s) / 60) * HOUR - 2);
                 const st = BLOCK_STYLE[b.status] ?? BLOCK_STYLE.confirmada;
+                const borderColor = b.type === "citas" && b.professionals?.color ? b.professionals.color : st.border;
                 return (
                   <button
                     key={b.id}
                     onClick={() => onSelect(b)}
                     title={`${b.customer_name} · ${detail(b)}`}
                     className="absolute left-0.5 right-0.5 rounded-md px-1.5 py-1 text-left overflow-hidden hover:z-10 hover:shadow-md transition"
-                    style={{ top, height, background: st.bg, borderLeft: `3px solid ${st.border}`, color: st.text }}
+                    style={{ top, height, background: st.bg, borderLeft: `3px solid ${borderColor}`, color: st.text }}
                   >
                     <div className="text-[11px] font-semibold leading-tight">{formatTime(b.starts_at, tz)}</div>
                     <div className="text-[11px] font-medium leading-tight truncate">{b.customer_name}</div>

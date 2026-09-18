@@ -90,18 +90,21 @@ begin
   values (v_ana, 6, '09:00', '14:00'), (v_luis, 6, '09:00', '14:00');
 
   -- ------------------- Servicios -------------------
-  insert into public.services (business_id, name, duration_min, buffer_min, professional_id, price, sort_order)
-  values (v_biz, 'Corte de pelo', 30, 0, v_ana, 15.00, 1) returning id into v_s_corte;
+  insert into public.services (business_id, name, duration_min, buffer_min, price, sort_order)
+  values (v_biz, 'Corte de pelo', 30, 0, 15.00, 1) returning id into v_s_corte;
+  insert into public.service_professionals (service_id, professional_id) values (v_s_corte, v_ana);
 
-  insert into public.services (business_id, name, duration_min, buffer_min, professional_id, price, sort_order)
-  values (v_biz, 'Corte + barba', 45, 0, v_luis, 22.00, 2) returning id into v_s_barba;
+  insert into public.services (business_id, name, duration_min, buffer_min, price, sort_order)
+  values (v_biz, 'Corte + barba', 45, 0, 22.00, 2) returning id into v_s_barba;
+  insert into public.service_professionals (service_id, professional_id) values (v_s_barba, v_luis);
 
-  insert into public.services (business_id, name, duration_min, buffer_min, professional_id, price, sort_order)
-  values (v_biz, 'Afeitado clásico', 30, 0, v_luis, 12.00, 3) returning id into v_s_afeit;
+  insert into public.services (business_id, name, duration_min, buffer_min, price, sort_order)
+  values (v_biz, 'Afeitado clásico', 30, 0, 12.00, 3) returning id into v_s_afeit;
+  insert into public.service_professionals (service_id, professional_id) values (v_s_afeit, v_luis);
 
   -- Tinte: sin profesional (usa aforo del negocio) y con disponibilidad propia Mar-Jue 10-18
-  insert into public.services (business_id, name, duration_min, buffer_min, professional_id, price, sort_order)
-  values (v_biz, 'Tinte', 90, 15, null, 40.00, 4) returning id into v_s_tinte;
+  insert into public.services (business_id, name, duration_min, buffer_min, price, sort_order)
+  values (v_biz, 'Tinte', 90, 15, 40.00, 4) returning id into v_s_tinte;
   insert into public.service_availability (service_id, weekday, start_time, end_time)
   values (v_s_tinte, 2, '10:00', '18:00'), (v_s_tinte, 3, '10:00', '18:00'), (v_s_tinte, 4, '10:00', '18:00');
 

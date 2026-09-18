@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   fetchBusiness, fetchServices, fetchSlots, createBooking,
-  type PublicBusiness, type PublicService, type Slot, type BookingResult,
+  type PublicBusiness, type PublicService, type PublicProfessional, type Slot, type BookingResult,
 } from "./api";
 import {
   formatCurrency, formatDuration, formatDate, formatTime,
@@ -58,13 +58,15 @@ export default function App({ slug, initialView, initialLocator }: Props) {
   );
 }
 
-type Step = "service" | "when" | "form" | "done";
+type Step = "service" | "professional" | "when" | "form" | "done";
 
 function BookingFlow({ business, onLookup }: { business: PublicBusiness; onLookup: () => void }) {
   const tz = business.timezone;
   const [step, setStep] = useState<Step>("service");
   const [services, setServices] = useState<PublicService[]>([]);
   const [service, setService] = useState<PublicService | null>(null);
+  // null = "cualquiera disponible" (o servicio con 0/1 profesionales).
+  const [professional, setProfessional] = useState<PublicProfessional | null>(null);
   const [date, setDate] = useState<string>("");     // YYYY-MM-DD en tz del negocio
   const [slots, setSlots] = useState<Slot[]>([]);
   const [slotsLoading, setSlotsLoading] = useState(false);
@@ -93,13 +95,13 @@ function BookingFlow({ business, onLookup }: { business: PublicBusiness; onLooku
     if (!service || !date) return;
     setSlotsLoading(true);
     setSlot(null);
-    fetchSlots(business.id, service.id, date)
+    fetchSlots(business.id, service.id, date, professional?.id ?? null)
       .then(setSlots)
       .catch((e) => setError(e.message))
       .finally(() => setSlotsLoading(false));
-  }, [service, date, business.id]);
+  }, [service, professional, date, business.id]);
 
-  const stepIndex = { service: 0, when: 1, form: 2, done: 3 }[step];
+  const stepIndex = { service: 0, professional: 0, when: 1, form: 2, done: 3 }[step];
 
   return (
     <>
@@ -120,13 +122,23 @@ function BookingFlow({ business, onLookup }: { business: PublicBusiness; onLooku
                 <button
                   key={s.id}
                   className={`card-btn ${service?.id === s.id ? "selected" : ""}`}
-                  onClick={() => { setService(s); setError(null); setStep("when"); }}
+                  onClick={() => {
+                    setService(s);
+                    setError(null);
+                    if (s.professionals.length > 1) {
+                      setProfessional(null);
+                      setStep("professional");
+                    } else {
+                      setProfessional(s.professionals[0] ?? null);
+                      setStep("when");
+                    }
+                  }}
                 >
                   <div>
                     <div className="name">{s.name}</div>
                     <div className="meta">
                       {formatDuration(s.duration_min)}
-                      {s.professional_name ? ` · ${s.professional_name}` : ""}
+                      {s.professionals.length === 1 ? ` · ${s.professionals[0].name}` : ""}
                     </div>
                   </div>
                   {s.price != null && <div className="price">{formatCurrency(s.price)}</div>}
@@ -137,10 +149,48 @@ function BookingFlow({ business, onLookup }: { business: PublicBusiness; onLooku
         </>
       )}
 
-      {step === "when" && service && (
+      {step === "professional" && service && (
         <>
           <button className="back" onClick={() => setStep("service")}>← Cambiar servicio</button>
-          <p className="section-title">Elige día y hora · {service.name}</p>
+          <p className="section-title">Elige profesional · {service.name}</p>
+          <div className="list">
+            <button
+              className={`card-btn ${professional === null ? "selected" : ""}`}
+              onClick={() => { setProfessional(null); setStep("when"); }}
+            >
+              <div>
+                <div className="name">Cualquiera disponible</div>
+                <div className="meta">Te asignamos el primer hueco libre</div>
+              </div>
+            </button>
+            {service.professionals.map((p) => (
+              <button
+                key={p.id}
+                className={`card-btn ${professional?.id === p.id ? "selected" : ""}`}
+                onClick={() => { setProfessional(p); setStep("when"); }}
+              >
+                <div className="prof-name">
+                  <span className="prof-dot" style={{ background: p.color }} />
+                  <span className="name">{p.name}</span>
+                </div>
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+
+      {step === "when" && service && (
+        <>
+          <button
+            className="back"
+            onClick={() => setStep(service.professionals.length > 1 ? "professional" : "service")}
+          >
+            ← {service.professionals.length > 1 ? "Cambiar profesional" : "Cambiar servicio"}
+          </button>
+          <p className="section-title">
+            Elige día y hora · {service.name}
+            {professional ? ` · ${professional.name}` : ""}
+          </p>
           <div className="dates">
             {dates.map(({ ymd, d }) => {
               const wd = weekdayInTz(d, tz);
@@ -186,6 +236,7 @@ function BookingFlow({ business, onLookup }: { business: PublicBusiness; onLooku
         <FormStep
           business={business}
           service={service}
+          professional={professional}
           slot={slot}
           onBack={() => setStep("when")}
           onError={setError}
@@ -218,10 +269,11 @@ function BookingFlow({ business, onLookup }: { business: PublicBusiness; onLooku
 }
 
 function FormStep({
-  business, service, slot, onBack, onDone, onError,
+  business, service, professional, slot, onBack, onDone, onError,
 }: {
   business: PublicBusiness;
   service: PublicService;
+  professional: PublicProfessional | null;
   slot: Slot;
   onBack: () => void;
   onDone: (r: BookingResult) => void;
@@ -243,6 +295,7 @@ function FormStep({
       const r = await createBooking({
         business_id: business.id,
         service_id: service.id,
+        professional_id: professional?.id ?? null,
         starts_at: slot.slot_start,
         name: name.trim(),
         last_name: lastName.trim(),
@@ -263,6 +316,9 @@ function FormStep({
       <button className="back" onClick={onBack}>← Cambiar hora</button>
       <div className="summary">
         <div className="line"><span className="k">Servicio</span><span>{service.name}</span></div>
+        {service.professionals.length > 1 && (
+          <div className="line"><span className="k">Profesional</span><span>{professional ? professional.name : "Cualquiera disponible"}</span></div>
+        )}
         <div className="line"><span className="k">Duración</span><span>{formatDuration(service.duration_min)}</span></div>
         <div className="line"><span className="k">Fecha</span><span>{formatDate(slot.slot_start, business.timezone)}</span></div>
         <div className="line"><span className="k">Hora</span><span>{formatTime(slot.slot_start, business.timezone)}</span></div>
