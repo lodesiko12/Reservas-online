@@ -34,6 +34,29 @@ Flujo de verificación tras cualquier cambio de código:
   de prueba con contraseña conocida para este entorno — para probar flujos de superadmin, pedir al
   usuario que inicie sesión él mismo en el panel.
 
+## Google Calendar — falta configurar 3 secretos de Edge Functions
+
+El código de sincronización con Google Calendar (`google-oauth-start`, `google-oauth-callback`,
+`sync-google-event`, `sync-google-busy`) está desplegado pero **inerte** hasta configurar, en el
+dashboard de Supabase (Project Settings → Edge Functions → Secrets — esta sesión no tiene forma de
+hacerlo vía API/MCP):
+
+- `GOOGLE_STATE_SECRET`: cualquier cadena aleatoria larga, usada para firmar el `state` del flujo
+  OAuth. Sin esto, el botón "Conectar con Google Calendar" del panel falla.
+- `DASHBOARD_URL`: `https://turnigo-panel.lodesiko12.workers.dev` (sin barra final), para que
+  `google-oauth-callback` sepa a dónde redirigir tras conectar una cuenta.
+- `GOOGLE_SYNC_CRON_SECRET`: debe coincidir EXACTAMENTE con el valor ya embebido en el cron job de
+  Postgres `sync-google-busy` (programado cada 15 min vía `pg_cron`+`pg_net`, ver migración 0022).
+  El valor real está en el propio `cron.job` de la base de datos (`select command from cron.job
+  where jobname='sync-google-busy'`), no en el repo (no se commitea un secreto real a un repo
+  público). Hasta que se configure, ese endpoint queda sin protección por secreto (no supone riesgo
+  real ahora mismo: no hace nada mientras ningún negocio tenga profesionales conectados).
+
+Además, cada negocio que quiera usar Google Calendar necesita su propio Client ID/Secret de un
+proyecto de Google Cloud (Configuración → Integraciones → Google Calendar, dentro del panel),
+con la URI de redirección `https://fjpbruwczuovvynhlnzv.supabase.co/functions/v1/google-oauth-callback`
+autorizada en ese proyecto de Google Cloud.
+
 ## Más contexto
 
 Ver `README.md` (sección "## Pendientes" para la lista canónica de tareas pendientes) y
