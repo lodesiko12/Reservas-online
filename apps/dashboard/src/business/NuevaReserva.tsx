@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../lib/auth";
-import { useServices } from "./hooks";
+import { useServices, useProfessionals, useServiceProfessionals } from "./hooks";
 import { ymdInTz, addDaysYmd, weekdayInTz, WEEKDAYS_SHORT_ES, formatTime, formatDuration } from "@reservas/shared";
 import { PageHeader, Spinner } from "../components/ui";
 
@@ -63,8 +63,11 @@ function NuevaReservaCitas() {
   const tz = business?.timezone ?? "Europe/Madrid";
   const nav = useNavigate();
   const { data: services } = useServices();
+  const { data: pros } = useProfessionals();
+  const { data: links } = useServiceProfessionals();
 
   const [serviceId, setServiceId] = useState("");
+  const [professionalId, setProfessionalId] = useState(""); // "" = cualquiera disponible
   const [date, setDate] = useState(ymdInTz(new Date(), tz));
   const [slots, setSlots] = useState<{ slot_start: string }[]>([]);
   const [slot, setSlot] = useState("");
@@ -74,16 +77,23 @@ function NuevaReservaCitas() {
   const [error, setError] = useState<string | null>(null);
   const [ok, setOk] = useState<string | null>(null);
 
+  const serviceProfessionals = (pros ?? []).filter((p) =>
+    (links ?? []).some((l) => l.service_id === serviceId && l.professional_id === p.id)
+  );
+
   useEffect(() => {
     if (!serviceId || !date) { setSlots([]); return; }
     setLoadingSlots(true); setSlot("");
     (async () => {
       // Canal "manual": el staff no está sujeto al límite de antelación máxima
       // pensado para reservas web.
-      const { data } = await supabase.rpc("get_available_slots", { p_business_id: bid, p_service_id: serviceId, p_date: date, p_channel: "manual" });
+      const { data } = await supabase.rpc("get_available_slots", {
+        p_business_id: bid, p_service_id: serviceId, p_date: date, p_channel: "manual",
+        p_professional_id: professionalId || undefined,
+      });
       setSlots((data as any[]) ?? []); setLoadingSlots(false);
     })();
-  }, [serviceId, date, bid]);
+  }, [serviceId, professionalId, date, bid]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault(); setError(null); setSaving(true);
@@ -92,6 +102,7 @@ function NuevaReservaCitas() {
       p_name: form.name.trim(), p_last_name: form.last_name.trim(),
       p_phone: form.phone.trim(), p_email: form.email.trim(),
       p_notes: form.notes.trim() || undefined, p_channel: "manual",
+      p_professional_id: professionalId || undefined,
     });
     setSaving(false);
     if (error) { setError(error.message); return; }
@@ -108,10 +119,19 @@ function NuevaReservaCitas() {
       <form onSubmit={submit} className="space-y-5">
         <div className="card p-5">
           <label className="label">Servicio</label>
-          <select className="input" value={serviceId} onChange={(e) => setServiceId(e.target.value)} required>
+          <select className="input" value={serviceId} onChange={(e) => { setServiceId(e.target.value); setProfessionalId(""); }} required>
             <option value="">Selecciona un servicio…</option>
             {services?.map((s) => <option key={s.id} value={s.id}>{s.name} · {formatDuration(s.duration_min)}</option>)}
           </select>
+          {serviceId && serviceProfessionals.length > 1 && (
+            <>
+              <label className="label mt-4">Profesional</label>
+              <select className="input" value={professionalId} onChange={(e) => setProfessionalId(e.target.value)}>
+                <option value="">Cualquiera disponible</option>
+                {serviceProfessionals.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+              </select>
+            </>
+          )}
           {serviceId && (
             <>
               <label className="label mt-4">Fecha</label>

@@ -71,14 +71,22 @@ function QuickFill({ wins, onChange, onDone }: { wins: Win[]; onChange: (w: Win[
   const [days, setDays] = useState<number[]>([1, 2, 3, 4, 5]);
   const [start, setStart] = useState("09:00");
   const [end, setEnd] = useState("18:00");
+  const [splitLunch, setSplitLunch] = useState(false);
+  const [start2, setStart2] = useState("16:00");
+  const [end2, setEnd2] = useState("20:00");
 
   function toggleDay(wd: number) {
     setDays((d) => (d.includes(wd) ? d.filter((x) => x !== wd) : [...d, wd]));
   }
 
   function apply() {
-    if (wins.length > 0 && !confirm("Esto sustituye el horario actual por la franja seleccionada en esos días. ¿Continuar?")) return;
-    onChange(days.map((wd) => ({ weekday: wd, start_time: start, end_time: end })));
+    if (wins.length > 0 && !confirm("Esto sustituye el horario actual por la(s) franja(s) seleccionada(s) en esos días. ¿Continuar?")) return;
+    const rows = days.flatMap((wd) => {
+      const r = [{ weekday: wd, start_time: start, end_time: end }];
+      if (splitLunch) r.push({ weekday: wd, start_time: start2, end_time: end2 });
+      return r;
+    });
+    onChange(rows);
     onDone();
   }
 
@@ -97,11 +105,29 @@ function QuickFill({ wins, onChange, onDone }: { wins: Win[]; onChange: (w: Win[
           ))}
         </div>
       </div>
-      <div className="flex items-center gap-2">
-        <input type="time" className="input py-1.5 w-28" value={start} onChange={(e) => setStart(e.target.value)} />
-        <span className="text-slate-400">–</span>
-        <input type="time" className="input py-1.5 w-28" value={end} onChange={(e) => setEnd(e.target.value)} />
+      <div>
+        {splitLunch && <div className="text-xs text-slate-400 mb-1">Mañana</div>}
+        <div className="flex items-center gap-2">
+          <input type="time" className="input py-1.5 w-28" value={start} onChange={(e) => setStart(e.target.value)} />
+          <span className="text-slate-400">–</span>
+          <input type="time" className="input py-1.5 w-28" value={end} onChange={(e) => setEnd(e.target.value)} />
+        </div>
       </div>
+      {splitLunch ? (
+        <div>
+          <div className="text-xs text-slate-400 mb-1">Tarde</div>
+          <div className="flex items-center gap-2">
+            <input type="time" className="input py-1.5 w-28" value={start2} onChange={(e) => setStart2(e.target.value)} />
+            <span className="text-slate-400">–</span>
+            <input type="time" className="input py-1.5 w-28" value={end2} onChange={(e) => setEnd2(e.target.value)} />
+            <button type="button" className="text-slate-400 hover:text-red-600 text-xs" onClick={() => setSplitLunch(false)}>✕ quitar</button>
+          </div>
+        </div>
+      ) : (
+        <button type="button" className="text-xs text-brand-600 hover:underline" onClick={() => setSplitLunch(true)}>
+          + Añadir segunda franja (p. ej. cierre para comer)
+        </button>
+      )}
       <button type="button" className="btn-primary text-xs" disabled={!days.length} onClick={apply}>
         Aplicar (sustituye el horario actual)
       </button>

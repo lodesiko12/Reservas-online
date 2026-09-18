@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
@@ -11,7 +11,7 @@ import { DeleteBusinessModal } from "./Businesses";
 
 type Business = Tables<"businesses">;
 const WIDGET_URL = ((import.meta.env.VITE_WIDGET_URL as string) || "").replace(/\/+$/, "");
-type Tab = "dashboard" | "editar" | "integraciones";
+type Tab = "dashboard" | "editar" | "integraciones" | "usuarios";
 
 export function BusinessDetail() {
   const { id = "" } = useParams();
@@ -41,7 +41,7 @@ export function BusinessDetail() {
       />
 
       <div className="flex gap-1 mb-6 border-b border-slate-200">
-        {([["dashboard", "Dashboard"], ["editar", "Editar negocio"], ["integraciones", "Integraciones"]] as [Tab, string][]).map(([k, label]) => (
+        {([["dashboard", "Dashboard"], ["editar", "Editar negocio"], ["integraciones", "Integraciones"], ["usuarios", "Usuarios"]] as [Tab, string][]).map(([k, label]) => (
           <button key={k} onClick={() => setTab(k)}
             className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px ${tab === k ? "border-brand-500 text-brand-700" : "border-transparent text-slate-500 hover:text-slate-700"}`}>
             {label}
@@ -56,6 +56,108 @@ export function BusinessDetail() {
           <h2 className="font-semibold mb-1">Integraciones (email y WhatsApp)</h2>
           <p className="text-sm text-slate-500 mb-4">Configura las credenciales de este negocio. Los secretos se guardan del lado del servidor.</p>
           <IntegrationsForm businessId={business.id} />
+        </div>
+      )}
+      {tab === "usuarios" && <BusinessUsersSection businessId={business.id} />}
+    </div>
+  );
+}
+
+/* ------------------------------ Usuarios del negocio ------------------------------ */
+function BusinessUsersSection({ businessId }: { businessId: string }) {
+  const [members, setMembers] = useState<{ id: string; user_id: string; role: string; email: string; created_at: string }[] | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [adding, setAdding] = useState(false);
+  const [form, setForm] = useState({ email: "", password: "", role: "staff" as "owner" | "staff" });
+  const [saving, setSaving] = useState(false);
+  const [busyUserId, setBusyUserId] = useState<string | null>(null);
+
+  async function load() {
+    setLoading(true); setError(null);
+    const { data, error } = await supabase.functions.invoke("admin-business-users", { body: { action: "list", business_id: businessId } });
+    setLoading(false);
+    if (error || (data as any)?.error) { setError((data as any)?.error ?? error!.message); return; }
+    setMembers((data as any).members);
+  }
+
+  useEffect(() => { load(); }, [businessId]);
+
+  async function addMember(e: React.FormEvent) {
+    e.preventDefault();
+    setSaving(true); setError(null);
+    const { data, error } = await supabase.functions.invoke("admin-business-users", {
+      body: { action: "add", business_id: businessId, staff_email: form.email.trim(), staff_password: form.password || undefined, role: form.role },
+    });
+    setSaving(false);
+    if (error || (data as any)?.error) { setError((data as any)?.error ?? error!.message); return; }
+    setForm({ email: "", password: "", role: "staff" });
+    setAdding(false);
+    load();
+  }
+
+  async function removeMember(userId: string) {
+    if (!confirm("¿Quitar a este usuario del negocio? Dejará de poder entrar al panel.")) return;
+    setBusyUserId(userId);
+    const { data, error } = await supabase.functions.invoke("admin-business-users", { body: { action: "remove", business_id: businessId, user_id: userId } });
+    setBusyUserId(null);
+    if (error || (data as any)?.error) { setError((data as any)?.error ?? error!.message); return; }
+    load();
+  }
+
+  async function changeRole(userId: string, role: "owner" | "staff") {
+    setBusyUserId(userId);
+    await supabase.functions.invoke("admin-business-users", { body: { action: "update_role", business_id: businessId, user_id: userId, role } });
+    setBusyUserId(null);
+    load();
+  }
+
+  return (
+    <div className="card p-6 max-w-2xl">
+      <div className="flex items-center justify-between mb-1">
+        <h2 className="font-semibold">Usuarios con acceso a este negocio</h2>
+        <button className="btn-ghost" onClick={() => setAdding((v) => !v)}>{adding ? "Cancelar" : "+ Añadir usuario"}</button>
+      </div>
+      <p className="text-sm text-slate-500 mb-4">Cualquiera de estos usuarios puede entrar al panel y gestionar este negocio (útil si hay varios profesionales con acceso).</p>
+
+      {error && <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-4">{error}</div>}
+
+      {adding && (
+        <form onSubmit={addMember} className="border border-slate-200 rounded-lg p-4 mb-4 space-y-3">
+          <div className="grid sm:grid-cols-2 gap-3">
+            <div><label className="label">Email</label><input type="email" className="input" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required /></div>
+            <div><label className="label">Rol</label>
+              <select className="input" value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value as "owner" | "staff" })}>
+                <option value="staff">Staff</option>
+                <option value="owner">Owner</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label className="label">Contraseña (solo si es un email nuevo, sin cuenta todavía)</label>
+            <input type="text" className="input" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="mín. 8 caracteres, dejar vacío si ya tiene cuenta" minLength={8} />
+          </div>
+          <button className="btn-primary" disabled={saving}>{saving ? "Añadiendo…" : "Añadir"}</button>
+        </form>
+      )}
+
+      {loading ? <Spinner /> : !members?.length ? <p className="text-sm text-slate-400">Sin usuarios.</p> : (
+        <div className="divide-y divide-slate-100">
+          {members.map((m) => (
+            <div key={m.id} className="flex items-center justify-between py-2.5">
+              <div>
+                <div className="font-medium text-sm">{m.email}</div>
+                <div className="text-xs text-slate-400">Desde {formatDateTime(m.created_at, "Europe/Madrid")}</div>
+              </div>
+              <div className="flex items-center gap-2">
+                <select className="input py-1 text-xs w-auto" value={m.role} disabled={busyUserId === m.user_id} onChange={(e) => changeRole(m.user_id, e.target.value as "owner" | "staff")}>
+                  <option value="staff">Staff</option>
+                  <option value="owner">Owner</option>
+                </select>
+                <button className="btn-ghost text-xs text-red-600" disabled={busyUserId === m.user_id} onClick={() => removeMember(m.user_id)}>Quitar</button>
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </div>

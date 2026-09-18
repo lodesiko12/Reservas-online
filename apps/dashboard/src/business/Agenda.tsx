@@ -34,7 +34,7 @@ function detail(b: any): string {
 export function Agenda() {
   const { business } = useAuth();
   const tz = business?.timezone ?? "Europe/Madrid";
-  const [view, setView] = useState<"day" | "week">("week");
+  const [view, setView] = useState<"day" | "week" | "month">("week");
   const [anchor, setAnchor] = useState(ymdInTz(new Date(), tz));
   const [selected, setSelected] = useState<any | null>(null);
 
@@ -45,18 +45,48 @@ export function Agenda() {
     return Array.from({ length: 7 }, (_, i) => addDaysYmd(monday, i));
   }, [anchor]);
 
+  // Rejilla del mes que contiene `anchor`: del lunes de la semana del día 1
+  // al domingo de la semana del último día, para completar semanas enteras.
+  const monthDays = useMemo(() => {
+    const [y, m] = anchor.split("-").map(Number);
+    const firstOfMonth = `${y}-${String(m).padStart(2, "0")}-01`;
+    const lastDay = new Date(Date.UTC(y, m, 0)).getUTCDate();
+    const lastOfMonth = `${y}-${String(m).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
+    const firstDow = new Date(firstOfMonth + "T00:00:00Z").getUTCDay();
+    const gridStart = addDaysYmd(firstOfMonth, -((firstDow + 6) % 7));
+    const lastDow = new Date(lastOfMonth + "T00:00:00Z").getUTCDay();
+    const gridEnd = addDaysYmd(lastOfMonth, (7 - lastDow) % 7);
+    const days: string[] = [];
+    for (let d = gridStart; d <= gridEnd; d = addDaysYmd(d, 1)) days.push(d);
+    return days;
+  }, [anchor]);
+
   const [from, to] = view === "day"
     ? zonedDayRange(anchor, tz)
-    : [zonedDayRange(weekDays[0], tz)[0], zonedDayRange(weekDays[6], tz)[1]];
+    : view === "week"
+    ? [zonedDayRange(weekDays[0], tz)[0], zonedDayRange(weekDays[6], tz)[1]]
+    : [zonedDayRange(monthDays[0], tz)[0], zonedDayRange(monthDays[monthDays.length - 1], tz)[1]];
 
   const { data: bookings, isLoading, refetch } = useBookings(from, to);
   const { data: professionals } = useProfessionals();
   const activePros = (professionals ?? []).filter((p) => p.is_active);
 
-  const step = view === "day" ? 1 : 7;
+  function goBack() {
+    if (view === "day") setAnchor(addDaysYmd(anchor, -1));
+    else if (view === "week") setAnchor(addDaysYmd(anchor, -7));
+    else setAnchor(addMonthsYmd(anchor, -1));
+  }
+  function goForward() {
+    if (view === "day") setAnchor(addDaysYmd(anchor, 1));
+    else if (view === "week") setAnchor(addDaysYmd(anchor, 7));
+    else setAnchor(addMonthsYmd(anchor, 1));
+  }
+
   const title = view === "day"
     ? formatDate(zonedDayRange(anchor, tz)[0], tz)
-    : `${fmtShort(weekDays[0], tz)} – ${fmtShort(weekDays[6], tz)}`;
+    : view === "week"
+    ? `${fmtShort(weekDays[0], tz)} – ${fmtShort(weekDays[6], tz)}`
+    : fmtMonthYear(anchor);
 
   return (
     <div>
@@ -68,10 +98,11 @@ export function Agenda() {
             <div className="inline-flex rounded-lg border border-slate-200 overflow-hidden">
               <button className={`px-3 py-1.5 text-sm font-medium ${view === "day" ? "bg-brand-500 text-white" : "bg-white text-slate-600"}`} onClick={() => setView("day")}>Día</button>
               <button className={`px-3 py-1.5 text-sm font-medium ${view === "week" ? "bg-brand-500 text-white" : "bg-white text-slate-600"}`} onClick={() => setView("week")}>Semana</button>
+              <button className={`px-3 py-1.5 text-sm font-medium ${view === "month" ? "bg-brand-500 text-white" : "bg-white text-slate-600"}`} onClick={() => setView("month")}>Mes</button>
             </div>
-            <button className="btn-ghost" onClick={() => setAnchor(addDaysYmd(anchor, -step))}>←</button>
+            <button className="btn-ghost" onClick={goBack}>←</button>
             <button className="btn-ghost" onClick={() => setAnchor(ymdInTz(new Date(), tz))}>Hoy</button>
-            <button className="btn-ghost" onClick={() => setAnchor(addDaysYmd(anchor, step))}>→</button>
+            <button className="btn-ghost" onClick={goForward}>→</button>
           </div>
         }
       />
@@ -91,6 +122,12 @@ export function Agenda() {
         <div className="grid place-items-center py-20"><Spinner /></div>
       ) : view === "week" ? (
         <WeekGrid weekDays={weekDays} tz={tz} bookings={bookings ?? []} today={ymdInTz(new Date(), tz)} onSelect={setSelected} />
+      ) : view === "month" ? (
+        <MonthGrid
+          monthDays={monthDays} tz={tz} bookings={bookings ?? []} today={ymdInTz(new Date(), tz)} anchorMonth={anchor}
+          onSelect={setSelected}
+          onDayClick={(d) => { setAnchor(d); setView("day"); }}
+        />
       ) : !bookings?.length ? (
         <EmptyState title="Sin reservas este día" hint="Prueba otra fecha o crea una reserva manual." />
       ) : (
@@ -215,6 +252,79 @@ function WeekGrid({ weekDays, tz, bookings, today, onSelect }: {
           ))}
         </div>
       </div>
+    </div>
+  );
+}
+
+/* ------------------------------ Rejilla mensual ------------------------------ */
+function MonthGrid({ monthDays, tz, bookings, today, anchorMonth, onSelect, onDayClick }: {
+  monthDays: string[]; tz: string; bookings: any[]; today: string; anchorMonth: string;
+  onSelect: (b: any) => void; onDayClick: (ymd: string) => void;
+}) {
+  const currentMonth = anchorMonth.slice(0, 7); // YYYY-MM
+
+  const byDay = useMemo(() => {
+    const map: Record<string, any[]> = {};
+    for (const d of monthDays) map[d] = [];
+    for (const b of bookings) {
+      const ymd = ymdInTz(new Date(b.starts_at), tz);
+      if (map[ymd]) map[ymd].push(b);
+    }
+    for (const d of monthDays) map[d].sort((a, b) => a.starts_at.localeCompare(b.starts_at));
+    return map;
+  }, [bookings, monthDays, tz]);
+
+  const weeks = Array.from({ length: monthDays.length / 7 }, (_, i) => monthDays.slice(i * 7, i * 7 + 7));
+  const MAX_VISIBLE = 3;
+
+  return (
+    <div className="card overflow-hidden">
+      <div className="grid grid-cols-7 border-b border-slate-200">
+        {WEEKDAYS_SHORT_ES.slice(1).concat(WEEKDAYS_SHORT_ES[0]).map((d) => (
+          <div key={d} className="py-2 text-center text-[11px] uppercase text-slate-400 font-medium">{d}</div>
+        ))}
+      </div>
+      {weeks.map((week, wi) => (
+        <div key={wi} className="grid grid-cols-7 border-b border-slate-100 last:border-b-0">
+          {week.map((d) => {
+            const isToday = d === today;
+            const inMonth = d.slice(0, 7) === currentMonth;
+            const dayBookings = byDay[d];
+            return (
+              <button
+                key={d}
+                onClick={() => onDayClick(d)}
+                className={`min-h-[92px] border-l border-slate-100 first:border-l-0 p-1.5 text-left align-top ${inMonth ? "bg-white" : "bg-slate-50"} hover:bg-brand-50/50 transition`}
+              >
+                <div className={`text-xs font-semibold mb-1 inline-flex items-center justify-center w-5 h-5 rounded-full ${isToday ? "bg-brand-500 text-white" : inMonth ? "text-slate-700" : "text-slate-300"}`}>
+                  {d.slice(8)}
+                </div>
+                <div className="space-y-0.5">
+                  {dayBookings.slice(0, MAX_VISIBLE).map((b) => {
+                    const st = BLOCK_STYLE[b.status] ?? BLOCK_STYLE.confirmada;
+                    const borderColor = b.type === "citas" && b.professionals?.color ? b.professionals.color : st.border;
+                    return (
+                      <div
+                        key={b.id}
+                        role="button"
+                        onClick={(e) => { e.stopPropagation(); onSelect(b); }}
+                        title={`${b.customer_name} · ${detail(b)}`}
+                        className="text-[10px] leading-tight truncate rounded px-1 py-0.5"
+                        style={{ background: st.bg, borderLeft: `2px solid ${borderColor}`, color: st.text }}
+                      >
+                        {formatTime(b.starts_at, tz)} {b.customer_name}
+                      </div>
+                    );
+                  })}
+                  {dayBookings.length > MAX_VISIBLE && (
+                    <div className="text-[10px] text-slate-400 px-1">+{dayBookings.length - MAX_VISIBLE} más</div>
+                  )}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      ))}
     </div>
   );
 }
@@ -356,6 +466,18 @@ function label(s: string) {
 }
 function fmtShort(ymd: string, tz: string): string {
   return new Intl.DateTimeFormat("es-ES", { day: "numeric", month: "short", timeZone: tz }).format(new Date(zonedDayRange(ymd, tz)[0]));
+}
+// Suma meses a un YYYY-MM-DD (calendario, sin tz), fijando el día al 1 para
+// evitar saltos de mes al restar/sumar sobre días que no existen en el mes destino.
+function addMonthsYmd(ymd: string, months: number): string {
+  const [y, m] = ymd.split("-").map(Number);
+  const dt = new Date(Date.UTC(y, m - 1 + months, 1));
+  return dt.toISOString().slice(0, 10);
+}
+function fmtMonthYear(ymd: string): string {
+  const [y, m] = ymd.split("-").map(Number);
+  const label = new Intl.DateTimeFormat("es-ES", { month: "long", year: "numeric" }).format(new Date(Date.UTC(y, m - 1, 1)));
+  return label.charAt(0).toUpperCase() + label.slice(1);
 }
 
 // datetime-local <-> ISO respetando la timezone del negocio.
