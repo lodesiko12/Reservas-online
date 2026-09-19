@@ -103,9 +103,9 @@ export function Layout({ nav, brandLabel }: { nav: NavItem[]; brandLabel: string
 
   return (
     <div className="min-h-screen flex bg-slate-50 dark:bg-slate-950">
-      {/* Sidebar de escritorio: estática, plegable */}
+      {/* Sidebar de escritorio: fija a la ventana, plegable */}
       <aside
-        className={`hidden lg:flex flex-col shrink-0 bg-white border-r border-slate-200 dark:bg-slate-900 dark:border-slate-800 transition-[width] duration-200 relative ${
+        className={`hidden lg:flex flex-col shrink-0 sticky top-0 h-screen bg-white border-r border-slate-200 dark:bg-slate-900 dark:border-slate-800 transition-[width] duration-200 relative ${
           collapsed ? "w-[76px]" : "w-60"
         }`}
       >
