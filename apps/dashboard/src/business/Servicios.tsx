@@ -54,7 +54,7 @@ function ProfessionalsSection() {
   return (
     <section>
       <div className="flex items-center justify-between mb-3">
-        <h2 className="font-semibold text-slate-800">Profesionales</h2>
+        <h2 className="font-semibold text-slate-800 dark:text-slate-100">Profesionales</h2>
         <button className="btn-ghost" onClick={() => setEditing("new")}>+ Añadir</button>
       </div>
       {isLoading ? <Spinner /> : !pros?.length ? (
@@ -67,7 +67,7 @@ function ProfessionalsSection() {
                 <span className="inline-block w-2.5 h-2.5 rounded-full shrink-0" style={{ background: p.color }} />
                 <div>
                   <div className="font-medium">{p.name}</div>
-                  <div className="text-xs text-slate-400">{p.is_active ? "Activo" : "Inactivo"}</div>
+                  <div className="text-xs text-slate-400 dark:text-slate-500">{p.is_active ? "Activo" : "Inactivo"}</div>
                 </div>
               </div>
               <div className="flex gap-1">
@@ -150,7 +150,7 @@ function ProfessionalModal({ bid, professional, nextColor, onClose, onSaved }: {
         <div>
           <label className="label">Servicios que presta</label>
           {!services?.length ? (
-            <p className="text-xs text-slate-400">Crea servicios primero para poder asignarlos.</p>
+            <p className="text-xs text-slate-400 dark:text-slate-500">Crea servicios primero para poder asignarlos.</p>
           ) : loaded ? (
             <div className="grid sm:grid-cols-2 gap-1.5">
               {services.map((s) => (
@@ -218,10 +218,10 @@ function GoogleCalendarSection({ professionalId }: { professionalId: string }) {
     <div>
       <label className="label">Google Calendar</label>
       {status.connected ? (
-        <div className="flex items-center justify-between border border-slate-200 rounded-lg px-3 py-2">
+        <div className="flex items-center justify-between border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2">
           <div className="text-sm">
             <div className="font-medium text-green-700">Conectado{status.google_email ? ` · ${status.google_email}` : ""}</div>
-            <label className="flex items-center gap-1.5 text-xs text-slate-500 mt-1">
+            <label className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 mt-1">
               <input type="checkbox" checked={status.sync_enabled} onChange={(e) => toggleSync(e.target.checked)} disabled={busy} />
               Sincronizar (exportar citas y bloquear huecos ocupados en Google)
             </label>
@@ -265,18 +265,19 @@ function ServicesSection() {
   return (
     <section>
       <div className="flex items-center justify-between mb-3">
-        <h2 className="font-semibold text-slate-800">Servicios</h2>
+        <h2 className="font-semibold text-slate-800 dark:text-slate-100">Servicios</h2>
         <button className="btn-primary" onClick={() => setEditing("new")}>+ Nuevo servicio</button>
       </div>
       {isLoading ? <Spinner /> : !services?.length ? <EmptyState title="Sin servicios" /> : (
         <div className="card overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-slate-50 text-slate-500 text-left">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+            <thead className="bg-slate-50 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 text-left">
               <tr><th className="px-5 py-3 font-medium">Servicio</th><th className="px-5 py-3 font-medium">Duración</th><th className="px-5 py-3 font-medium">Precio</th><th className="px-5 py-3 font-medium">Profesional</th><th className="px-5 py-3 font-medium">Estado</th><th className="px-5 py-3"></th></tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {services.map((s) => (
-                <tr key={s.id} className="hover:bg-slate-50">
+                <tr key={s.id} className="hover:bg-slate-50 dark:hover:bg-slate-800">
                   <td className="px-5 py-3 font-medium">{s.name}</td>
                   <td className="px-5 py-3">{formatDuration(s.duration_min)}{s.buffer_min ? ` (+${s.buffer_min})` : ""}</td>
                   <td className="px-5 py-3">{s.price != null ? formatCurrency(s.price) : "—"}</td>
@@ -284,15 +285,15 @@ function ServicesSection() {
                     {prosForService(s.id).length ? (
                       <div className="flex flex-wrap gap-1">
                         {prosForService(s.id).map((p) => (
-                          <span key={p.id} className="badge inline-flex items-center gap-1 bg-slate-100 text-slate-700">
+                          <span key={p.id} className="badge inline-flex items-center gap-1 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200">
                             <span className="inline-block w-2 h-2 rounded-full" style={{ background: p.color }} />
                             {p.name}
                           </span>
                         ))}
                       </div>
-                    ) : <span className="text-slate-400">Sin asignar</span>}
+                    ) : <span className="text-slate-400 dark:text-slate-500">Sin asignar</span>}
                   </td>
-                  <td className="px-5 py-3"><button onClick={() => toggle(s)} className={`badge ${s.is_active ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-500"}`}>{s.is_active ? "Activo" : "Inactivo"}</button></td>
+                  <td className="px-5 py-3"><button onClick={() => toggle(s)} className={`badge ${s.is_active ? "bg-green-100 text-green-700" : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400"}`}>{s.is_active ? "Activo" : "Inactivo"}</button></td>
                   <td className="px-5 py-3 text-right whitespace-nowrap">
                     <button className="btn-ghost text-xs" onClick={() => setEditing(s)}>Editar</button>
                     <button className="btn-ghost text-xs ml-1" onClick={() => remove(s)}>🗑</button>
@@ -301,6 +302,7 @@ function ServicesSection() {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       )}
       {editing && <ServiceModal bid={bid} service={editing === "new" ? null : editing} pros={pros ?? []} onClose={() => setEditing(null)} onSaved={() => { qc.invalidateQueries(); setEditing(null); }} />}
@@ -371,9 +373,9 @@ function ServiceModal({ bid, service, pros, onClose, onSaved }: {
         </div>
         <div>
           <label className="label">Profesionales que lo prestan (opcional)</label>
-          <p className="text-xs text-slate-400 mb-2">Si no marcas ninguno, se usa el aforo del negocio. Si marcas varios, el cliente podrá elegir uno o "cualquiera disponible".</p>
+          <p className="text-xs text-slate-400 dark:text-slate-500 mb-2">Si no marcas ninguno, se usa el aforo del negocio. Si marcas varios, el cliente podrá elegir uno o "cualquiera disponible".</p>
           {!pros.length ? (
-            <p className="text-xs text-slate-400">Crea profesionales primero para poder asignarlos.</p>
+            <p className="text-xs text-slate-400 dark:text-slate-500">Crea profesionales primero para poder asignarlos.</p>
           ) : loaded ? (
             <div className="grid sm:grid-cols-2 gap-1.5">
               {pros.map((p) => (
@@ -388,7 +390,7 @@ function ServiceModal({ bid, service, pros, onClose, onSaved }: {
         </div>
         <div>
           <label className="label">Disponibilidad propia del servicio</label>
-          <p className="text-xs text-slate-400 mb-2">Si lo dejas vacío, el servicio se ofrece en todo el horario del negocio.</p>
+          <p className="text-xs text-slate-400 dark:text-slate-500 mb-2">Si lo dejas vacío, el servicio se ofrece en todo el horario del negocio.</p>
           {loaded ? <WindowsEditor wins={wins} onChange={setWins} /> : <Spinner />}
         </div>
         <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.is_active} onChange={(e) => setForm({ ...form, is_active: e.target.checked })} /> Activo</label>

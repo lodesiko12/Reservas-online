@@ -146,24 +146,24 @@ export function Reportes() {
 
           <div className="card p-5 mt-6">
             <h3 className="font-semibold mb-1">Próximas reservas</h3>
-            <p className="text-sm text-slate-500 mb-4">
+            <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
               Reservas a partir de hoy (incluye las creadas manualmente); las estadísticas de arriba solo cubren los últimos {days} días ya pasados.
             </p>
             {loadingUpcoming ? <Spinner /> : !upcoming?.length ? (
-              <p className="text-sm text-slate-400">Sin reservas próximas.</p>
+              <p className="text-sm text-slate-400 dark:text-slate-500">Sin reservas próximas.</p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
-                  <thead className="text-slate-500 text-left">
+                  <thead className="text-slate-500 dark:text-slate-400 text-left">
                     <tr><th className="py-2 pr-4 font-medium">Fecha</th><th className="py-2 pr-4 font-medium">Cliente</th><th className="py-2 pr-4 font-medium">Servicio</th><th className="py-2 pr-4 font-medium">Canal</th><th className="py-2 font-medium">Estado</th></tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                     {upcoming.map((r) => (
                       <tr key={r.id}>
                         <td className="py-2 pr-4">{formatDateTime(r.starts_at, tz)}</td>
                         <td className="py-2 pr-4">{r.customer_name}</td>
                         <td className="py-2 pr-4">{r.services?.name ?? "—"}</td>
-                        <td className="py-2 pr-4"><span className={`badge ${r.channel === "web" ? "bg-brand-50 text-brand-700" : "bg-slate-100 text-slate-500"}`}>{r.channel}</span></td>
+                        <td className="py-2 pr-4"><span className={`badge ${r.channel === "web" ? "bg-brand-50 text-brand-700" : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400"}`}>{r.channel}</span></td>
                         <td className="py-2"><StatusBadge status={r.status} /></td>
                       </tr>
                     ))}

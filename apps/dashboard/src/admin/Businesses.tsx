@@ -71,8 +71,9 @@ export function Businesses() {
         <EmptyState title="Aún no hay negocios" hint="Crea el primero para empezar." />
       ) : (
         <div className="card overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-slate-50 text-slate-500 text-left">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+            <thead className="bg-slate-50 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 text-left">
               <tr>
                 <th className="px-5 py-3 font-medium">Negocio</th>
                 <th className="px-5 py-3 font-medium">Tipo</th>
@@ -82,24 +83,24 @@ export function Businesses() {
                 <th className="px-5 py-3 font-medium text-right">Acciones</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {businesses.map((b) => (
-                <tr key={b.id} className="hover:bg-slate-50/60">
+                <tr key={b.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/60">
                   <td className="px-5 py-3">
                     <div className="flex items-center gap-3">
                       <span className="h-8 w-8 rounded-lg grid place-items-center text-white text-xs font-bold" style={{ background: b.primary_color }}>
                         {b.name.slice(0, 2).toUpperCase()}
                       </span>
                       <div>
-                        <Link to={`/admin/negocio/${b.id}`} className="font-semibold text-slate-800 hover:text-brand-600 hover:underline">{b.name}</Link>
-                        <div className="text-xs text-slate-400">/{b.slug}</div>
+                        <Link to={`/admin/negocio/${b.id}`} className="font-semibold text-slate-800 dark:text-slate-100 hover:text-brand-600 hover:underline">{b.name}</Link>
+                        <div className="text-xs text-slate-400 dark:text-slate-500">/{b.slug}</div>
                       </div>
                     </div>
                   </td>
                   <td className="px-5 py-3 capitalize">{b.type}</td>
                   <td className="px-5 py-3">{b.bookings?.[0]?.count ?? 0}</td>
                   <td className="px-5 py-3">
-                    <span className={`badge ${b.is_active ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-500"}`}>
+                    <span className={`badge ${b.is_active ? "bg-green-100 text-green-700" : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400"}`}>
                       {b.is_active ? "Activo" : "Inactivo"}
                     </span>
                   </td>
@@ -125,6 +126,7 @@ export function Businesses() {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       )}
 
@@ -170,7 +172,7 @@ export function DeleteBusinessModal({ business, onClose, onDeleted }: {
           Esta acción es <strong>irreversible</strong>. Se borrará <strong>{business.name}</strong> y todos sus datos:
           profesionales, servicios, reservas, clientes, integraciones y todo su historial. No hay vuelta atrás.
         </div>
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-slate-500 dark:text-slate-400">
           Si solo quieres pausar el negocio sin perder datos, cierra esto y usa <strong>Desactivar</strong> en su lugar.
         </p>
         <div>
@@ -233,7 +235,7 @@ function NewBusinessModal({ open, onClose, onCreated }: { open: boolean; onClose
         <div className="text-center py-4">
           <div className="text-4xl">✅</div>
           <p className="font-semibold mt-2">Negocio creado</p>
-          <p className="text-sm text-slate-500 mt-1">
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
             El staff ya puede acceder con <strong>{form.staff_email}</strong>.
           </p>
           <button className="btn-primary mt-4" onClick={close}>Hecho</button>
@@ -266,7 +268,7 @@ function NewBusinessModal({ open, onClose, onCreated }: { open: boolean; onClose
           </div>
 
           <hr className="my-2" />
-          <p className="text-sm font-semibold text-slate-600">Credenciales del staff</p>
+          <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">Credenciales del staff</p>
           <div>
             <label className="label">Nombre del responsable</label>
             <input className="input" value={form.staff_name} onChange={(e) => set("staff_name", e.target.value)} />

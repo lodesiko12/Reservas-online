@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import {
-  fetchBusiness, fetchServices, fetchSlots, createBooking,
+  fetchBusiness, fetchServices, fetchSlots, fetchAvailableDays, createBooking,
   type PublicBusiness, type PublicService, type PublicProfessional, type Slot, type BookingResult,
 } from "./api";
 import {
@@ -68,6 +68,8 @@ function BookingFlow({ business, onLookup }: { business: PublicBusiness; onLooku
   // null = "cualquiera disponible" (o servicio con 0/1 profesionales).
   const [professional, setProfessional] = useState<PublicProfessional | null>(null);
   const [date, setDate] = useState<string>("");     // YYYY-MM-DD en tz del negocio
+  const [availableDays, setAvailableDays] = useState<Set<string> | null>(null);
+  const [daysLoading, setDaysLoading] = useState(false);
   const [slots, setSlots] = useState<Slot[]>([]);
   const [slotsLoading, setSlotsLoading] = useState(false);
   const [slot, setSlot] = useState<Slot | null>(null);
@@ -100,6 +102,25 @@ function BookingFlow({ business, onLookup }: { business: PublicBusiness; onLooku
       .catch((e) => setError(e.message))
       .finally(() => setSlotsLoading(false));
   }, [service, professional, date, business.id]);
+
+  // Al elegir servicio/profesional, comprueba qué días del rango tienen algún
+  // hueco libre para no mostrar fechas vacías en el selector.
+  useEffect(() => {
+    if (!service || step !== "when") return;
+    setAvailableDays(null);
+    setDaysLoading(true);
+    fetchAvailableDays(business.id, service.id, dates[0].ymd, dates[dates.length - 1].ymd, professional?.id ?? null)
+      .then((days) => {
+        setAvailableDays(days);
+        // Si la fecha elegida (o la primera por defecto) dejó de tener huecos, la limpiamos.
+        if (date && !days.has(date)) setDate("");
+      })
+      .catch((e) => setError(e.message))
+      .finally(() => setDaysLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [service, professional, step, business.id]);
+
+  const visibleDates = availableDays ? dates.filter((d) => availableDays.has(d.ymd)) : dates;
 
   const stepIndex = { service: 0, professional: 0, when: 1, form: 2, done: 3 }[step];
 
@@ -191,26 +212,32 @@ function BookingFlow({ business, onLookup }: { business: PublicBusiness; onLooku
             Elige día y hora · {service.name}
             {professional ? ` · ${professional.name}` : ""}
           </p>
-          <div className="dates">
-            {dates.map(({ ymd, d }) => {
-              const wd = weekdayInTz(d, tz);
-              const dom = new Intl.DateTimeFormat("es-ES", { day: "numeric", timeZone: tz }).format(d);
-              const mon = new Intl.DateTimeFormat("es-ES", { month: "short", timeZone: tz }).format(d);
-              return (
-                <button
-                  key={ymd}
-                  className={`date-pill ${date === ymd ? "selected" : ""}`}
-                  onClick={() => setDate(ymd)}
-                >
-                  <div className="dow">{WEEKDAYS_SHORT_ES[wd]}</div>
-                  <div className="dom">{dom}</div>
-                  <div className="mon">{mon}</div>
-                </button>
-              );
-            })}
-          </div>
+          {daysLoading ? (
+            <div className="empty"><span className="spinner" /></div>
+          ) : visibleDates.length === 0 ? (
+            <div className="empty">No hay días disponibles en las próximas semanas. Prueba más adelante.</div>
+          ) : (
+            <div className="dates">
+              {visibleDates.map(({ ymd, d }) => {
+                const wd = weekdayInTz(d, tz);
+                const dom = new Intl.DateTimeFormat("es-ES", { day: "numeric", timeZone: tz }).format(d);
+                const mon = new Intl.DateTimeFormat("es-ES", { month: "short", timeZone: tz }).format(d);
+                return (
+                  <button
+                    key={ymd}
+                    className={`date-pill ${date === ymd ? "selected" : ""}`}
+                    onClick={() => setDate(ymd)}
+                  >
+                    <div className="dow">{WEEKDAYS_SHORT_ES[wd]}</div>
+                    <div className="dom">{dom}</div>
+                    <div className="mon">{mon}</div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
 
-          {!date ? (
+          {daysLoading || visibleDates.length === 0 ? null : !date ? (
             <p className="hint" style={{ marginTop: 14 }}>Selecciona una fecha para ver los huecos disponibles.</p>
           ) : slotsLoading ? (
             <div className="empty"><span className="spinner" /></div>

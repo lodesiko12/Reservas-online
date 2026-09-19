@@ -39,12 +39,12 @@ export function Bloqueos() {
       {isLoading ? <div className="grid place-items-center py-20"><Spinner /></div>
         : !blocks?.length ? <EmptyState title="Sin bloqueos" hint="Crea uno para vacaciones, festivos o ausencias." />
         : (
-          <div className="card divide-y divide-slate-100">
+          <div className="card divide-y divide-slate-100 dark:divide-slate-800">
             {blocks.map((b) => (
               <div key={b.id} className="flex items-center justify-between px-5 py-3">
                 <div>
                   <div className="font-medium">{formatDateTime(b.starts_at, tz)} → {formatDateTime(b.ends_at, tz)}</div>
-                  <div className="text-xs text-slate-500">
+                  <div className="text-xs text-slate-500 dark:text-slate-400">
                     {b.scope === "professional" ? `Profesional: ${b.professionals?.name ?? "—"}` : "Todo el negocio"}
                     {b.reason ? ` · ${b.reason}` : ""}
                   </div>

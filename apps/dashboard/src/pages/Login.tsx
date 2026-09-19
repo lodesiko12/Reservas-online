@@ -18,12 +18,12 @@ export function Login() {
   }
 
   return (
-    <div className="min-h-screen grid place-items-center p-4 bg-gradient-to-br from-slate-100 to-slate-200">
+    <div className="min-h-screen grid place-items-center p-4 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-950 dark:to-slate-900">
       <div className="w-full max-w-sm">
         <div className="text-center mb-6">
           <div className="mx-auto h-12 w-12 rounded-xl bg-brand-500 grid place-items-center text-white font-bold text-xl">T</div>
-          <h1 className="mt-3 text-xl font-bold">Turnigo</h1>
-          <p className="text-sm text-slate-500">Accede con tu cuenta</p>
+          <h1 className="mt-3 text-xl font-bold text-slate-900 dark:text-slate-50">Turnigo</h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400">Accede con tu cuenta</p>
         </div>
         <form onSubmit={submit} className="card p-6 space-y-4">
           <div>
@@ -34,7 +34,7 @@ export function Login() {
             <label className="label">Contraseña</label>
             <input className="input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
           </div>
-          {error && <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</div>}
+          {error && <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 dark:bg-red-950/40 dark:border-red-900 dark:text-red-400">{error}</div>}
           <button className="btn-primary w-full" disabled={loading}>
             {loading ? <Spinner className="h-4 w-4 border-white/40 border-t-white" /> : "Entrar"}
           </button>

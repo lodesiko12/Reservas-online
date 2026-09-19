@@ -131,7 +131,7 @@ export function Dashboard() {
             <Link to="/app/agenda" className="text-xs text-brand-600 hover:underline">Ver agenda</Link>
           </div>
           {upcoming.length === 0 ? (
-            <p className="text-sm text-slate-400 py-6 text-center">No hay más turnos hoy.</p>
+            <p className="text-sm text-slate-400 dark:text-slate-500 py-6 text-center">No hay más turnos hoy.</p>
           ) : (
             <ul className="space-y-3">
               {upcoming.map((b) => (
@@ -139,7 +139,7 @@ export function Dashboard() {
                   <div className="text-sm font-bold text-brand-600 w-12">{formatTime(b.starts_at, tz)}</div>
                   <div className="min-w-0">
                     <div className="text-sm font-medium truncate">{b.customer_name} {b.customer_last_name ?? ""}</div>
-                    <div className="text-xs text-slate-400 truncate">{b.type === "restaurante" ? `Mesa · ${b.party_size} pers.` : `${b.services?.name ?? ""}${b.professionals?.name ? ` · ${b.professionals.name}` : ""}`}</div>
+                    <div className="text-xs text-slate-400 dark:text-slate-500 truncate">{b.type === "restaurante" ? `Mesa · ${b.party_size} pers.` : `${b.services?.name ?? ""}${b.professionals?.name ? ` · ${b.professionals.name}` : ""}`}</div>
                   </div>
                 </li>
               ))}
@@ -151,9 +151,9 @@ export function Dashboard() {
       <div className="card p-5 mt-6">
         <h3 className="font-semibold mb-3">Ausencias recientes (hoy)</h3>
         {recentNoShows.length === 0 ? (
-          <p className="text-sm text-slate-400">Sin ausencias registradas hoy. 🎉</p>
+          <p className="text-sm text-slate-400 dark:text-slate-500">Sin ausencias registradas hoy. 🎉</p>
         ) : (
-          <ul className="divide-y divide-slate-100">
+          <ul className="divide-y divide-slate-100 dark:divide-slate-800">
             {recentNoShows.map((b) => (
               <li key={b.id} className="py-2 flex items-center justify-between text-sm">
                 <span>{b.customer_name} · {b.services?.name}</span>

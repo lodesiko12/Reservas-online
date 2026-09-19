@@ -98,10 +98,10 @@ export function Agenda() {
         subtitle={title}
         actions={
           <div className="flex items-center gap-2">
-            <div className="inline-flex rounded-lg border border-slate-200 overflow-hidden">
-              <button className={`px-3 py-1.5 text-sm font-medium ${view === "day" ? "bg-brand-500 text-white" : "bg-white text-slate-600"}`} onClick={() => setView("day")}>Día</button>
-              <button className={`px-3 py-1.5 text-sm font-medium ${view === "week" ? "bg-brand-500 text-white" : "bg-white text-slate-600"}`} onClick={() => setView("week")}>Semana</button>
-              <button className={`px-3 py-1.5 text-sm font-medium ${view === "month" ? "bg-brand-500 text-white" : "bg-white text-slate-600"}`} onClick={() => setView("month")}>Mes</button>
+            <div className="inline-flex rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+              <button className={`px-3 py-1.5 text-sm font-medium ${view === "day" ? "bg-brand-500 text-white" : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300"}`} onClick={() => setView("day")}>Día</button>
+              <button className={`px-3 py-1.5 text-sm font-medium ${view === "week" ? "bg-brand-500 text-white" : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300"}`} onClick={() => setView("week")}>Semana</button>
+              <button className={`px-3 py-1.5 text-sm font-medium ${view === "month" ? "bg-brand-500 text-white" : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300"}`} onClick={() => setView("month")}>Mes</button>
             </div>
             <button className="btn-ghost" onClick={goBack}>←</button>
             <button className="btn-ghost" onClick={() => setAnchor(ymdInTz(new Date(), tz))}>Hoy</button>
@@ -111,7 +111,7 @@ export function Agenda() {
       />
 
       {business?.type !== "restaurante" && activePros.length > 0 && (
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mb-3 text-xs text-slate-500">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mb-3 text-xs text-slate-500 dark:text-slate-400">
           {activePros.map((p) => (
             <span key={p.id} className="inline-flex items-center gap-1.5">
               <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ background: p.color }} />
@@ -134,19 +134,19 @@ export function Agenda() {
       ) : !bookings?.length ? (
         <EmptyState title="Sin reservas este día" hint="Prueba otra fecha o crea una reserva manual." />
       ) : (
-        <div className="card divide-y divide-slate-100">
+        <div className="card divide-y divide-slate-100 dark:divide-slate-800">
           {bookings.map((b) => (
-            <button key={b.id} onClick={() => setSelected(b)} className="w-full flex items-center gap-4 px-5 py-3 hover:bg-slate-50 text-left">
+            <button key={b.id} onClick={() => setSelected(b)} className="w-full flex items-center gap-4 px-5 py-3 hover:bg-slate-50 dark:hover:bg-slate-800 text-left">
               <div className="w-16 shrink-0">
                 <div className="font-bold text-brand-600">{formatTime(b.starts_at, tz)}</div>
-                <div className="text-xs text-slate-400">{formatTime(b.ends_at, tz)}</div>
+                <div className="text-xs text-slate-400 dark:text-slate-500">{formatTime(b.ends_at, tz)}</div>
               </div>
               <div className="flex-1 min-w-0">
                 <div className="font-medium truncate">{b.customer_name} {b.customer_last_name ?? ""}</div>
-                <div className="text-xs text-slate-500 truncate">{detail(b)}{" · "}{b.customer_phone}</div>
+                <div className="text-xs text-slate-500 dark:text-slate-400 truncate">{detail(b)}{" · "}{b.customer_phone}</div>
               </div>
               <div className="flex items-center gap-2 shrink-0">
-                <span className={`badge ${b.channel === "web" ? "bg-brand-50 text-brand-700" : "bg-slate-100 text-slate-500"}`}>{b.channel}</span>
+                <span className={`badge ${b.channel === "web" ? "bg-brand-50 text-brand-700" : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400"}`}>{b.channel}</span>
                 <StatusBadge status={b.status} />
               </div>
             </button>
@@ -197,14 +197,14 @@ function WeekGrid({ weekDays, tz, bookings, today, onSelect }: {
       <div className="min-w-[720px]">
         {/* Cabecera de días */}
         <div className="grid" style={{ gridTemplateColumns: `48px repeat(7, 1fr)` }}>
-          <div className="border-b border-slate-200" />
+          <div className="border-b border-slate-200 dark:border-slate-700" />
           {weekDays.map((d) => {
             const dow = new Date(d + "T00:00:00Z").getUTCDay();
             const isToday = d === today;
             return (
-              <div key={d} className={`border-b border-l border-slate-200 py-2 text-center ${isToday ? "bg-brand-50" : ""}`}>
-                <div className="text-[11px] uppercase text-slate-400">{WEEKDAYS_SHORT_ES[dow]}</div>
-                <div className={`text-sm font-bold ${isToday ? "text-brand-600" : "text-slate-700"}`}>{d.slice(8)}</div>
+              <div key={d} className={`border-b border-l border-slate-200 dark:border-slate-700 py-2 text-center ${isToday ? "bg-brand-50" : ""}`}>
+                <div className="text-[11px] uppercase text-slate-400 dark:text-slate-500">{WEEKDAYS_SHORT_ES[dow]}</div>
+                <div className={`text-sm font-bold ${isToday ? "text-brand-600" : "text-slate-700 dark:text-slate-200"}`}>{d.slice(8)}</div>
               </div>
             );
           })}
@@ -215,7 +215,7 @@ function WeekGrid({ weekDays, tz, bookings, today, onSelect }: {
           {/* Eje de horas */}
           <div className="relative" style={{ height: gridHeight }}>
             {hours.map((h, i) => (
-              <div key={h} className="absolute right-1 text-[10px] text-slate-400" style={{ top: i * HOUR - 6 }}>
+              <div key={h} className="absolute right-1 text-[10px] text-slate-400 dark:text-slate-500" style={{ top: i * HOUR - 6 }}>
                 {String(h).padStart(2, "0")}:00
               </div>
             ))}
@@ -223,10 +223,10 @@ function WeekGrid({ weekDays, tz, bookings, today, onSelect }: {
 
           {/* Columnas por día */}
           {weekDays.map((d) => (
-            <div key={d} className="relative border-l border-slate-200" style={{ height: gridHeight }}>
+            <div key={d} className="relative border-l border-slate-200 dark:border-slate-700" style={{ height: gridHeight }}>
               {/* Líneas de hora */}
               {hours.map((_, i) => (
-                <div key={i} className="absolute left-0 right-0 border-b border-slate-100" style={{ top: i * HOUR }} />
+                <div key={i} className="absolute left-0 right-0 border-b border-slate-100 dark:border-slate-800" style={{ top: i * HOUR }} />
               ))}
               {/* Bloques de reserva */}
               {byDay[d].map((b) => {
@@ -282,13 +282,13 @@ function MonthGrid({ monthDays, tz, bookings, today, anchorMonth, onSelect, onDa
 
   return (
     <div className="card overflow-hidden">
-      <div className="grid grid-cols-7 border-b border-slate-200">
+      <div className="grid grid-cols-7 border-b border-slate-200 dark:border-slate-700">
         {WEEKDAYS_SHORT_ES.slice(1).concat(WEEKDAYS_SHORT_ES[0]).map((d) => (
-          <div key={d} className="py-2 text-center text-[11px] uppercase text-slate-400 font-medium">{d}</div>
+          <div key={d} className="py-2 text-center text-[11px] uppercase text-slate-400 dark:text-slate-500 font-medium">{d}</div>
         ))}
       </div>
       {weeks.map((week, wi) => (
-        <div key={wi} className="grid grid-cols-7 border-b border-slate-100 last:border-b-0">
+        <div key={wi} className="grid grid-cols-7 border-b border-slate-100 dark:border-slate-800 last:border-b-0">
           {week.map((d) => {
             const isToday = d === today;
             const inMonth = d.slice(0, 7) === currentMonth;
@@ -297,9 +297,9 @@ function MonthGrid({ monthDays, tz, bookings, today, anchorMonth, onSelect, onDa
               <button
                 key={d}
                 onClick={() => onDayClick(d)}
-                className={`min-h-[92px] border-l border-slate-100 first:border-l-0 p-1.5 text-left align-top ${inMonth ? "bg-white" : "bg-slate-50"} hover:bg-brand-50/50 transition`}
+                className={`min-h-[92px] border-l border-slate-100 dark:border-slate-800 first:border-l-0 p-1.5 text-left align-top ${inMonth ? "bg-white dark:bg-slate-800" : "bg-slate-50 dark:bg-slate-800/60"} hover:bg-brand-50/50 transition`}
               >
-                <div className={`text-xs font-semibold mb-1 inline-flex items-center justify-center w-5 h-5 rounded-full ${isToday ? "bg-brand-500 text-white" : inMonth ? "text-slate-700" : "text-slate-300"}`}>
+                <div className={`text-xs font-semibold mb-1 inline-flex items-center justify-center w-5 h-5 rounded-full ${isToday ? "bg-brand-500 text-white" : inMonth ? "text-slate-700 dark:text-slate-200" : "text-slate-300"}`}>
                   {d.slice(8)}
                 </div>
                 <div className="space-y-0.5">
@@ -320,7 +320,7 @@ function MonthGrid({ monthDays, tz, bookings, today, anchorMonth, onSelect, onDa
                     );
                   })}
                   {dayBookings.length > MAX_VISIBLE && (
-                    <div className="text-[10px] text-slate-400 px-1">+{dayBookings.length - MAX_VISIBLE} más</div>
+                    <div className="text-[10px] text-slate-400 dark:text-slate-500 px-1">+{dayBookings.length - MAX_VISIBLE} más</div>
                   )}
                 </div>
               </button>
@@ -412,7 +412,7 @@ function BookingModal({ booking, tz, onClose, onChanged }: {
       </div>
 
       {booking.type === "restaurante" && booking.table_combo_id && (
-        <p className="text-xs text-slate-400 mt-4 border-t pt-4">Mesa combinada asignada automáticamente; la reasignación manual de combinaciones no está disponible desde aquí.</p>
+        <p className="text-xs text-slate-400 dark:text-slate-500 mt-4 border-t pt-4">Mesa combinada asignada automáticamente; la reasignación manual de combinaciones no está disponible desde aquí.</p>
       )}
 
       {booking.type === "restaurante" && !booking.table_combo_id && (
@@ -446,7 +446,7 @@ function BookingModal({ booking, tz, onClose, onChanged }: {
             <button className="btn-primary" disabled={busy} onClick={saveReschedule}>Guardar</button>
             <button className="btn-ghost" onClick={() => setReschedule(false)}>Cancelar</button>
           </div>
-          <p className="text-xs text-slate-400 mt-2">Reprogramación manual (sin re-verificar disponibilidad).</p>
+          <p className="text-xs text-slate-400 dark:text-slate-500 mt-2">Reprogramación manual (sin re-verificar disponibilidad).</p>
         </div>
       ) : (
         <div className="mt-5 border-t pt-4 flex flex-wrap gap-2">
@@ -462,7 +462,7 @@ function BookingModal({ booking, tz, onClose, onChanged }: {
 }
 
 function Row({ k, v }: { k: string; v: React.ReactNode }) {
-  return <div className="flex justify-between gap-4"><span className="text-slate-500">{k}</span><span className="font-medium text-right">{v}</span></div>;
+  return <div className="flex justify-between gap-4"><span className="text-slate-500 dark:text-slate-400">{k}</span><span className="font-medium text-right">{v}</span></div>;
 }
 function label(s: string) {
   return ({ pendiente: "pendiente", confirmada: "confirmada", sentada: "sentada", completada: "completada", no_show: "ausente", cancelada: "cancelada" } as any)[s];

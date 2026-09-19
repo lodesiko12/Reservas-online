@@ -57,6 +57,25 @@ export async function fetchSlots(
   return (data ?? []) as Slot[];
 }
 
+/** Días (YYYY-MM-DD) dentro del rango que tienen al menos un hueco disponible. */
+export async function fetchAvailableDays(
+  businessId: string,
+  serviceId: string,
+  dateFrom: string,
+  dateTo: string,
+  professionalId?: string | null
+): Promise<Set<string>> {
+  const { data, error } = await supabase.rpc("get_available_days", {
+    p_business_id: businessId,
+    p_service_id: serviceId,
+    p_date_from: dateFrom,
+    p_date_to: dateTo,
+    p_professional_id: professionalId || undefined,
+  });
+  if (error) throw error;
+  return new Set((data ?? []).map((r: { day: string }) => r.day));
+}
+
 export async function fetchDiningSlots(
   businessId: string,
   date: string,
@@ -69,6 +88,23 @@ export async function fetchDiningSlots(
   });
   if (error) throw error;
   return (data ?? []) as DiningSlot[];
+}
+
+/** Días (YYYY-MM-DD) del rango con al menos una mesa disponible para ese nº de comensales. */
+export async function fetchAvailableDiningDays(
+  businessId: string,
+  dateFrom: string,
+  dateTo: string,
+  partySize: number
+): Promise<Set<string>> {
+  const { data, error } = await supabase.rpc("get_available_dining_days", {
+    p_business_id: businessId,
+    p_date_from: dateFrom,
+    p_date_to: dateTo,
+    p_party_size: partySize,
+  });
+  if (error) throw error;
+  return new Set((data ?? []).map((r: { day: string }) => r.day));
 }
 
 export type DiningSettings = { min_party_online: number; max_party_online: number };

@@ -89,8 +89,9 @@ export function Clientes() {
         : !customers?.length ? <EmptyState title="Sin clientes todavía" />
         : (
           <div className="card overflow-hidden">
+            <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-slate-50 text-slate-500 text-left">
+              <thead className="bg-slate-50 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 text-left">
                 <tr>
                   <th className="px-5 py-3 font-medium">Nombre</th>
                   <th className="px-5 py-3 font-medium">Teléfono</th>
@@ -99,11 +100,11 @@ export function Clientes() {
                   <th className="px-5 py-3"></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {customers.map((c) => (
-                  <tr key={c.id} className="hover:bg-slate-50">
+                  <tr key={c.id} className="hover:bg-slate-50 dark:hover:bg-slate-800">
                     <td className="px-5 py-3 font-medium cursor-pointer" onClick={() => setSel(c)}>{c.full_name} {c.last_name ?? ""}</td>
-                    <td className="px-5 py-3 text-slate-500 cursor-pointer" onClick={() => setSel(c)}>{c.phone ?? "—"}</td>
+                    <td className="px-5 py-3 text-slate-500 dark:text-slate-400 cursor-pointer" onClick={() => setSel(c)}>{c.phone ?? "—"}</td>
                     <td className="px-5 py-3 cursor-pointer" onClick={() => setSel(c)}>{c.bookings_count}</td>
                     <td className="px-5 py-3 cursor-pointer" onClick={() => setSel(c)}>{c.no_show_count > 0 ? <span className="text-red-600 font-semibold">{c.no_show_count}</span> : 0}</td>
                     <td className="px-5 py-3 text-right">
@@ -113,6 +114,7 @@ export function Clientes() {
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
         )}
 
@@ -209,7 +211,7 @@ function ImportCsvModal({ bid, onClose }: { bid: string; onClose: () => void }) 
       <div className="space-y-4">
         {!rows && (
           <>
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-slate-500 dark:text-slate-400">
               El archivo debe tener cabeceras. Columnas reconocidas: <strong>Nombre</strong> (obligatoria), Apellidos, Teléfono, Email, Notas.
             </p>
             <input type="file" accept=".csv,text/csv" onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])} />
@@ -220,13 +222,13 @@ function ImportCsvModal({ bid, onClose }: { bid: string; onClose: () => void }) 
         {rows && !done && (
           <>
             <p className="text-sm">{rows.length} clientes listos para importar.</p>
-            <div className="max-h-56 overflow-y-auto border rounded-lg divide-y divide-slate-100">
+            <div className="max-h-56 overflow-y-auto border rounded-lg divide-y divide-slate-100 dark:divide-slate-800">
               {rows.slice(0, 8).map((r, i) => (
                 <div key={i} className="px-3 py-1.5 text-sm">{r.full_name} {r.last_name ?? ""} · {r.phone ?? "sin teléfono"}</div>
               ))}
-              {rows.length > 8 && <div className="px-3 py-1.5 text-xs text-slate-400">…y {rows.length - 8} más</div>}
+              {rows.length > 8 && <div className="px-3 py-1.5 text-xs text-slate-400 dark:text-slate-500">…y {rows.length - 8} más</div>}
             </div>
-            {importing && <p className="text-sm text-slate-500">Importando {progress}/{rows.length}…</p>}
+            {importing && <p className="text-sm text-slate-500 dark:text-slate-400">Importando {progress}/{rows.length}…</p>}
             <div className="flex justify-end gap-2">
               <button className="btn-ghost" onClick={() => setRows(null)} disabled={importing}>Elegir otro archivo</button>
               <button className="btn-primary" onClick={doImport} disabled={importing}>{importing ? "Importando…" : `Importar ${rows.length}`}</button>
@@ -287,9 +289,9 @@ function CustomerModal({ customer, onClose, onDeleted }: { customer: Customer; o
   return (
     <Modal open onClose={onClose} title={`${customer.full_name} ${customer.last_name ?? ""}`} width="max-w-xl">
       <div className="grid grid-cols-3 gap-3 mb-4">
-        <div className="card p-3 text-center"><div className="text-2xl font-bold">{customer.bookings_count}</div><div className="text-xs text-slate-500">Reservas</div></div>
-        <div className="card p-3 text-center"><div className="text-2xl font-bold text-red-600">{customer.no_show_count}</div><div className="text-xs text-slate-500">No-shows</div></div>
-        <div className="card p-3 text-center"><div className="text-sm font-semibold mt-1">{customer.phone ?? "—"}</div><div className="text-xs text-slate-500">{customer.email ?? "Sin email"}</div></div>
+        <div className="card p-3 text-center"><div className="text-2xl font-bold">{customer.bookings_count}</div><div className="text-xs text-slate-500 dark:text-slate-400">Reservas</div></div>
+        <div className="card p-3 text-center"><div className="text-2xl font-bold text-red-600">{customer.no_show_count}</div><div className="text-xs text-slate-500 dark:text-slate-400">No-shows</div></div>
+        <div className="card p-3 text-center"><div className="text-sm font-semibold mt-1">{customer.phone ?? "—"}</div><div className="text-xs text-slate-500 dark:text-slate-400">{customer.email ?? "Sin email"}</div></div>
       </div>
 
       <label className="label">Notas privadas</label>
@@ -298,8 +300,8 @@ function CustomerModal({ customer, onClose, onDeleted }: { customer: Customer; o
       <button className="btn-ghost text-xs mb-4" onClick={saveNotes} disabled={savingNotes}>{savingNotes ? "Guardando…" : "Guardar notas"}</button>
 
       <h3 className="font-semibold text-sm mb-2">Historial</h3>
-      {isLoading ? <Spinner /> : !history?.length ? <p className="text-sm text-slate-400">Sin reservas.</p> : (
-        <ul className="divide-y divide-slate-100 max-h-72 overflow-y-auto">
+      {isLoading ? <Spinner /> : !history?.length ? <p className="text-sm text-slate-400 dark:text-slate-500">Sin reservas.</p> : (
+        <ul className="divide-y divide-slate-100 dark:divide-slate-800 max-h-72 overflow-y-auto">
           {history.map((b) => (
             <li key={b.id} className="py-2 flex items-center justify-between text-sm">
               <span>{formatDateTime(b.starts_at, tz)} · {b.services?.name ?? "—"}</span>

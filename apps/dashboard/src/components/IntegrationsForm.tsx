@@ -83,7 +83,7 @@ export function IntegrationsForm({ businessId, onToast }: { businessId: string; 
     <div>
       {localToast && <div className="mb-3 text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2">{localToast}</div>}
 
-      <h3 className="text-sm font-semibold text-slate-700 mb-2">Email de confirmación (Resend)</h3>
+      <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">Email de confirmación (Resend)</h3>
       <div className="grid sm:grid-cols-2 gap-4">
         <div>
           <label className="label">Remitente (From)</label>
@@ -95,7 +95,7 @@ export function IntegrationsForm({ businessId, onToast }: { businessId: string; 
         </div>
       </div>
 
-      <h3 className="text-sm font-semibold text-slate-700 mt-6 mb-2">Recordatorios por WhatsApp (Meta Cloud API)</h3>
+      <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200 mt-6 mb-2">Recordatorios por WhatsApp (Meta Cloud API)</h3>
       <label className="flex items-center gap-2 text-sm font-medium mb-3"><input type="checkbox" checked={waEnabled} onChange={(e) => setWaEnabled(e.target.checked)} /> Activar recordatorio 24h antes</label>
       {waEnabled && (
         <div className="grid sm:grid-cols-2 gap-4">
@@ -106,8 +106,8 @@ export function IntegrationsForm({ businessId, onToast }: { businessId: string; 
         </div>
       )}
 
-      <h3 className="text-sm font-semibold text-slate-700 mt-6 mb-2">Google Calendar</h3>
-      <p className="text-xs text-slate-500 mb-3">
+      <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200 mt-6 mb-2">Google Calendar</h3>
+      <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
         Crea un proyecto en Google Cloud Console con la API de Google Calendar habilitada y una credencial OAuth
         "Aplicación web" (URI de redirección autorizada: añade la que se muestra abajo). Pega aquí su Client ID y
         Client Secret; cada profesional podrá luego conectar su propia cuenta desde su ficha en "Servicios".
@@ -119,12 +119,12 @@ export function IntegrationsForm({ businessId, onToast }: { businessId: string; 
           <input className="input" type="password" value={googleClientSecret} onChange={(e) => setGoogleClientSecret(e.target.value)} placeholder={hasGoogleSecret ? "•••••• (dejar vacío para mantener)" : "GOCSPX-..."} />
         </div>
       </div>
-      <p className="text-xs text-slate-400 mt-2">
-        URI de redirección a autorizar en Google Cloud: <code className="bg-slate-100 px-1 rounded">{`${(import.meta as any).env.VITE_SUPABASE_URL}/functions/v1/google-oauth-callback`}</code>
+      <p className="text-xs text-slate-400 dark:text-slate-500 mt-2">
+        URI de redirección a autorizar en Google Cloud: <code className="bg-slate-100 dark:bg-slate-800 px-1 rounded">{`${(import.meta as any).env.VITE_SUPABASE_URL}/functions/v1/google-oauth-callback`}</code>
       </p>
 
       <button className="btn-primary mt-5" onClick={save} disabled={saving}>{saving ? "Guardando…" : "Guardar integraciones"}</button>
-      <p className="text-xs text-slate-400 mt-2">Si no configuras credenciales propias, se usan las globales de la plataforma (si existen).</p>
+      <p className="text-xs text-slate-400 dark:text-slate-500 mt-2">Si no configuras credenciales propias, se usan las globales de la plataforma (si existen).</p>
     </div>
   );
 }

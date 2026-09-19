@@ -1296,6 +1296,29 @@ export type Database = {
         Returns: undefined
       }
       generate_locator: { Args: never; Returns: string }
+      get_available_days: {
+        Args: {
+          p_business_id: string
+          p_date_from: string
+          p_date_to: string
+          p_professional_id?: string
+          p_service_id: string
+        }
+        Returns: {
+          day: string
+        }[]
+      }
+      get_available_dining_days: {
+        Args: {
+          p_business_id: string
+          p_date_from: string
+          p_date_to: string
+          p_party_size: number
+        }
+        Returns: {
+          day: string
+        }[]
+      }
       get_available_dining_slots: {
         Args: {
           p_business_id: string

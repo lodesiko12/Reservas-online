@@ -40,10 +40,10 @@ export function BusinessDetail() {
         }
       />
 
-      <div className="flex gap-1 mb-6 border-b border-slate-200">
+      <div className="flex gap-1 mb-6 border-b border-slate-200 dark:border-slate-700">
         {([["dashboard", "Dashboard"], ["editar", "Editar negocio"], ["integraciones", "Integraciones"], ["usuarios", "Usuarios"]] as [Tab, string][]).map(([k, label]) => (
           <button key={k} onClick={() => setTab(k)}
-            className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px ${tab === k ? "border-brand-500 text-brand-700" : "border-transparent text-slate-500 hover:text-slate-700"}`}>
+            className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px ${tab === k ? "border-brand-500 text-brand-700" : "border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"}`}>
             {label}
           </button>
         ))}
@@ -54,7 +54,7 @@ export function BusinessDetail() {
       {tab === "integraciones" && (
         <div className="card p-6 max-w-3xl">
           <h2 className="font-semibold mb-1">Integraciones (email y WhatsApp)</h2>
-          <p className="text-sm text-slate-500 mb-4">Configura las credenciales de este negocio. Los secretos se guardan del lado del servidor.</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">Configura las credenciales de este negocio. Los secretos se guardan del lado del servidor.</p>
           <IntegrationsForm businessId={business.id} />
         </div>
       )}
@@ -118,12 +118,12 @@ function BusinessUsersSection({ businessId }: { businessId: string }) {
         <h2 className="font-semibold">Usuarios con acceso a este negocio</h2>
         <button className="btn-ghost" onClick={() => setAdding((v) => !v)}>{adding ? "Cancelar" : "+ Añadir usuario"}</button>
       </div>
-      <p className="text-sm text-slate-500 mb-4">Cualquiera de estos usuarios puede entrar al panel y gestionar este negocio (útil si hay varios profesionales con acceso).</p>
+      <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">Cualquiera de estos usuarios puede entrar al panel y gestionar este negocio (útil si hay varios profesionales con acceso).</p>
 
       {error && <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-4">{error}</div>}
 
       {adding && (
-        <form onSubmit={addMember} className="border border-slate-200 rounded-lg p-4 mb-4 space-y-3">
+        <form onSubmit={addMember} className="border border-slate-200 dark:border-slate-700 rounded-lg p-4 mb-4 space-y-3">
           <div className="grid sm:grid-cols-2 gap-3">
             <div><label className="label">Email</label><input type="email" className="input" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required /></div>
             <div><label className="label">Rol</label>
@@ -141,13 +141,13 @@ function BusinessUsersSection({ businessId }: { businessId: string }) {
         </form>
       )}
 
-      {loading ? <Spinner /> : !members?.length ? <p className="text-sm text-slate-400">Sin usuarios.</p> : (
-        <div className="divide-y divide-slate-100">
+      {loading ? <Spinner /> : !members?.length ? <p className="text-sm text-slate-400 dark:text-slate-500">Sin usuarios.</p> : (
+        <div className="divide-y divide-slate-100 dark:divide-slate-800">
           {members.map((m) => (
             <div key={m.id} className="flex items-center justify-between py-2.5">
               <div>
                 <div className="font-medium text-sm">{m.email}</div>
-                <div className="text-xs text-slate-400">Desde {formatDateTime(m.created_at, "Europe/Madrid")}</div>
+                <div className="text-xs text-slate-400 dark:text-slate-500">Desde {formatDateTime(m.created_at, "Europe/Madrid")}</div>
               </div>
               <div className="flex items-center gap-2">
                 <select className="input py-1 text-xs w-auto" value={m.role} disabled={busyUserId === m.user_id} onChange={(e) => changeRole(m.user_id, e.target.value as "owner" | "staff")}>
@@ -234,15 +234,15 @@ function BusinessDashboard({ business }: { business: Business }) {
         <div className="card p-5">
           <h3 className="font-semibold mb-4">Salud (30 días)</h3>
           <ul className="space-y-3 text-sm">
-            <li className="flex justify-between"><span className="text-slate-500">% por web</span><span className="font-semibold">{stats.webPct}%</span></li>
+            <li className="flex justify-between"><span className="text-slate-500 dark:text-slate-400">% por web</span><span className="font-semibold">{stats.webPct}%</span></li>
             {stats.byStatus.map((x) => (
               <li key={x.s} className="flex justify-between items-center">
                 <StatusBadge status={x.s} /><span className="font-semibold">{x.n}</span>
               </li>
             ))}
-            <li className="flex justify-between border-t pt-3"><span className="text-slate-500">Última reserva</span><span className="font-medium">{stats.lastCreated ? formatDateTime(stats.lastCreated, tz) : "—"}</span></li>
-            <li className="flex justify-between"><span className="text-slate-500">Estado</span>
-              <span className={`badge ${business.is_active ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-500"}`}>{business.is_active ? "Activo" : "Inactivo"}</span>
+            <li className="flex justify-between border-t pt-3"><span className="text-slate-500 dark:text-slate-400">Última reserva</span><span className="font-medium">{stats.lastCreated ? formatDateTime(stats.lastCreated, tz) : "—"}</span></li>
+            <li className="flex justify-between"><span className="text-slate-500 dark:text-slate-400">Estado</span>
+              <span className={`badge ${business.is_active ? "bg-green-100 text-green-700" : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400"}`}>{business.is_active ? "Activo" : "Inactivo"}</span>
             </li>
           </ul>
         </div>
@@ -285,7 +285,7 @@ function EditBusiness({ business, onSaved }: { business: Business; onSaved: () =
           <input className="input" value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} />
           <p className="text-xs text-amber-600 mt-1">⚠ Cambiar el slug rompe los widgets ya insertados.</p>
         </div>
-        <div><label className="label">Tipo</label><input className="input bg-slate-50" value={business.type} disabled /><p className="text-xs text-slate-400 mt-1">El tipo no se puede cambiar.</p></div>
+        <div><label className="label">Tipo</label><input className="input bg-slate-50 dark:bg-slate-800/60" value={business.type} disabled /><p className="text-xs text-slate-400 dark:text-slate-500 mt-1">El tipo no se puede cambiar.</p></div>
         <div><label className="label">Color primario</label><input type="color" className="input h-[42px] p-1" value={form.primary_color} onChange={(e) => setForm({ ...form, primary_color: e.target.value })} /></div>
         <div><label className="label">Timezone</label><input className="input" value={form.timezone} onChange={(e) => setForm({ ...form, timezone: e.target.value })} placeholder="Europe/Madrid" /></div>
         <div className="flex items-end">
@@ -318,7 +318,7 @@ function DangerZone({ business }: { business: Business }) {
   return (
     <div className="mt-8 pt-5 border-t border-red-200">
       <h3 className="font-semibold text-red-700 mb-1">Zona de peligro</h3>
-      <p className="text-sm text-slate-500 mb-3">Borra este negocio y todos sus datos de forma permanente e irreversible.</p>
+      <p className="text-sm text-slate-500 dark:text-slate-400 mb-3">Borra este negocio y todos sus datos de forma permanente e irreversible.</p>
       <button className="btn-danger" onClick={() => setDeleting(true)}>Borrar negocio definitivamente</button>
       {deleting && (
         <DeleteBusinessModal

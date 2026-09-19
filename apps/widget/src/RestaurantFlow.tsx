@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import {
-  fetchDiningSlots, fetchDiningSettings, createBooking,
+  fetchDiningSlots, fetchDiningSettings, fetchAvailableDiningDays, createBooking,
   type PublicBusiness, type DiningSlot, type BookingResult, type DiningSettings,
 } from "./api";
 import { formatDate, formatTime, WEEKDAYS_SHORT_ES, ymdInTz, weekdayInTz } from "@reservas/shared";
@@ -14,6 +14,8 @@ export function RestaurantFlow({ business, onLookup }: { business: PublicBusines
   const [settings, setSettings] = useState<DiningSettings>({ min_party_online: 1, max_party_online: 12 });
   const [party, setParty] = useState(2);
   const [date, setDate] = useState("");
+  const [availableDays, setAvailableDays] = useState<Set<string> | null>(null);
+  const [daysLoading, setDaysLoading] = useState(false);
   const [slots, setSlots] = useState<DiningSlot[]>([]);
   const [loading, setLoading] = useState(false);
   const [slot, setSlot] = useState<DiningSlot | null>(null);
@@ -54,6 +56,24 @@ export function RestaurantFlow({ business, onLookup }: { business: PublicBusines
       .finally(() => setLoading(false));
   }, [date, party, business.id]);
 
+  // Al entrar en "when" (o cambiar de comensales), comprueba qué días del
+  // rango tienen alguna mesa libre y oculta el resto.
+  useEffect(() => {
+    if (step !== "when") return;
+    setAvailableDays(null);
+    setDaysLoading(true);
+    fetchAvailableDiningDays(business.id, dates[0].ymd, dates[dates.length - 1].ymd, party)
+      .then((days) => {
+        setAvailableDays(days);
+        setDate((prev) => (prev && days.has(prev) ? prev : [...days].sort()[0] ?? ""));
+      })
+      .catch((e) => setError(e.message))
+      .finally(() => setDaysLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, party, business.id]);
+
+  const visibleDates = availableDays ? dates.filter((d) => availableDays.has(d.ymd)) : dates;
+
   // Agrupa huecos por franja para mostrarlos con su nombre (Comida / Cena).
   const grouped = useMemo(() => {
     const map = new Map<string, { name: string; slots: DiningSlot[] }>();
@@ -83,7 +103,7 @@ export function RestaurantFlow({ business, onLookup }: { business: PublicBusines
               </button>
             ))}
           </div>
-          <button className="btn" style={{ marginTop: 16 }} disabled={!PARTY_OPTIONS.length} onClick={() => { setDate(dates[0].ymd); setStep("when"); }}>
+          <button className="btn" style={{ marginTop: 16 }} disabled={!PARTY_OPTIONS.length} onClick={() => { setStep("when"); }}>
             Continuar con {party} {party === 1 ? "persona" : "personas"}
           </button>
           {settings.max_party_online < 12 && (
@@ -96,17 +116,24 @@ export function RestaurantFlow({ business, onLookup }: { business: PublicBusines
         <>
           <button className="back" onClick={() => setStep("party")}>← {party} comensales</button>
           <p className="section-title">Elige día y hora</p>
-          <div className="dates">
-            {dates.map(({ ymd, d }) => (
-              <button key={ymd} className={`date-pill ${date === ymd ? "selected" : ""}`} onClick={() => setDate(ymd)}>
-                <div className="dow">{WEEKDAYS_SHORT_ES[weekdayInTz(d, tz)]}</div>
-                <div className="dom">{new Intl.DateTimeFormat("es-ES", { day: "numeric", timeZone: tz }).format(d)}</div>
-                <div className="mon">{new Intl.DateTimeFormat("es-ES", { month: "short", timeZone: tz }).format(d)}</div>
-              </button>
-            ))}
-          </div>
 
-          {loading ? (
+          {daysLoading ? (
+            <div className="empty"><span className="spinner" /></div>
+          ) : visibleDates.length === 0 ? (
+            <div className="empty">No hay mesas disponibles en las próximas semanas para {party} comensales.</div>
+          ) : (
+            <div className="dates">
+              {visibleDates.map(({ ymd, d }) => (
+                <button key={ymd} className={`date-pill ${date === ymd ? "selected" : ""}`} onClick={() => setDate(ymd)}>
+                  <div className="dow">{WEEKDAYS_SHORT_ES[weekdayInTz(d, tz)]}</div>
+                  <div className="dom">{new Intl.DateTimeFormat("es-ES", { day: "numeric", timeZone: tz }).format(d)}</div>
+                  <div className="mon">{new Intl.DateTimeFormat("es-ES", { month: "short", timeZone: tz }).format(d)}</div>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {daysLoading || visibleDates.length === 0 ? null : loading ? (
             <div className="empty"><span className="spinner" /></div>
           ) : grouped.length === 0 ? (
             <div className="empty">No hay mesas disponibles ese día para {party} comensales.</div>

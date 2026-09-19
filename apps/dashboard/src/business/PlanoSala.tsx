@@ -16,7 +16,7 @@ const PARTY_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8, 10, 12];
 type Health = "libre" | "reservada_pronto" | "reservada_ahora" | "retrasada" | "sentada" | "a_punto_terminar";
 
 const HEALTH_STYLE: Record<Health, { bg: string; border: string; text: string; label: string }> = {
-  libre: { bg: "bg-white", border: "border-slate-200", text: "text-slate-400", label: "Libre" },
+  libre: { bg: "bg-white dark:bg-slate-800", border: "border-slate-200 dark:border-slate-700", text: "text-slate-400 dark:text-slate-500", label: "Libre" },
   reservada_pronto: { bg: "bg-sky-50", border: "border-sky-300", text: "text-sky-700", label: "Reservada" },
   reservada_ahora: { bg: "bg-blue-50", border: "border-blue-400", text: "text-blue-700", label: "Debería llegar" },
   retrasada: { bg: "bg-red-50", border: "border-red-400", text: "text-red-700", label: "Retrasada" },
@@ -130,7 +130,7 @@ export function PlanoSala() {
             const zoneName = zoneId ? zones?.find((z) => z.id === zoneId)?.name : "Sin zona";
             return (
               <div key={zoneId ?? "none"}>
-                <h3 className="font-semibold text-sm text-slate-500 mb-2">{zoneName}</h3>
+                <h3 className="font-semibold text-sm text-slate-500 dark:text-slate-400 mb-2">{zoneName}</h3>
                 <div className="grid sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
                   {list.map((t) => {
                     const { health, booking } = tableHealth(t.id);
@@ -141,15 +141,15 @@ export function PlanoSala() {
                           <div className="font-semibold">{t.name}</div>
                           <span className={`text-[11px] font-semibold ${st.text}`}>{st.label}</span>
                         </div>
-                        <div className="text-xs text-slate-500">{t.cap_min === t.cap_max ? `${t.cap_min} pers.` : `${t.cap_min}–${t.cap_max} pers.`}</div>
+                        <div className="text-xs text-slate-500 dark:text-slate-400">{t.cap_min === t.cap_max ? `${t.cap_min} pers.` : `${t.cap_min}–${t.cap_max} pers.`}</div>
 
                         {booking ? (
                           <div className="mt-2 text-xs">
                             <div className="font-medium truncate">{booking.customer_name} · {booking.party_size} pers.</div>
-                            <div className="text-slate-500">{formatTime(booking.starts_at, tz)} – {formatTime(booking.ends_at, tz)}</div>
+                            <div className="text-slate-500 dark:text-slate-400">{formatTime(booking.starts_at, tz)} – {formatTime(booking.ends_at, tz)}</div>
                           </div>
                         ) : (
-                          <div className="mt-2 text-xs text-slate-400">Sin reservas próximas</div>
+                          <div className="mt-2 text-xs text-slate-400 dark:text-slate-500">Sin reservas próximas</div>
                         )}
 
                         <div className="mt-3 flex flex-wrap gap-1.5">
@@ -177,7 +177,7 @@ export function PlanoSala() {
       )}
 
       {!currentShift && !isLoading && (
-        <p className="text-xs text-slate-400 mt-4">No hay ningún turno de servicio activo ahora mismo, así que no se pueden registrar walk-ins.</p>
+        <p className="text-xs text-slate-400 dark:text-slate-500 mt-4">No hay ningún turno de servicio activo ahora mismo, así que no se pueden registrar walk-ins.</p>
       )}
 
       {walkinTable && currentShift && (
@@ -248,14 +248,14 @@ function WaitlistSection({ bid, currentShiftId }: { bid: string; currentShiftId:
       {isLoading ? <Spinner /> : !waitlist?.length ? (
         <EmptyState title="Sin nadie en espera" />
       ) : (
-        <div className="card divide-y divide-slate-100">
+        <div className="card divide-y divide-slate-100 dark:divide-slate-800">
           {waitlist.map((w) => (
             <div key={w.id} className="flex items-center gap-4 px-5 py-3">
               <div className="flex-1 min-w-0">
                 <div className="font-medium truncate">{w.name} · {w.party_size} pers.</div>
-                <div className="text-xs text-slate-500">{w.phone ?? "sin teléfono"}{w.notes ? ` · ${w.notes}` : ""}</div>
+                <div className="text-xs text-slate-500 dark:text-slate-400">{w.phone ?? "sin teléfono"}{w.notes ? ` · ${w.notes}` : ""}</div>
               </div>
-              <span className={`badge text-[11px] ${w.status === "avisado" ? "bg-amber-100 text-amber-700" : "bg-slate-100 text-slate-500"}`}>
+              <span className={`badge text-[11px] ${w.status === "avisado" ? "bg-amber-100 text-amber-700" : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400"}`}>
                 {w.status === "avisado" ? "Avisado" : "Esperando"}
               </span>
               <div className="flex gap-1.5 shrink-0">
@@ -298,7 +298,7 @@ function AddWaitlistModal({ bid, onClose, onDone }: { bid: string; onClose: () =
           <div className="flex flex-wrap gap-2">
             {PARTY_OPTIONS.map((n) => (
               <button type="button" key={n} onClick={() => setParty(n)}
-                className={`w-10 h-10 rounded-lg border font-semibold ${party === n ? "bg-brand-500 text-white border-brand-500" : "bg-white border-slate-200"}`}>{n}</button>
+                className={`w-10 h-10 rounded-lg border font-semibold ${party === n ? "bg-brand-500 text-white border-brand-500" : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700"}`}>{n}</button>
             ))}
           </div>
         </div>
@@ -339,7 +339,7 @@ function WalkinModal({ bid, shiftId, table, onClose, onDone }: {
           <div className="flex flex-wrap gap-2">
             {PARTY_OPTIONS.map((n) => (
               <button type="button" key={n} onClick={() => setParty(n)}
-                className={`w-10 h-10 rounded-lg border font-semibold ${party === n ? "bg-brand-500 text-white border-brand-500" : "bg-white border-slate-200"}`}>{n}</button>
+                className={`w-10 h-10 rounded-lg border font-semibold ${party === n ? "bg-brand-500 text-white border-brand-500" : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700"}`}>{n}</button>
             ))}
           </div>
         </div>

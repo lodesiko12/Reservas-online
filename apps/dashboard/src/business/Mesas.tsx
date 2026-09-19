@@ -75,12 +75,12 @@ export function Mesas() {
               <div className="flex items-start justify-between">
                 <div>
                   <div className="font-semibold text-lg">{z.name}</div>
-                  <div className="text-xs text-slate-500">
+                  <div className="text-xs text-slate-500 dark:text-slate-400">
                     {z.reservable_online ? "Reservable online" : "Solo manual/teléfono"}
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className={`badge ${z.is_active ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-500"}`}>{z.is_active ? "Activa" : "Inactiva"}</span>
+                  <span className={`badge ${z.is_active ? "bg-green-100 text-green-700" : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400"}`}>{z.is_active ? "Activa" : "Inactiva"}</span>
                   <button className="btn-ghost text-xs" onClick={() => setEditingZone(z)}>Editar</button>
                   <button className="btn-ghost text-xs" onClick={() => removeZone(z)}>🗑</button>
                 </div>
@@ -91,7 +91,7 @@ export function Mesas() {
 
           {(tablesByZone.get(null)?.length ?? 0) > 0 && (
             <div className="card p-5">
-              <div className="font-semibold text-lg text-slate-500">Sin zona</div>
+              <div className="font-semibold text-lg text-slate-500 dark:text-slate-400">Sin zona</div>
               <TableGrid tables={tablesByZone.get(null) ?? []} onEdit={setEditingTable} onRemove={removeTable} onToggle={toggleTable} />
             </div>
           )}
@@ -113,13 +113,13 @@ export function Mesas() {
                 <div className="flex items-start justify-between">
                   <div>
                     <div className="font-semibold">{c.name || "Combinación"}</div>
-                    <div className="text-xs text-slate-500">
+                    <div className="text-xs text-slate-500 dark:text-slate-400">
                       {c.table_ids.map((id) => tables?.find((t) => t.id === id)?.name ?? "?").join(" + ")}
                     </div>
                   </div>
-                  <button onClick={() => toggleCombo(c)} className={`badge ${c.is_active ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-500"}`}>{c.is_active ? "Activa" : "Inactiva"}</button>
+                  <button onClick={() => toggleCombo(c)} className={`badge ${c.is_active ? "bg-green-100 text-green-700" : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400"}`}>{c.is_active ? "Activa" : "Inactiva"}</button>
                 </div>
-                <div className="text-xs text-slate-500 mt-2">{c.cap_min}–{c.cap_max} comensales{c.priority > 0 ? ` · prioridad ${c.priority}` : ""}</div>
+                <div className="text-xs text-slate-500 dark:text-slate-400 mt-2">{c.cap_min}–{c.cap_max} comensales{c.priority > 0 ? ` · prioridad ${c.priority}` : ""}</div>
                 <div className="mt-2 flex gap-2">
                   <button className="btn-ghost text-xs" onClick={() => setEditingCombo(c)}>Editar</button>
                   <button className="btn-ghost text-xs" onClick={() => removeCombo(c)}>🗑</button>
@@ -149,16 +149,16 @@ export function Mesas() {
 function TableGrid({ tables, onEdit, onRemove, onToggle }: {
   tables: DiningTable[]; onEdit: (t: DiningTable) => void; onRemove: (t: DiningTable) => void; onToggle: (t: DiningTable) => void;
 }) {
-  if (!tables.length) return <p className="text-sm text-slate-400 mt-3">Sin mesas en esta zona.</p>;
+  if (!tables.length) return <p className="text-sm text-slate-400 dark:text-slate-500 mt-3">Sin mesas en esta zona.</p>;
   return (
     <div className="mt-4 grid sm:grid-cols-3 md:grid-cols-4 gap-3">
       {tables.map((t) => (
-        <div key={t.id} className={`rounded-lg border p-3 ${t.is_active ? "border-slate-200" : "border-slate-100 opacity-50"}`}>
+        <div key={t.id} className={`rounded-lg border p-3 ${t.is_active ? "border-slate-200 dark:border-slate-700" : "border-slate-100 dark:border-slate-800 opacity-50"}`}>
           <div className="flex items-start justify-between">
             <div className="font-semibold">{t.name}</div>
-            <button className="text-xs text-slate-400" onClick={() => onToggle(t)}>{t.is_active ? "●" : "○"}</button>
+            <button className="text-xs text-slate-400 dark:text-slate-500" onClick={() => onToggle(t)}>{t.is_active ? "●" : "○"}</button>
           </div>
-          <div className="text-xs text-slate-500">{t.cap_min === t.cap_max ? `${t.cap_min} pers.` : `${t.cap_min}–${t.cap_max} pers.`}</div>
+          <div className="text-xs text-slate-500 dark:text-slate-400">{t.cap_min === t.cap_max ? `${t.cap_min} pers.` : `${t.cap_min}–${t.cap_max} pers.`}</div>
           {t.priority > 0 && <div className="text-xs text-brand-600">prioridad {t.priority}</div>}
           <div className="mt-2 flex gap-2">
             <button className="btn-ghost text-xs" onClick={() => onEdit(t)}>Editar</button>
@@ -245,7 +245,7 @@ function TableModal({ bid, zones, table, onClose, onSaved }: {
           <div><label className="label">Máx. pers.</label><input type="number" min={1} className="input" value={form.cap_max} onChange={(e) => setForm({ ...form, cap_max: +e.target.value })} /></div>
           <div><label className="label">Prioridad</label><input type="number" className="input" value={form.priority} onChange={(e) => setForm({ ...form, priority: +e.target.value })} /></div>
         </div>
-        <p className="text-xs text-slate-400">La prioridad decide qué mesa se prefiere cuando varias encajan igual de bien (mayor = se asigna antes).</p>
+        <p className="text-xs text-slate-400 dark:text-slate-500">La prioridad decide qué mesa se prefiere cuando varias encajan igual de bien (mayor = se asigna antes).</p>
         <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.is_active} onChange={(e) => setForm({ ...form, is_active: e.target.checked })} /> Activa</label>
         <div className="flex justify-end gap-2"><button className="btn-ghost" onClick={onClose}>Cancelar</button><button className="btn-primary" disabled={!valid || busy} onClick={save}>Guardar</button></div>
       </div>
@@ -297,7 +297,7 @@ function ComboModal({ bid, tables, combo, onClose, onSaved }: {
           <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 mt-1">
             {tables.map((t) => (
               <button type="button" key={t.id} onClick={() => toggleTableId(t.id)}
-                className={`px-2 py-1.5 rounded-lg text-sm border ${form.table_ids.includes(t.id) ? "bg-brand-500 text-white border-brand-500" : "bg-white border-slate-200"}`}>
+                className={`px-2 py-1.5 rounded-lg text-sm border ${form.table_ids.includes(t.id) ? "bg-brand-500 text-white border-brand-500" : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700"}`}>
                 {t.name}
               </button>
             ))}
@@ -308,7 +308,7 @@ function ComboModal({ bid, tables, combo, onClose, onSaved }: {
           <div><label className="label">Máx. pers.</label><input type="number" min={1} className="input" value={form.cap_max} onChange={(e) => setForm({ ...form, cap_max: +e.target.value })} /></div>
           <div><label className="label">Prioridad</label><input type="number" className="input" value={form.priority} onChange={(e) => setForm({ ...form, priority: +e.target.value })} /></div>
         </div>
-        <p className="text-xs text-slate-400">Solo se usa cuando ninguna mesa individual encaja para ese nº de comensales.</p>
+        <p className="text-xs text-slate-400 dark:text-slate-500">Solo se usa cuando ninguna mesa individual encaja para ese nº de comensales.</p>
         <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.is_active} onChange={(e) => setForm({ ...form, is_active: e.target.checked })} /> Activa</label>
         <div className="flex justify-end gap-2"><button className="btn-ghost" onClick={onClose}>Cancelar</button><button className="btn-primary" disabled={!valid || busy} onClick={save}>Guardar</button></div>
       </div>

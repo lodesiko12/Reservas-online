@@ -47,12 +47,12 @@ export function WindowsEditor({ wins, onChange }: { wins: Win[]; onChange: (w: W
               {WEEKDAYS_ES.map((d, idx) => <option key={idx} value={idx}>{d}</option>)}
             </select>
             <input type="time" className="input py-1.5 w-28" value={w.start_time} onChange={(e) => update(i, { start_time: e.target.value })} />
-            <span className="text-slate-400">–</span>
+            <span className="text-slate-400 dark:text-slate-500">–</span>
             <input type="time" className="input py-1.5 w-28" value={w.end_time} onChange={(e) => update(i, { end_time: e.target.value })} />
-            <button type="button" className="text-slate-400 hover:text-brand-600 text-xs whitespace-nowrap" title="Copiar esta franja a todos los días" onClick={() => copyToAllDays(i)}>
+            <button type="button" className="text-slate-400 dark:text-slate-500 hover:text-brand-600 text-xs whitespace-nowrap" title="Copiar esta franja a todos los días" onClick={() => copyToAllDays(i)}>
               ⧉ a todos
             </button>
-            <button type="button" className="text-slate-400 hover:text-red-600" onClick={() => del(i)}>✕</button>
+            <button type="button" className="text-slate-400 dark:text-slate-500 hover:text-red-600" onClick={() => del(i)}>✕</button>
           </div>
         ))}
       </div>
@@ -91,14 +91,14 @@ function QuickFill({ wins, onChange, onDone }: { wins: Win[]; onChange: (w: Win[
   }
 
   return (
-    <div className="border border-slate-200 rounded-lg p-3 bg-slate-50 space-y-3">
+    <div className="border border-slate-200 dark:border-slate-700 rounded-lg p-3 bg-slate-50 dark:bg-slate-800/60 space-y-3">
       <div>
-        <div className="text-xs font-medium text-slate-500 mb-1.5">Días activos</div>
+        <div className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5">Días activos</div>
         <div className="flex gap-1.5">
           {WEEKDAY_LETTERS.map((letter, wd) => (
             <button
               type="button" key={wd} onClick={() => toggleDay(wd)}
-              className={`w-8 h-8 rounded-full text-xs font-semibold border ${days.includes(wd) ? "bg-brand-500 text-white border-brand-500" : "bg-white border-slate-200 text-slate-500"}`}
+              className={`w-8 h-8 rounded-full text-xs font-semibold border ${days.includes(wd) ? "bg-brand-500 text-white border-brand-500" : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400"}`}
             >
               {letter}
             </button>
@@ -106,21 +106,21 @@ function QuickFill({ wins, onChange, onDone }: { wins: Win[]; onChange: (w: Win[
         </div>
       </div>
       <div>
-        {splitLunch && <div className="text-xs text-slate-400 mb-1">Mañana</div>}
+        {splitLunch && <div className="text-xs text-slate-400 dark:text-slate-500 mb-1">Mañana</div>}
         <div className="flex items-center gap-2">
           <input type="time" className="input py-1.5 w-28" value={start} onChange={(e) => setStart(e.target.value)} />
-          <span className="text-slate-400">–</span>
+          <span className="text-slate-400 dark:text-slate-500">–</span>
           <input type="time" className="input py-1.5 w-28" value={end} onChange={(e) => setEnd(e.target.value)} />
         </div>
       </div>
       {splitLunch ? (
         <div>
-          <div className="text-xs text-slate-400 mb-1">Tarde</div>
+          <div className="text-xs text-slate-400 dark:text-slate-500 mb-1">Tarde</div>
           <div className="flex items-center gap-2">
             <input type="time" className="input py-1.5 w-28" value={start2} onChange={(e) => setStart2(e.target.value)} />
-            <span className="text-slate-400">–</span>
+            <span className="text-slate-400 dark:text-slate-500">–</span>
             <input type="time" className="input py-1.5 w-28" value={end2} onChange={(e) => setEnd2(e.target.value)} />
-            <button type="button" className="text-slate-400 hover:text-red-600 text-xs" onClick={() => setSplitLunch(false)}>✕ quitar</button>
+            <button type="button" className="text-slate-400 dark:text-slate-500 hover:text-red-600 text-xs" onClick={() => setSplitLunch(false)}>✕ quitar</button>
           </div>
         </div>
       ) : (

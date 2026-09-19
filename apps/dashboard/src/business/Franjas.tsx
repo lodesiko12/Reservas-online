@@ -47,24 +47,24 @@ export function Franjas() {
                 <div className="flex items-start justify-between">
                   <div>
                     <div className="font-semibold text-lg">{s.name}</div>
-                    <div className="text-sm text-slate-500">{shortTime(s.start_time)}–{shortTime(s.end_time)} · mesa {s.booking_duration_min} min</div>
+                    <div className="text-sm text-slate-500 dark:text-slate-400">{shortTime(s.start_time)}–{shortTime(s.end_time)} · mesa {s.booking_duration_min} min</div>
                   </div>
-                  <button onClick={() => toggle(s)} className={`badge ${s.is_active ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-500"}`}>{s.is_active ? "Activa" : "Inactiva"}</button>
+                  <button onClick={() => toggle(s)} className={`badge ${s.is_active ? "bg-green-100 text-green-700" : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400"}`}>{s.is_active ? "Activa" : "Inactiva"}</button>
                 </div>
                 <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
                   <span className="font-medium">Aforo: {s.max_covers} comensales</span>
-                  <span className="text-slate-400">cada {s.slot_interval_min} min</span>
-                  {s.last_call_time && <span className="text-slate-400">última reserva {shortTime(s.last_call_time)}</span>}
+                  <span className="text-slate-400 dark:text-slate-500">cada {s.slot_interval_min} min</span>
+                  {s.last_call_time && <span className="text-slate-400 dark:text-slate-500">última reserva {shortTime(s.last_call_time)}</span>}
                 </div>
                 <div className="mt-1 flex flex-wrap gap-1.5">
                   {s.pacing_enabled && <span className="badge bg-amber-50 text-amber-700 text-[11px]">Stock por slot activo</span>}
                   {s.online_max_covers != null && <span className="badge bg-amber-50 text-amber-700 text-[11px]">Online: {s.online_max_covers}</span>}
-                  {!s.allow_double_turn && <span className="badge bg-slate-100 text-slate-500 text-[11px]">Sin doblar mesa</span>}
-                  {s.cleanup_min > 0 && <span className="badge bg-slate-100 text-slate-500 text-[11px]">Limpieza {s.cleanup_min} min</span>}
+                  {!s.allow_double_turn && <span className="badge bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-[11px]">Sin doblar mesa</span>}
+                  {s.cleanup_min > 0 && <span className="badge bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-[11px]">Limpieza {s.cleanup_min} min</span>}
                 </div>
                 <div className="mt-2 flex gap-1">
                   {[1, 2, 3, 4, 5, 6, 0].map((wd) => (
-                    <span key={wd} className={`text-xs px-1.5 py-0.5 rounded ${s.active_weekdays.includes(wd) ? "bg-brand-50 text-brand-700" : "bg-slate-100 text-slate-400"}`}>
+                    <span key={wd} className={`text-xs px-1.5 py-0.5 rounded ${s.active_weekdays.includes(wd) ? "bg-brand-50 text-brand-700" : "bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500"}`}>
                       {WEEKDAYS_SHORT_ES[wd]}
                     </span>
                   ))}
@@ -114,13 +114,13 @@ function DurationRules({ shiftId }: { shiftId: string }) {
   return (
     <div className="mt-4 border-t pt-4">
       <label className="label">Duración según nº de comensales (opcional)</label>
-      <p className="text-xs text-slate-400 mb-2">Si un grupo no encaja en ningún rango, se usa la duración por defecto de arriba.</p>
+      <p className="text-xs text-slate-400 dark:text-slate-500 mb-2">Si un grupo no encaja en ningún rango, se usa la duración por defecto de arriba.</p>
       {!!rules?.length && (
         <div className="space-y-1 mb-3">
           {rules.map((r) => (
-            <div key={r.id} className="flex items-center justify-between text-sm bg-slate-50 rounded-lg px-3 py-1.5">
+            <div key={r.id} className="flex items-center justify-between text-sm bg-slate-50 dark:bg-slate-800/60 rounded-lg px-3 py-1.5">
               <span>{r.pax_min === r.pax_max ? `${r.pax_min} pax` : `${r.pax_min}–${r.pax_max} pax`} → {r.duration_min} min</span>
-              <button className="text-slate-400 hover:text-red-600" onClick={() => remove(r.id)}>🗑</button>
+              <button className="text-slate-400 dark:text-slate-500 hover:text-red-600" onClick={() => remove(r.id)}>🗑</button>
             </div>
           ))}
         </div>
@@ -201,7 +201,7 @@ function ShiftModal({ bid, shift, onClose, onSaved }: { bid: string; shift: Shif
           <div className="flex gap-1">
             {[1, 2, 3, 4, 5, 6, 0].map((wd) => (
               <button key={wd} type="button" onClick={() => toggleDay(wd)}
-                className={`px-2.5 py-1.5 rounded-lg text-sm font-medium ${form.active_weekdays.includes(wd) ? "bg-brand-500 text-white" : "bg-slate-100 text-slate-500"}`}>
+                className={`px-2.5 py-1.5 rounded-lg text-sm font-medium ${form.active_weekdays.includes(wd) ? "bg-brand-500 text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400"}`}>
                 {WEEKDAYS_SHORT_ES[wd]}
               </button>
             ))}
@@ -212,7 +212,7 @@ function ShiftModal({ bid, shift, onClose, onSaved }: { bid: string; shift: Shif
         <div className="border-t pt-4">
           <label className="label">Última hora de reserva (opcional)</label>
           <input type="time" className="input w-32" value={form.last_call_time} onChange={(e) => setForm({ ...form, last_call_time: e.target.value })} />
-          <p className="text-xs text-slate-400 mt-1">Si se deja vacío, se puede reservar hasta el cierre de la franja.</p>
+          <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Si se deja vacío, se puede reservar hasta el cierre de la franja.</p>
         </div>
 
         <div className="border-t pt-4">
@@ -228,19 +228,19 @@ function ShiftModal({ bid, shift, onClose, onSaved }: { bid: string; shift: Shif
         <div className="border-t pt-4">
           <label className="label">Stock online (opcional)</label>
           <input type="number" min={1} className="input w-32" placeholder="= aforo total" value={form.online_max_covers} onChange={(e) => setForm({ ...form, online_max_covers: e.target.value === "" ? "" : +e.target.value })} />
-          <p className="text-xs text-slate-400 mt-1">Comensales que la web puede reservar; el resto del aforo queda para teléfono/walk-in. Vacío = igual al aforo total.</p>
+          <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Comensales que la web puede reservar; el resto del aforo queda para teléfono/walk-in. Vacío = igual al aforo total.</p>
         </div>
 
         <div className="border-t pt-4 grid grid-cols-2 gap-3">
           <div>
             <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.allow_double_turn} onChange={(e) => setForm({ ...form, allow_double_turn: e.target.checked })} /> Permitir doblar mesa</label>
-            <p className="text-xs text-slate-400 mt-1">Si se desactiva, cada mesa admite una sola reserva por franja.</p>
+            <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Si se desactiva, cada mesa admite una sola reserva por franja.</p>
           </div>
           <div><label className="label">Limpieza entre reservas (min)</label><input type="number" min={0} step={5} className="input" value={form.cleanup_min} onChange={(e) => setForm({ ...form, cleanup_min: +e.target.value })} /></div>
         </div>
 
         {shift && <DurationRules shiftId={shift.id} />}
-        {!shift && <p className="text-xs text-slate-400 border-t pt-4">Guarda la franja para poder configurar duraciones por nº de comensales.</p>}
+        {!shift && <p className="text-xs text-slate-400 dark:text-slate-500 border-t pt-4">Guarda la franja para poder configurar duraciones por nº de comensales.</p>}
 
         <div className="flex justify-end gap-2"><button className="btn-ghost" onClick={onClose}>Cancelar</button><button className="btn-primary" disabled={!form.name.trim() || busy} onClick={save}>Guardar</button></div>
       </div>

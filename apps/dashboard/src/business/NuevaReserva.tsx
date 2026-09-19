@@ -21,7 +21,7 @@ function DateStrip({ tz, date, setDate }: { tz: string; date: string; setDate: (
         const d = new Date(ymd + "T12:00:00");
         return (
           <button type="button" key={ymd} onClick={() => setDate(ymd)}
-            className={`shrink-0 rounded-lg border px-3 py-2 text-center ${date === ymd ? "bg-brand-500 text-white border-brand-500" : "bg-white border-slate-200"}`}>
+            className={`shrink-0 rounded-lg border px-3 py-2 text-center ${date === ymd ? "bg-brand-500 text-white border-brand-500" : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700"}`}>
             <div className="text-[10px] uppercase opacity-80">{WEEKDAYS_SHORT_ES[weekdayInTz(d, tz)]}</div>
             <div className="font-bold">{ymd.slice(8)}</div>
           </button>
@@ -50,7 +50,7 @@ function Done({ locator }: { locator: string }) {
         <div className="text-4xl">✅</div>
         <p className="font-semibold mt-2">Reserva creada</p>
         <p className="text-brand-600 font-bold text-xl mt-1">{locator}</p>
-        <p className="text-sm text-slate-400 mt-2">Redirigiendo a la agenda…</p>
+        <p className="text-sm text-slate-400 dark:text-slate-500 mt-2">Redirigiendo a la agenda…</p>
       </div>
     </div>
   );
@@ -137,11 +137,11 @@ function NuevaReservaCitas() {
               <label className="label mt-4">Fecha</label>
               <DateStrip tz={tz} date={date} setDate={setDate} />
               <label className="label mt-2">Hora</label>
-              {loadingSlots ? <Spinner /> : slots.length === 0 ? <p className="text-sm text-slate-400">No hay huecos ese día.</p> : (
+              {loadingSlots ? <Spinner /> : slots.length === 0 ? <p className="text-sm text-slate-400 dark:text-slate-500">No hay huecos ese día.</p> : (
                 <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
                   {slots.map((s) => (
                     <button type="button" key={s.slot_start} onClick={() => setSlot(s.slot_start)}
-                      className={`rounded-lg border py-2 text-sm font-semibold ${slot === s.slot_start ? "bg-brand-500 text-white border-brand-500" : "bg-white border-slate-200"}`}>
+                      className={`rounded-lg border py-2 text-sm font-semibold ${slot === s.slot_start ? "bg-brand-500 text-white border-brand-500" : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700"}`}>
                       {formatTime(s.slot_start, tz)}
                     </button>
                   ))}
@@ -234,7 +234,7 @@ function NuevaReservaRestaurante() {
           <div className="flex flex-wrap gap-2">
             {PARTY_OPTIONS.map((n) => (
               <button type="button" key={n} onClick={() => setParty(n)}
-                className={`w-11 h-11 rounded-lg border font-semibold ${party === n ? "bg-brand-500 text-white border-brand-500" : "bg-white border-slate-200"}`}>{n}</button>
+                className={`w-11 h-11 rounded-lg border font-semibold ${party === n ? "bg-brand-500 text-white border-brand-500" : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700"}`}>{n}</button>
             ))}
           </div>
 
@@ -242,14 +242,14 @@ function NuevaReservaRestaurante() {
           <DateStrip tz={tz} date={date} setDate={setDate} />
 
           <label className="label mt-2">Hora</label>
-          {loadingSlots ? <Spinner /> : grouped.length === 0 ? <p className="text-sm text-slate-400">No hay mesas ese día para {party} comensales.</p> : (
+          {loadingSlots ? <Spinner /> : grouped.length === 0 ? <p className="text-sm text-slate-400 dark:text-slate-500">No hay mesas ese día para {party} comensales.</p> : (
             grouped.map((g) => (
               <div key={g.name} className="mb-3">
-                <div className="text-xs font-semibold text-slate-500 mb-1">{g.name}</div>
+                <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">{g.name}</div>
                 <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
                   {g.slots.map((s) => (
                     <button type="button" key={s.slot_start} onClick={() => setSlot(s)}
-                      className={`rounded-lg border py-2 text-sm font-semibold ${slot?.slot_start === s.slot_start ? "bg-brand-500 text-white border-brand-500" : "bg-white border-slate-200"}`}>
+                      className={`rounded-lg border py-2 text-sm font-semibold ${slot?.slot_start === s.slot_start ? "bg-brand-500 text-white border-brand-500" : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700"}`}>
                       {formatTime(s.slot_start, tz)}
                     </button>
                   ))}

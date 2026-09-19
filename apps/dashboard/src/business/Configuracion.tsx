@@ -123,7 +123,7 @@ export function Configuracion() {
         {hours === null ? <Spinner /> : (
           <>
             <WindowsEditor wins={hours} onChange={setHours} />
-            {isRestaurant && <p className="text-xs text-slate-400 mt-2">El aforo por franja se gestiona en “Franjas y aforo”.</p>}
+            {isRestaurant && <p className="text-xs text-slate-400 dark:text-slate-500 mt-2">El aforo por franja se gestiona en “Franjas y aforo”.</p>}
             <div><button className="btn-primary mt-4" onClick={saveHours} disabled={savingHours}>{savingHours ? "Guardando…" : "Guardar horario"}</button></div>
           </>
         )}
@@ -139,7 +139,7 @@ export function Configuracion() {
             <div>
               <label className="label">Antelación máxima de reserva (días)</label>
               <input type="number" min={1} className="input" value={maxAdvanceDays} onChange={(e) => setMaxAdvanceDays(e.target.value)} placeholder="Sin límite" />
-              <p className="text-xs text-slate-400 mt-1">Vacío = sin límite. Ej. 90 = no se puede reservar con más de 3 meses de antelación. Solo afecta a las reservas web, no a las que crea el staff manualmente.</p>
+              <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Vacío = sin límite. Ej. 90 = no se puede reservar con más de 3 meses de antelación. Solo afecta a las reservas web, no a las que crea el staff manualmente.</p>
             </div>
           </div>
           <button className="btn-primary mt-4" onClick={saveReservas} disabled={savingRes}>{savingRes ? "Guardando…" : "Guardar"}</button>
@@ -152,7 +152,7 @@ export function Configuracion() {
       {/* Petición de reseña post-visita */}
       <section className="card p-6">
         <h2 className="font-semibold mb-1">Reseñas</h2>
-        <p className="text-sm text-slate-500 mb-4">
+        <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
           Si configuras un enlace, 1–3h después de que termine una reserva (y no haya sido cancelada/no-show) se envía
           automáticamente un email pidiendo una reseña. Déjalo vacío para no enviar nada.
         </p>
@@ -164,14 +164,14 @@ export function Configuracion() {
       {/* Integraciones: email y WhatsApp por negocio */}
       <section className="card p-6">
         <h2 className="font-semibold mb-1">Integraciones (email y WhatsApp)</h2>
-        <p className="text-sm text-slate-500 mb-4">Envía desde tu propio remitente y número. Tus claves se guardan del lado del servidor y no se muestran aquí.</p>
+        <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">Envía desde tu propio remitente y número. Tus claves se guardan del lado del servidor y no se muestran aquí.</p>
         <IntegrationsForm businessId={bid} onToast={flash} />
       </section>
 
       {/* Embed */}
       <section className="card p-6">
         <h2 className="font-semibold mb-1">Insertar el widget en tu web</h2>
-        <p className="text-sm text-slate-500 mb-3">Pega este código donde quieras que aparezca el formulario de reservas.</p>
+        <p className="text-sm text-slate-500 dark:text-slate-400 mb-3">Pega este código donde quieras que aparezca el formulario de reservas.</p>
         <pre className="bg-slate-900 text-slate-100 text-xs rounded-lg p-4 overflow-x-auto">{embedSnippet}</pre>
         <button className="btn-ghost mt-3" onClick={() => { navigator.clipboard.writeText(embedSnippet); flash("Snippet copiado"); }}>📋 Copiar snippet</button>
         <a className="btn-ghost mt-3 ml-2" href={`${WIDGET_URL}/?slug=${business?.slug}`} target="_blank" rel="noreferrer">Previsualizar widget ↗</a>
@@ -218,7 +218,7 @@ function DiningSettingsSection({ bid, flash }: { bid: string; flash: (m: string)
   return (
     <section className="card p-6">
       <h2 className="font-semibold mb-1">Reglas de reserva</h2>
-      <p className="text-sm text-slate-500 mb-4">Antelación, tamaño de grupo permitido online y confirmación de las reservas.</p>
+      <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">Antelación, tamaño de grupo permitido online y confirmación de las reservas.</p>
       {isLoading ? <Spinner /> : (
         <>
           <div className="grid sm:grid-cols-2 gap-4">
@@ -227,7 +227,7 @@ function DiningSettingsSection({ bid, flash }: { bid: string; flash: (m: string)
             <div><label className="label">Mín. comensales online</label><input type="number" min={1} className="input" value={form.min_party_online} onChange={(e) => setForm({ ...form, min_party_online: +e.target.value })} /></div>
             <div><label className="label">Máx. comensales online</label><input type="number" min={1} className="input" value={form.max_party_online} onChange={(e) => setForm({ ...form, max_party_online: +e.target.value })} /></div>
           </div>
-          <p className="text-xs text-slate-400 mt-2">Grupos fuera de este rango solo se pueden dar de alta manualmente desde el panel (teléfono/contacto directo). La antelación y estos límites no aplican a las reservas manuales del staff.</p>
+          <p className="text-xs text-slate-400 dark:text-slate-500 mt-2">Grupos fuera de este rango solo se pueden dar de alta manualmente desde el panel (teléfono/contacto directo). La antelación y estos límites no aplican a las reservas manuales del staff.</p>
           <label className="flex items-center gap-2 text-sm mt-4">
             <input type="checkbox" checked={form.require_manual_confirmation} onChange={(e) => setForm({ ...form, require_manual_confirmation: e.target.checked })} />
             Requerir confirmación manual de las reservas web (si no, se confirman al instante)
@@ -237,7 +237,7 @@ function DiningSettingsSection({ bid, flash }: { bid: string; flash: (m: string)
           <div className="border-t mt-6 pt-4">
             <label className="label">Plantilla de WhatsApp para "mesa lista" (lista de espera)</label>
             <input className="input" value={waitlistTemplate} onChange={(e) => setWaitlistTemplate(e.target.value)} placeholder="lista_espera_mesa" />
-            <p className="text-xs text-slate-400 mt-1">Nombre de la plantilla aprobada en Meta con 2 variables: nombre del cliente y nombre del negocio.</p>
+            <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Nombre de la plantilla aprobada en Meta con 2 variables: nombre del cliente y nombre del negocio.</p>
             <button className="btn-ghost mt-2 text-xs" onClick={saveWaitlistTemplate} disabled={savingTemplate}>{savingTemplate ? "Guardando…" : "Guardar plantilla"}</button>
           </div>
         </>
