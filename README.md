@@ -341,7 +341,6 @@ Tras aplicar `seed.sql`:
 
 | Rol | Email | Contraseña |
 |---|---|---|
-| Staff (Barbería, citas) | `staff@barberia.test` | `Barberia1234!` |
 | Staff (Restaurante) | `staff@restaurante.test` | `Restaurante1234!` |
 
 > **Super-admin**: en el proyecto de producción el único super-admin es la cuenta real del dueño
@@ -350,13 +349,16 @@ Tras aplicar `seed.sql`:
 > prueba con contraseña conocida para super-admin en producción — para probar algo que requiera ese
 > rol, pídele al dueño que inicie sesión él mismo.
 
-- El negocio demo `barberia-demo` suele quedar con `is_active=false` entre sesiones de trabajo; si necesitas probar el widget con él, pide al super-admin que lo active un momento desde **Negocios**.
-- Negocio demo **tipo citas**: *Barbería El Corte* (`slug: barberia-demo`) con horario, 2 profesionales (Ana con jornada partida 9–14 / 16–20, Luis 10–20), 4 servicios (uno, *Tinte*, con disponibilidad propia Mar–Jue y sin profesional dedicado, usando aforo del negocio; puede tener varios profesionales asignados a la vez) y reservas de ejemplo (web/manual, futuras y pasadas incluyendo un no-show).
+> **⚠ El negocio demo `barberia-demo` ("Barbería El Corte") ya no existe**: se borró definitivamente
+> el 2026-09-19 (probando la función de borrado de negocios). `staff@barberia.test` ya no tiene
+> negocio vinculado. Para verificar cambios de tipo **citas** en vivo sin negocio demo, dos opciones:
+> pedir al usuario credenciales de un negocio real suyo (así se hizo el 2026-09-19, con *Ana Sánchez
+> Psicóloga*, `slug: ana-sanchez-psicologa` — extremar el cuidado de no tocar datos reales y borrar
+> cualquier dato de prueba de inmediato), o recrear `barberia-demo` re-ejecutando `seed.sql`.
+
 - Negocio demo **tipo restaurante**: *Restaurante La Plaza* (`slug: restaurante-la-plaza`) con dos franjas — *Comida* (13–16, aforo 40) y *Cena* (20–23:30, aforo 50) — y reservas de mesa de ejemplo. Widget: `http://localhost:5174/?slug=restaurante-la-plaza`.
 
 Flujo completo probado: **widget → reserva → email → panel (agenda/estado) → bloqueo con cancelación → reportes**.
-
-Widget demo local: `http://localhost:5174/?slug=barberia-demo`.
 
 ---
 
@@ -414,6 +416,16 @@ Widget demo local: `http://localhost:5174/?slug=barberia-demo`.
 - **Sincronización con Google Calendar** (credenciales OAuth propias por negocio, igual patrón que Resend/WhatsApp): cada negocio pega su Client ID/Secret de Google Cloud en `Configuración → Integraciones`; cada profesional conecta su propia cuenta desde su ficha en `Servicios`. Exporta las citas como eventos (`sync-google-event`, invocada desde `create-booking` y desde la Agenda al cambiar estado/reprogramar/eliminar) e importa los huecos ocupados de Google como `blocks` cada 15 min (`sync-google-busy`, cron vía `pg_cron`+`pg_net`). **Código desplegado pero inerte**: faltan 3 secretos de Edge Functions por configurar manualmente en el dashboard de Supabase — ver [`CLAUDE.md`](CLAUDE.md).
 - Bug real encontrado y corregido en esta fase: la migración 0018 había revertido sin querer una corrección de la 0008 en el upsert de clientes (ver 0019 en la tabla de migraciones).
 
+**Fase 6 — ronda de ajustes sobre la Fase 5, misma sesión larga (completada, 2026-09-19):**
+- **Usuarios múltiples por negocio (super-admin)**: pestaña "Usuarios" en `Admin → Negocio → Gestionar`, con Edge Function `admin-business-users` para añadir/quitar/cambiar el rol de varios usuarios con acceso al mismo negocio (útil si hay varios profesionales con cuenta propia). No verificado en vivo por esta sesión (requiere sesión de super-admin real).
+- **Selector de profesional en "Nueva reserva" manual**: el staff ahora puede elegir profesional (o "cualquiera disponible") al crear una reserva a mano, igual que en el widget.
+- **Vista "Mes" en la Agenda**, además de Día/Semana.
+- **Reportes → "Próximas reservas"**: sección nueva que muestra las reservas futuras (incluidas las manuales); las estadísticas de arriba siguen siendo solo históricas ("últimos N días").
+- **"Rellenar rápido" de horarios admite una segunda franja** (para negocios que cierran a mediodía).
+- **Estados de cita simplificados**: en negocios tipo citas, la Agenda solo ofrece marcar completada/cancelada/ausente (antes también mostraba conceptos de restaurante). "No-show" pasa a llamarse "Ausente" en toda la UI.
+- **Clientes**: se pueden eliminar (icono en la lista o botón en la ficha; el historial de reservas se conserva). Se quitaron las etiquetas (VIP/Habitual/...) de toda la interfaz.
+- El negocio demo `barberia-demo` se borró definitivamente durante esta fase (probando la función de borrado) — ver "Datos de demostración" más abajo.
+
 ---
 
 ## Pendientes
@@ -435,6 +447,7 @@ Lista única y actualizada de lo que falta. Si retomas el proyecto en otra conve
 
 ### Mejoras menores pendientes (sin bloqueo, cuestión de tiempo)
 
+- **Verificar en vivo la pestaña "Usuarios" del super-admin** (añadir/quitar usuarios de un negocio, Fase 6): construida y compila, pero ninguna sesión de trabajo ha podido probarla en vivo porque requiere una sesión de super-admin real. Pedirle al usuario que la pruebe él mismo, o retomarlo si hay acceso.
 - **Editor visual de posiciones de mesa**: arrastrar y soltar mesas sobre un croquis real de la sala (ya existen las columnas `pos_x`/`pos_y` en `dining_tables`, sin usar todavía). Hoy el Plano de sala es una cuadrícula por zona, no un mapa libre — decisión explícita para entregar antes, ver conversación de la Fase 2.
 - **Reasignación manual de mesa para reservas con combinación**: en la Agenda, cambiar de mesa está bloqueado a propósito cuando la reserva usa una combinación (`table_combo_id`); solo funciona para mesas individuales.
 - **Arrastrar y soltar en la rejilla semanal de Agenda** para reprogramar reservas visualmente.
