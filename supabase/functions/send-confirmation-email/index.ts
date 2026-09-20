@@ -28,7 +28,7 @@ Deno.serve(async (req) => {
   if (!b.customer_email) return json({ error: "La reserva no tiene email." }, 400);
 
   const [{ data: biz }, { data: svc }, { data: integ }] = await Promise.all([
-    supabase.from("businesses").select("name, timezone, primary_color, slug").eq("id", b.business_id).single(),
+    supabase.from("businesses").select("name, timezone, primary_color, slug, confirmation_email_message").eq("id", b.business_id).single(),
     b.service_id
       ? supabase.from("services").select("name").eq("id", b.service_id).single()
       : Promise.resolve({ data: null }),
@@ -49,6 +49,7 @@ Deno.serve(async (req) => {
     customerName: b.customer_name,
     manageUrl,
     primaryColor: biz?.primary_color,
+    customMessage: biz?.confirmation_email_message,
   });
 
   try {

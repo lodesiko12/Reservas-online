@@ -306,6 +306,7 @@ export type Database = {
       }
       businesses: {
         Row: {
+          confirmation_email_message: string | null
           created_at: string
           default_capacity: number
           google_review_url: string | null
@@ -317,6 +318,7 @@ export type Database = {
           primary_color: string
           reminder_lang: string
           reminder_template_name: string | null
+          review_email_message: string | null
           slot_interval_min: number
           slug: string
           timezone: string
@@ -327,6 +329,7 @@ export type Database = {
           whatsapp_reminders_enabled: boolean
         }
         Insert: {
+          confirmation_email_message?: string | null
           created_at?: string
           default_capacity?: number
           google_review_url?: string | null
@@ -338,6 +341,7 @@ export type Database = {
           primary_color?: string
           reminder_lang?: string
           reminder_template_name?: string | null
+          review_email_message?: string | null
           slot_interval_min?: number
           slug: string
           timezone?: string
@@ -348,6 +352,7 @@ export type Database = {
           whatsapp_reminders_enabled?: boolean
         }
         Update: {
+          confirmation_email_message?: string | null
           created_at?: string
           default_capacity?: number
           google_review_url?: string | null
@@ -359,6 +364,7 @@ export type Database = {
           primary_color?: string
           reminder_lang?: string
           reminder_template_name?: string | null
+          review_email_message?: string | null
           slot_interval_min?: number
           slug?: string
           timezone?: string

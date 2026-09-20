@@ -11,6 +11,7 @@ export type ConfirmationData = {
   manageUrl?: string; // enlace a "Mi reserva"
   primaryColor?: string;
   isPending?: boolean; // el negocio requiere confirmación manual
+  customMessage?: string | null; // párrafo de introducción personalizado por el negocio
 };
 
 function fmtDate(iso: string, tz: string): string {
@@ -24,6 +25,15 @@ function fmtTime(iso: string, tz: string): string {
   }).format(new Date(iso));
 }
 
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+/** Sustituye placeholders tipo {clave} por su valor; deja intacto lo que no reconoce. */
+function applyPlaceholders(template: string, vars: Record<string, string>): string {
+  return template.replace(/\{(\w+)\}/g, (m, k) => (k in vars ? vars[k] : m));
+}
+
 export function buildConfirmationEmail(d: ConfirmationData): { subject: string; html: string; text: string } {
   const color = d.primaryColor || "#4f46e5";
   const date = fmtDate(d.startsAt, d.timezone);
@@ -31,9 +41,14 @@ export function buildConfirmationEmail(d: ConfirmationData): { subject: string; 
   const pending = !!d.isPending;
   const subject = pending ? `Solicitud recibida · ${d.businessName}` : `Reserva confirmada · ${d.businessName}`;
   const heading = pending ? "Pendiente de confirmación" : "Reserva confirmada";
-  const intro = pending
+  const defaultIntro = pending
     ? `Hola ${d.customerName}, hemos recibido tu solicitud de reserva. El negocio la confirmará en breve. Estos son los detalles:`
     : `Hola ${d.customerName}, tu reserva está confirmada. Estos son los detalles:`;
+  const custom = d.customMessage?.trim();
+  const introPlain = custom
+    ? applyPlaceholders(custom, { cliente: d.customerName, negocio: d.businessName, servicio: d.serviceName ?? "", fecha: date, hora: time })
+    : defaultIntro;
+  const introHtml = custom ? escapeHtml(introPlain).replace(/\n/g, "<br>") : introPlain;
 
   const manage = d.manageUrl
     ? `<p style="margin:16px 0 0">Puedes consultar o cancelar tu reserva aquí:<br>
@@ -47,7 +62,7 @@ export function buildConfirmationEmail(d: ConfirmationData): { subject: string; 
       <p style="margin:4px 0 0;opacity:.9">${heading}</p>
     </div>
     <div style="padding:24px">
-      <p style="margin:0 0 12px">${intro}</p>
+      <p style="margin:0 0 12px">${introHtml}</p>
       <table style="width:100%;border-collapse:collapse;font-size:15px">
         ${d.serviceName ? `<tr><td style="padding:6px 0;color:#64748b">Detalle</td><td style="padding:6px 0;text-align:right"><strong>${d.serviceName}</strong></td></tr>` : ""}
         <tr><td style="padding:6px 0;color:#64748b">Fecha</td><td style="padding:6px 0;text-align:right"><strong>${date}</strong></td></tr>
@@ -62,7 +77,7 @@ export function buildConfirmationEmail(d: ConfirmationData): { subject: string; 
     </div>
   </div></body></html>`;
 
-  const text = `${pending ? "Solicitud de reserva recibida en" : "Reserva confirmada en"} ${d.businessName}
+  const text = `${custom ? introPlain : `${pending ? "Solicitud de reserva recibida en" : "Reserva confirmada en"} ${d.businessName}`}
 ${d.serviceName ? `Detalle: ${d.serviceName}\n` : ""}Fecha: ${date}
 Hora: ${time}
 Código localizador: ${d.locator}
@@ -76,6 +91,7 @@ export type ReviewRequestData = {
   customerName: string;
   reviewUrl: string;
   primaryColor?: string;
+  customMessage?: string | null; // párrafo de introducción personalizado por el negocio
 };
 
 /** Email post-visita pidiendo una reseña. Solo se construye/envía si el
@@ -83,6 +99,12 @@ export type ReviewRequestData = {
 export function buildReviewRequestEmail(d: ReviewRequestData): { subject: string; html: string; text: string } {
   const color = d.primaryColor || "#4f46e5";
   const subject = `¿Qué tal tu visita a ${d.businessName}?`;
+  const custom = d.customMessage?.trim();
+  const defaultIntro = `Hola ${d.customerName}, esperamos que lo hayas pasado genial. Si tienes un minuto, nos ayudaría muchísimo que dejaras tu opinión:`;
+  const introPlain = custom
+    ? applyPlaceholders(custom, { cliente: d.customerName, negocio: d.businessName })
+    : defaultIntro;
+  const introHtml = custom ? escapeHtml(introPlain).replace(/\n/g, "<br>") : introPlain;
   const html = `<!doctype html><html><body style="margin:0;background:#f1f5f9;padding:24px;font-family:system-ui,Segoe UI,Arial,sans-serif;color:#0f172a">
   <div style="max-width:520px;margin:0 auto;background:#fff;border-radius:14px;overflow:hidden;border:1px solid #e2e8f0">
     <div style="background:${color};color:#fff;padding:20px 24px">
@@ -90,14 +112,14 @@ export function buildReviewRequestEmail(d: ReviewRequestData): { subject: string
       <p style="margin:4px 0 0;opacity:.9">Gracias por tu visita</p>
     </div>
     <div style="padding:24px">
-      <p style="margin:0 0 16px">Hola ${d.customerName}, esperamos que lo hayas pasado genial. Si tienes un minuto, nos ayudaría muchísimo que dejaras tu opinión:</p>
+      <p style="margin:0 0 16px">${introHtml}</p>
       <p style="text-align:center;margin:24px 0">
         <a href="${d.reviewUrl}" style="background:${color};color:#fff;text-decoration:none;padding:12px 24px;border-radius:10px;font-weight:600;display:inline-block">Dejar una reseña</a>
       </p>
       <p style="margin:18px 0 0;color:#94a3b8;font-size:12px">Gracias por confiar en nosotros.</p>
     </div>
   </div></body></html>`;
-  const text = `Hola ${d.customerName}, gracias por tu visita a ${d.businessName}. Si tienes un minuto, déjanos tu opinión aquí: ${d.reviewUrl}`;
+  const text = `${introPlain} ${d.reviewUrl}`;
   return { subject, html, text };
 }
 

@@ -83,7 +83,7 @@ Deno.serve(async (req) => {
 
   // 2) Datos para el email y la respuesta (incl. credenciales de email del negocio).
   const [{ data: biz }, { data: svc }, { data: integ }] = await Promise.all([
-    supabase.from("businesses").select("name, timezone, primary_color, slug").eq("id", business_id).single(),
+    supabase.from("businesses").select("name, timezone, primary_color, slug, confirmation_email_message").eq("id", business_id).single(),
     isRestaurant
       ? Promise.resolve({ data: null })
       : supabase.from("services").select("name").eq("id", service_id!).single(),
@@ -110,6 +110,7 @@ Deno.serve(async (req) => {
       manageUrl,
       primaryColor: biz?.primary_color,
       isPending: booking.status === "pendiente",
+      customMessage: biz?.confirmation_email_message,
     });
     await sendEmail(email.trim(), mail.subject, mail.html, mail.text, integ?.resend_api_key, integ?.email_from);
   } catch (e) {

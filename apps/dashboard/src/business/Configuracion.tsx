@@ -23,7 +23,10 @@ export function Configuracion() {
   const [slotInterval, setSlotInterval] = useState(business?.slot_interval_min ?? 15);
   const [maxAdvanceDays, setMaxAdvanceDays] = useState<string>(business?.max_advance_days?.toString() ?? "");
   const [reviewUrl, setReviewUrl] = useState(business?.google_review_url ?? "");
+  const [reviewMessage, setReviewMessage] = useState(business?.review_email_message ?? "");
   const [savingReview, setSavingReview] = useState(false);
+  const [confirmationMessage, setConfirmationMessage] = useState(business?.confirmation_email_message ?? "");
+  const [savingConfirmation, setSavingConfirmation] = useState(false);
 
   const [hours, setHours] = useState<Win[] | null>(null);
   const [savingBranding, setSavingBranding] = useState(false);
@@ -58,9 +61,19 @@ export function Configuracion() {
 
   async function saveReview() {
     setSavingReview(true);
-    await supabase.from("businesses").update({ google_review_url: reviewUrl.trim() || null }).eq("id", bid);
+    await supabase.from("businesses").update({
+      google_review_url: reviewUrl.trim() || null,
+      review_email_message: reviewMessage.trim() || null,
+    }).eq("id", bid);
     await refresh();
     setSavingReview(false); flash("Enlace de reseña guardado");
+  }
+
+  async function saveConfirmationMessage() {
+    setSavingConfirmation(true);
+    await supabase.from("businesses").update({ confirmation_email_message: confirmationMessage.trim() || null }).eq("id", bid);
+    await refresh();
+    setSavingConfirmation(false); flash("Mensaje de confirmación guardado");
   }
 
   async function saveHours() {
@@ -117,6 +130,26 @@ export function Configuracion() {
         <button className="btn-primary mt-4" onClick={saveBranding} disabled={savingBranding}>{savingBranding ? "Guardando…" : "Guardar marca"}</button>
       </section>
 
+      {/* Email de confirmación */}
+      <section className="card p-6">
+        <h2 className="font-semibold mb-1">Email de confirmación</h2>
+        <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
+          Personaliza el párrafo principal del email que recibe el cliente al reservar. Déjalo vacío para usar el
+          mensaje por defecto. Placeholders disponibles: <code className="bg-slate-100 dark:bg-slate-800 px-1 rounded">{"{cliente}"}</code>{" "}
+          <code className="bg-slate-100 dark:bg-slate-800 px-1 rounded">{"{negocio}"}</code>{" "}
+          <code className="bg-slate-100 dark:bg-slate-800 px-1 rounded">{"{servicio}"}</code>{" "}
+          <code className="bg-slate-100 dark:bg-slate-800 px-1 rounded">{"{fecha}"}</code>{" "}
+          <code className="bg-slate-100 dark:bg-slate-800 px-1 rounded">{"{hora}"}</code>.
+        </p>
+        <textarea
+          className="input min-h-[100px]"
+          value={confirmationMessage}
+          onChange={(e) => setConfirmationMessage(e.target.value)}
+          placeholder={`Hola {cliente}, tu reserva en {negocio} está confirmada para el {fecha} a las {hora}. ¡Te esperamos!`}
+        />
+        <button className="btn-primary mt-4" onClick={saveConfirmationMessage} disabled={savingConfirmation}>{savingConfirmation ? "Guardando…" : "Guardar mensaje"}</button>
+      </section>
+
       {/* Horario */}
       <section className="card p-6">
         <h2 className="font-semibold mb-4">Horario de apertura</h2>
@@ -158,6 +191,14 @@ export function Configuracion() {
         </p>
         <label className="label">Enlace de reseña (Google, TripAdvisor…)</label>
         <input className="input" value={reviewUrl} onChange={(e) => setReviewUrl(e.target.value)} placeholder="https://g.page/r/…/review" />
+        <label className="label mt-4">Mensaje personalizado del email</label>
+        <textarea
+          className="input min-h-[80px]"
+          value={reviewMessage}
+          onChange={(e) => setReviewMessage(e.target.value)}
+          placeholder={`Hola {cliente}, gracias por confiar en {negocio}. ¿Nos dejas tu opinión?`}
+        />
+        <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Vacío = mensaje por defecto. Placeholders: {"{cliente}"} {"{negocio}"}.</p>
         <button className="btn-primary mt-4" onClick={saveReview} disabled={savingReview}>{savingReview ? "Guardando…" : "Guardar"}</button>
       </section>
 

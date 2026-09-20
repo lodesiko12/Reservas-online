@@ -28,7 +28,7 @@ Deno.serve(async (req) => {
   const { data: bookings, error } = await supabase
     .from("bookings")
     .select("id, business_id, customer_name, customer_email, " +
-            "businesses!inner(name, primary_color, google_review_url)")
+            "businesses!inner(name, primary_color, google_review_url, review_email_message)")
     .in("status", ["confirmada", "completada", "sentada"])
     .gte("ends_at", from)
     .lte("ends_at", to);
@@ -52,6 +52,7 @@ Deno.serve(async (req) => {
     const mail = buildReviewRequestEmail({
       businessName: biz.name, customerName: b.customer_name,
       reviewUrl: biz.google_review_url, primaryColor: biz.primary_color,
+      customMessage: biz.review_email_message,
     });
 
     try {
