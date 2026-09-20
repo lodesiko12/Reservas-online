@@ -34,28 +34,58 @@ Flujo de verificación tras cualquier cambio de código:
   de prueba con contraseña conocida para este entorno — para probar flujos de superadmin, pedir al
   usuario que inicie sesión él mismo en el panel.
 
-## Google Calendar — falta configurar 3 secretos de Edge Functions
+## Dónde se configuran los secretos de Edge Functions
+
+Ya **no** están en Project Settings del dashboard de Supabase. Hay que ir al menú principal
+(el de siempre, con Table Editor/SQL Editor/Database/Auth...) → **Edge Functions** → botón/pestaña
+**"Manage secrets"** (arriba de la lista de funciones). Son secretos compartidos por **todas** las
+funciones del proyecto. Esta sesión no tiene forma de configurarlos vía API/MCP — solo el usuario
+puede hacerlo a mano.
+
+## Google Calendar — 3 secretos de plataforma ya configurados (2026-09-20)
 
 El código de sincronización con Google Calendar (`google-oauth-start`, `google-oauth-callback`,
-`sync-google-event`, `sync-google-busy`) está desplegado pero **inerte** hasta configurar, en el
-dashboard de Supabase (Project Settings → Edge Functions → Secrets — esta sesión no tiene forma de
-hacerlo vía API/MCP):
+`sync-google-event`, `sync-google-busy`) está desplegado y los 3 secretos de plataforma que
+necesitaba (`GOOGLE_STATE_SECRET`, `DASHBOARD_URL`, `GOOGLE_SYNC_CRON_SECRET`) ya fueron
+configurados por el usuario. **Pendiente de verificar el flujo completo end-to-end**: ningún negocio
+tiene todavía su propio Client ID/Secret de Google Cloud configurado (paso previo distinto, por
+negocio, ver abajo), así que "Conectar con Google Calendar" no se ha podido probar de principio a
+fin todavía.
 
-- `GOOGLE_STATE_SECRET`: cualquier cadena aleatoria larga, usada para firmar el `state` del flujo
-  OAuth. Sin esto, el botón "Conectar con Google Calendar" del panel falla.
-- `DASHBOARD_URL`: `https://turnigo-panel.lodesiko12.workers.dev` (sin barra final), para que
-  `google-oauth-callback` sepa a dónde redirigir tras conectar una cuenta.
-- `GOOGLE_SYNC_CRON_SECRET`: debe coincidir EXACTAMENTE con el valor ya embebido en el cron job de
-  Postgres `sync-google-busy` (programado cada 15 min vía `pg_cron`+`pg_net`, ver migración 0022).
-  El valor real está en el propio `cron.job` de la base de datos (`select command from cron.job
-  where jobname='sync-google-busy'`), no en el repo (no se commitea un secreto real a un repo
-  público). Hasta que se configure, ese endpoint queda sin protección por secreto (no supone riesgo
-  real ahora mismo: no hace nada mientras ningún negocio tenga profesionales conectados).
-
-Además, cada negocio que quiera usar Google Calendar necesita su propio Client ID/Secret de un
-proyecto de Google Cloud (Configuración → Integraciones → Google Calendar, dentro del panel),
+Cada negocio que quiera usar Google Calendar necesita su propio Client ID/Secret de un
+proyecto de Google Cloud (gratis: Google Cloud Console → habilitar Calendar API → credencial OAuth
+"Aplicación web"), pegado en `Configuración → Integraciones → Google Calendar` dentro del panel,
 con la URI de redirección `https://fjpbruwczuovvynhlnzv.supabase.co/functions/v1/google-oauth-callback`
 autorizada en ese proyecto de Google Cloud.
+
+## Crons de recordatorio y reseña — falta configurar 1 secreto de Edge Functions
+
+Migración `0025_reminder_review_cron.sql` (2026-09-20) programó dos cron jobs cada hora
+(`whatsapp-reminders-hourly`, `request-reviews-hourly`) que llaman a las Edge Functions del mismo
+nombre, que hasta entonces estaban desplegadas pero sin nada que las invocara periódicamente (a
+diferencia de `sync-google-busy`, programado en la Fase 5). **Falta el secreto `CRON_SECRET`**: sin
+él, ambas funciones responden 401 a la llamada del cron. El valor real está embebido en los propios
+cron jobs de la base de datos (nunca se commitea al repo):
+```sql
+select command from cron.job where jobname='whatsapp-reminders-hourly';
+```
+Una vez copiado ese valor, configurarlo como secreto `CRON_SECRET` (mismo sitio que los 3 de Google
+Calendar arriba).
+
+Además, para que `request-reviews` envíe algo, cada negocio necesita rellenar su **"Enlace de
+reseña"** en `Panel → Configuración → Reseñas` (vacío por defecto = no se envía nada para ese
+negocio).
+
+## Mensajes de email personalizables (Fase 7, 2026-09-20)
+
+Cada negocio puede personalizar, desde `Panel → Configuración`, el párrafo de introducción del
+email de confirmación (`businesses.confirmation_email_message`) y del email de petición de reseña
+(`businesses.review_email_message`), con placeholders `{cliente}` `{negocio}` `{servicio}`
+`{fecha}` `{hora}` (los dos últimos solo en confirmación). Si se deja vacío, se usa el texto por
+defecto de siempre. La lógica de sustitución vive en `supabase/functions/_shared/email.ts`
+(`applyPlaceholders`) — no es un motor de plantillas de propósito general, solo sustituye el
+párrafo de introducción; el resto del diseño del email (cabecera de color, tarjeta del código
+localizador...) sigue siendo fijo, decisión explícita para no arriesgar con HTML libre por negocio.
 
 ## Más contexto
 

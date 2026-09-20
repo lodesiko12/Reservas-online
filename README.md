@@ -114,6 +114,9 @@ Todo el backend vive en **Supabase** (Postgres + Auth + RLS + Edge Functions + S
 | `0020_max_advance_days.sql` | `businesses.max_advance_days`: antelación máxima de reserva online para negocios **citas** (mismo patrón que `dining_settings.max_advance_days`); nuevo parámetro `p_channel` en `get_available_slots`/`create_public_booking` para que el límite no aplique a reservas manuales del staff |
 | `0021_google_calendar.sql` | `professional_google_accounts` (tokens OAuth por profesional) + `business_integrations.google_client_id/secret` + `bookings.google_event_id` + `blocks.source`; RPCs de conexión/estado |
 | `0022_google_busy_sync_cron.sql` | Programa (`pg_cron`+`pg_net`) la llamada cada 15 min a `sync-google-busy` |
+| `0023_public_available_days.sql` | RPCs `get_available_days`/`get_available_dining_days`: el widget oculta del selector los días sin ningún hueco disponible |
+| `0024_email_custom_messages.sql` | `businesses.confirmation_email_message` / `review_email_message`: párrafo de introducción personalizable por negocio para el email de confirmación y el de petición de reseña (placeholders `{cliente}` `{negocio}` `{servicio}` `{fecha}` `{hora}`), con fallback al texto por defecto si se deja vacío |
+| `0025_reminder_review_cron.sql` | Programa (`pg_cron`+`pg_net`) los crons `whatsapp-reminders-hourly` y `request-reviews-hourly`, que hasta entonces existían como Edge Functions desplegadas sin nada que las llamara periódicamente |
 
 ---
 
@@ -426,6 +429,11 @@ Flujo completo probado: **widget → reserva → email → panel (agenda/estado)
 - **Clientes**: se pueden eliminar (icono en la lista o botón en la ficha; el historial de reservas se conserva). Se quitaron las etiquetas (VIP/Habitual/...) de toda la interfaz.
 - El negocio demo `barberia-demo` se borró definitivamente durante esta fase (probando la función de borrado) — ver "Datos de demostración" más abajo.
 
+**Fase 7 — Mensajes de email personalizables y crons de recordatorio/reseña programados (completada, 2026-09-20):**
+- **Mensaje personalizado en emails** (migración `0024`): cada negocio puede escribir, desde `Panel → Configuración`, el párrafo de introducción del email de **confirmación de reserva** (nueva sección "Email de confirmación") y del email de **petición de reseña** (dentro de la sección "Reseñas"), con placeholders `{cliente}` `{negocio}` `{servicio}` `{fecha}` `{hora}` (los dos últimos solo aplican a confirmación). Si se deja vacío, se usa el texto por defecto de siempre — el resto del diseño del email (cabecera de color, tarjeta del código localizador, botón de reseña) no es editable, por decisión explícita para no arriesgar con HTML libre. Aplica también al reenvío manual del email (`send-confirmation-email`). Verificado en vivo contra Cloudflare guardando y limpiando un mensaje de prueba en un negocio real.
+- **Crons de `whatsapp-reminders` y `request-reviews` programados** (migración `0025`, `whatsapp-reminders-hourly` / `request-reviews-hourly`, cada hora): hasta esta fase ambas Edge Functions estaban desplegadas pero nada las llamaba periódicamente (solo `sync-google-busy` se había programado en la Fase 5). **Pendiente de que el usuario configure el secreto `CRON_SECRET`** en Supabase (Edge Functions → Manage secrets) para que las funciones acepten las llamadas del cron — sin él, responden 401. El valor exacto ya está embebido en ambos cron jobs; se puede recuperar con `select command from cron.job where jobname='whatsapp-reminders-hourly'`.
+- **Los 3 secretos de Google Calendar** (`GOOGLE_STATE_SECRET`, `DASHBOARD_URL`, `GOOGLE_SYNC_CRON_SECRET`) fueron configurados por el usuario en esta misma sesión. Sigue sin verificarse el flujo completo end-to-end porque ningún negocio tiene todavía su propio Client ID/Secret de Google Cloud configurado (paso que le corresponde a cada negocio, ver más abajo).
+
 ---
 
 ## Pendientes
@@ -436,7 +444,7 @@ Lista única y actualizada de lo que falta. Si retomas el proyecto en otra conve
 
 | Pendiente | Bloqueado por | Al desbloquear |
 |---|---|---|
-| **Google Calendar operativo** | 3 secretos de Edge Functions sin configurar (`GOOGLE_STATE_SECRET`, `DASHBOARD_URL`, `GOOGLE_SYNC_CRON_SECRET`) — solo el usuario puede hacerlo desde el dashboard de Supabase | Ver instrucciones exactas (incluido el valor ya usado en el cron) en [`CLAUDE.md`](CLAUDE.md) → sección "Google Calendar" |
+| **Crons de recordatorio/reseña activos** (`whatsapp-reminders-hourly`, `request-reviews-hourly`, migración `0025`) | Falta el secreto `CRON_SECRET` en Edge Functions — solo el usuario puede configurarlo desde el dashboard de Supabase | Ver instrucciones en [`CLAUDE.md`](CLAUDE.md) → sección "Crons de recordatorio y reseña" (valor recuperable desde `cron.job`, nunca commiteado al repo) |
 | **Huella bancaria y prepago (Stripe)** | El negocio necesita una cuenta de Stripe (aunque sea de test) | `SetupIntent` para huella bancaria, `PaymentIntent` para prepago; hay que añadir también el aviso legal de política de cancelación (ventana gratuita, importe, aceptación expresa) antes de confirmar — ver la nota legal del documento de referencia en la sección 4 |
 | **Resumen de reseñas con IA** | Acceso a la API de Google Business Profile del negocio + una API de IA (p.ej. Claude) para resumir | Leer reseñas vía Google Business Profile API, resumirlas y mostrarlas en Reportes |
 
@@ -452,5 +460,5 @@ Lista única y actualizada de lo que falta. Si retomas el proyecto en otra conve
 - **Reasignación manual de mesa para reservas con combinación**: en la Agenda, cambiar de mesa está bloqueado a propósito cuando la reserva usa una combinación (`table_combo_id`); solo funciona para mesas individuales.
 - **Arrastrar y soltar en la rejilla semanal de Agenda** para reprogramar reservas visualmente.
 - **Multi-idioma del widget** y más proveedores de email/SMS aparte de Resend/WhatsApp.
-- **Programar los cron de `whatsapp-reminders` y `request-reviews`** en `pg_cron` — siguen sin programarse (solo se programó `sync-google-busy` en la Fase 5). **Ya no hace falta el dashboard de Supabase para esto**: las sesiones con acceso al MCP de Supabase pueden ejecutar `cron.schedule(...)` directamente por SQL (ver migración `0022_google_busy_sync_cron.sql` como ejemplo del patrón con `net.http_post`, más simple que `ALTER DATABASE ... SET` porque este plan gestionado no permite parámetros custom — el secreto va embebido literal en el comando del cron job, nunca commiteado al repo).
+- **Google Calendar operativo de punta a punta**: los 3 secretos de plataforma ya están configurados (Fase 7), pero ningún negocio tiene todavía su propio Client ID/Secret de Google Cloud puesto en `Configuración → Integraciones`, así que el flujo completo (conectar profesional → exportar cita → importar huecos ocupados) sigue sin probarse en vivo. Pendiente de que un negocio real lo configure.
 - **Despliegue real = Cloudflare Workers, no Netlify.** La sección "Desplegar online (Netlify)" de abajo describe una alternativa válida pero ya no es como está desplegado el proyecto de referencia; ver la nota de Cloudflare al principio de este README y [`CLAUDE.md`](CLAUDE.md) para el flujo de despliegue y verificación reales (push a `main` → Cloudflare Workers Builds despliega solo).
