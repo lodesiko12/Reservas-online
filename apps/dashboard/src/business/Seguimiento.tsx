@@ -68,7 +68,7 @@ export function Seguimiento() {
             <div>
               <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 mb-2">Siguiente</h3>
               <div className="grid sm:grid-cols-2 gap-3">
-                <BookingCard booking={next} tz={tz} />
+                <BookingCard booking={next} tz={tz} action={<button className="btn-ghost text-xs mt-3" onClick={() => setActive(next)}>Apuntar notas</button>} />
               </div>
             </div>
           )}
