@@ -5,6 +5,11 @@ import { useAuth } from "../lib/auth";
 import { useBusinessId, type Customer } from "./hooks";
 import { formatDateTime } from "@reservas/shared";
 import { PageHeader, Spinner, Modal, StatusBadge, EmptyState } from "../components/ui";
+import { HistorialTab } from "./ficha/HistorialTab";
+import { EditarTab } from "./ficha/EditarTab";
+import { NotasTab } from "./ficha/NotasTab";
+import { TareasTab } from "./ficha/TareasTab";
+import { InformeTab } from "./ficha/InformeTab";
 
 /** Parser CSV mínimo: soporta comillas, comas y saltos de línea dentro de campos. */
 function parseCsv(text: string): string[][] {
@@ -250,6 +255,7 @@ function ImportCsvModal({ bid, onClose }: { bid: string; onClose: () => void }) 
 
 function CustomerModal({ customer, onClose, onDeleted }: { customer: Customer; onClose: () => void; onDeleted: () => void }) {
   const { business } = useAuth();
+  const isPsicologo = business?.type === "psicologo";
   const tz = business?.timezone ?? "Europe/Madrid";
   const qc = useQueryClient();
   const bid = useBusinessId();
@@ -257,7 +263,7 @@ function CustomerModal({ customer, onClose, onDeleted }: { customer: Customer; o
     queryKey: ["customer-history", customer.id],
     queryFn: async () => {
       const { data, error } = await supabase.from("bookings")
-        .select("*, services(name)").eq("customer_id", customer.id)
+        .select("*, services(name, price)").eq("customer_id", customer.id)
         .order("starts_at", { ascending: false }).limit(50);
       if (error) throw error;
       return data as any[];
@@ -267,6 +273,7 @@ function CustomerModal({ customer, onClose, onDeleted }: { customer: Customer; o
   const [notes, setNotes] = useState(customer.notes ?? "");
   const [savingNotes, setSavingNotes] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [tab, setTab] = useState<"historial" | "editar" | "notas" | "tareas" | "informe">("historial");
 
   useEffect(() => { setNotes(customer.notes ?? ""); }, [customer]);
 
@@ -294,21 +301,43 @@ function CustomerModal({ customer, onClose, onDeleted }: { customer: Customer; o
         <div className="card p-3 text-center"><div className="text-sm font-semibold mt-1">{customer.phone ?? "—"}</div><div className="text-xs text-slate-500 dark:text-slate-400">{customer.email ?? "Sin email"}</div></div>
       </div>
 
-      <label className="label">Notas privadas</label>
-      <textarea className="input mb-1" rows={2} value={notes} onChange={(e) => setNotes(e.target.value)}
-        placeholder="Mesa preferida, alergias, preferencias…" />
-      <button className="btn-ghost text-xs mb-4" onClick={saveNotes} disabled={savingNotes}>{savingNotes ? "Guardando…" : "Guardar notas"}</button>
+      {isPsicologo ? (
+        <>
+          <div className="flex gap-1 border-b border-slate-200 dark:border-slate-800 mb-4 overflow-x-auto">
+            {([
+              ["historial", "Historial"], ["editar", "Editar"], ["notas", "Notas"],
+              ["tareas", "Tareas"], ["informe", "Informe"],
+            ] as const).map(([k, l]) => (
+              <button key={k} type="button"
+                className={`px-3 py-2 text-sm font-medium whitespace-nowrap ${tab === k ? "border-b-2 border-brand-500 text-brand-600" : "text-slate-500 dark:text-slate-400"}`}
+                onClick={() => setTab(k)}>{l}</button>
+            ))}
+          </div>
+          {tab === "historial" && <HistorialTab customer={customer} history={history} isLoading={isLoading} />}
+          {tab === "editar" && <EditarTab customer={customer} onSaved={() => qc.invalidateQueries({ queryKey: ["customers", bid] })} />}
+          {tab === "notas" && <NotasTab customer={customer} />}
+          {tab === "tareas" && <TareasTab customer={customer} />}
+          {tab === "informe" && <InformeTab customer={customer} />}
+        </>
+      ) : (
+        <>
+          <label className="label">Notas privadas</label>
+          <textarea className="input mb-1" rows={2} value={notes} onChange={(e) => setNotes(e.target.value)}
+            placeholder="Mesa preferida, alergias, preferencias…" />
+          <button className="btn-ghost text-xs mb-4" onClick={saveNotes} disabled={savingNotes}>{savingNotes ? "Guardando…" : "Guardar notas"}</button>
 
-      <h3 className="font-semibold text-sm mb-2">Historial</h3>
-      {isLoading ? <Spinner /> : !history?.length ? <p className="text-sm text-slate-400 dark:text-slate-500">Sin reservas.</p> : (
-        <ul className="divide-y divide-slate-100 dark:divide-slate-800 max-h-72 overflow-y-auto">
-          {history.map((b) => (
-            <li key={b.id} className="py-2 flex items-center justify-between text-sm">
-              <span>{formatDateTime(b.starts_at, tz)} · {b.services?.name ?? "—"}</span>
-              <StatusBadge status={b.status} />
-            </li>
-          ))}
-        </ul>
+          <h3 className="font-semibold text-sm mb-2">Historial</h3>
+          {isLoading ? <Spinner /> : !history?.length ? <p className="text-sm text-slate-400 dark:text-slate-500">Sin reservas.</p> : (
+            <ul className="divide-y divide-slate-100 dark:divide-slate-800 max-h-72 overflow-y-auto">
+              {history.map((b) => (
+                <li key={b.id} className="py-2 flex items-center justify-between text-sm">
+                  <span>{formatDateTime(b.starts_at, tz)} · {b.services?.name ?? "—"}</span>
+                  <StatusBadge status={b.status} />
+                </li>
+              ))}
+            </ul>
+          )}
+        </>
       )}
 
       <div className="mt-5 border-t pt-4">

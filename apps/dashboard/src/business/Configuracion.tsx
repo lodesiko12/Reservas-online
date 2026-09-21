@@ -7,6 +7,7 @@ import { shortTime } from "@reservas/shared";
 import { PageHeader, Spinner } from "../components/ui";
 import { IntegrationsForm } from "../components/IntegrationsForm";
 import { GoogleBusinessProfileSection } from "../components/GoogleBusinessProfileSection";
+import { GeminiConfigForm } from "../components/GeminiConfigForm";
 import { WindowsEditor, type Win } from "../components/WindowsEditor";
 
 const WIDGET_URL = ((import.meta.env.VITE_WIDGET_URL as string) || "").replace(/\/+$/, "");
@@ -16,6 +17,7 @@ export function Configuracion() {
   const { business, refresh } = useAuth();
   const qc = useQueryClient();
   const isRestaurant = business?.type === "restaurante";
+  const isPsicologo = business?.type === "psicologo";
 
   const [name, setName] = useState(business?.name ?? "");
   const [color, setColor] = useState(business?.primary_color ?? "#4f46e5");
@@ -232,6 +234,13 @@ export function Configuracion() {
         <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">Envía desde tu propio remitente y número. Tus claves se guardan del lado del servidor y no se muestran aquí.</p>
         <IntegrationsForm businessId={bid} onToast={flash} />
       </section>
+
+      {/* Gemini (informes de IA en la ficha de cliente, solo negocios psicólogo) */}
+      {isPsicologo && (
+        <section className="card p-6">
+          <GeminiConfigForm businessId={bid} onToast={flash} />
+        </section>
+      )}
 
       {/* Embed */}
       <section className="card p-6">

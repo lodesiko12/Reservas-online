@@ -233,6 +233,7 @@ export type Database = {
           business_id: string
           created_at: string
           email_from: string | null
+          gemini_api_key: string | null
           google_client_id: string | null
           google_client_secret: string | null
           resend_api_key: string | null
@@ -244,6 +245,7 @@ export type Database = {
           business_id: string
           created_at?: string
           email_from?: string | null
+          gemini_api_key?: string | null
           google_client_id?: string | null
           google_client_secret?: string | null
           resend_api_key?: string | null
@@ -255,6 +257,7 @@ export type Database = {
           business_id?: string
           created_at?: string
           email_from?: string | null
+          gemini_api_key?: string | null
           google_client_id?: string | null
           google_client_secret?: string | null
           resend_api_key?: string | null
@@ -376,6 +379,163 @@ export type Database = {
         }
         Relationships: []
       }
+      client_ai_reports: {
+        Row: {
+          business_id: string
+          content: string
+          created_at: string
+          customer_id: string
+          generated_by_user_id: string | null
+          id: string
+          model: string
+          notes_count: number
+          tasks_count: number
+        }
+        Insert: {
+          business_id: string
+          content: string
+          created_at?: string
+          customer_id: string
+          generated_by_user_id?: string | null
+          id?: string
+          model?: string
+          notes_count?: number
+          tasks_count?: number
+        }
+        Update: {
+          business_id?: string
+          content?: string
+          created_at?: string
+          customer_id?: string
+          generated_by_user_id?: string | null
+          id?: string
+          model?: string
+          notes_count?: number
+          tasks_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_ai_reports_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_ai_reports_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_notes: {
+        Row: {
+          author_user_id: string | null
+          body: string
+          booking_id: string | null
+          business_id: string
+          created_at: string
+          customer_id: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          author_user_id?: string | null
+          body: string
+          booking_id?: string | null
+          business_id: string
+          created_at?: string
+          customer_id: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          author_user_id?: string | null
+          body?: string
+          booking_id?: string | null
+          business_id?: string
+          created_at?: string
+          customer_id?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_notes_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_notes_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_notes_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_tasks: {
+        Row: {
+          business_id: string
+          created_at: string
+          customer_id: string
+          description: string | null
+          due_date: string | null
+          id: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          customer_id: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          customer_id?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_tasks_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_tasks_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customers: {
         Row: {
           bookings_count: number
@@ -385,6 +545,7 @@ export type Database = {
           full_name: string
           id: string
           last_name: string | null
+          nif: string | null
           no_show_count: number
           notes: string | null
           phone: string | null
@@ -400,6 +561,7 @@ export type Database = {
           full_name: string
           id?: string
           last_name?: string | null
+          nif?: string | null
           no_show_count?: number
           notes?: string | null
           phone?: string | null
@@ -415,6 +577,7 @@ export type Database = {
           full_name?: string
           id?: string
           last_name?: string | null
+          nif?: string | null
           no_show_count?: number
           notes?: string | null
           phone?: string | null
@@ -1412,6 +1575,14 @@ export type Database = {
           location_title: string
           sync_enabled: boolean
         }[]
+      }
+      get_gemini_status: {
+        Args: { p_business_id: string }
+        Returns: { has_gemini_key: boolean }[]
+      }
+      set_gemini_key: {
+        Args: { p_api_key?: string; p_business_id: string }
+        Returns: undefined
       }
       get_google_credentials_status: {
         Args: { p_business_id: string }

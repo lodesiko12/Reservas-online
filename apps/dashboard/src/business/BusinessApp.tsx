@@ -12,10 +12,12 @@ import { Configuracion } from "./Configuracion";
 import { Franjas } from "./Franjas";
 import { Mesas } from "./Mesas";
 import { PlanoSala } from "./PlanoSala";
+import { Seguimiento } from "./Seguimiento";
 
 export function BusinessApp() {
   const { business } = useAuth();
   const isRestaurant = business?.type === "restaurante";
+  const isPsicologo = business?.type === "psicologo";
 
   const nav: NavItem[] = [
     { to: "/app", label: "Resumen", icon: "📊", end: true },
@@ -23,6 +25,7 @@ export function BusinessApp() {
     { to: "/app/agenda", label: "Agenda", icon: "🗓️" },
     { to: "/app/nueva", label: "Nueva reserva", icon: "➕" },
     { to: "/app/clientes", label: "Clientes", icon: "👤" },
+    ...(isPsicologo ? [{ to: "/app/seguimiento", label: "Seguimiento", icon: "🩺" }] : []),
     isRestaurant
       ? { to: "/app/franjas", label: "Franjas y aforo", icon: "🍽️" }
       : { to: "/app/servicios", label: "Servicios", icon: "✂️" },
@@ -40,6 +43,7 @@ export function BusinessApp() {
         <Route path="agenda" element={<Agenda />} />
         <Route path="nueva" element={<NuevaReserva />} />
         <Route path="clientes" element={<Clientes />} />
+        <Route path="seguimiento" element={<Seguimiento />} />
         <Route path="servicios" element={<Servicios />} />
         <Route path="franjas" element={<Franjas />} />
         <Route path="mesas" element={<Mesas />} />

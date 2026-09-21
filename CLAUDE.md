@@ -117,6 +117,44 @@ resolver ubicación y con la sincronización desactivada — visible en el panel
 construido a propósito: es el caso menos común y esta feature ya va a estar inerte para la mayoría
 por el bloqueo de arriba.
 
+## Categoría de negocio "Psicólogo" (Fase 8, 2026-09-21)
+
+`business_type` ganó un tercer valor de enum, `psicologo` (migración `0027`), pensado para el
+negocio real "Ana Sánchez Psicóloga" (hoy sigue como `type='citas'`, sin migrar — ver Fase 9 abajo).
+Al añadirse, era **funcionalmente idéntico a `citas`**: una auditoría exhaustiva del código (dos
+agentes Explore) confirmó que casi todo el proyecto ya distingue tipos como `type === 'restaurante'
+? ... : ...`, nunca un switch cerrado de dos casos, así que un negocio `psicologo` caía
+automáticamente en el camino de citas sin más cambios. La Fase 9 (justo debajo) es la primera vez
+que `psicologo` deja de comportarse igual que `citas`.
+
+## Ficha de cliente ampliada para Psicólogo + clave de Gemini por negocio (Fase 9, 2026-09-21)
+
+Primera feature con checks reales de `business?.type === "psicologo"` en el código (antes solo
+existía el valor del enum, sin ningún comportamiento distinto). Añade a la ficha de cliente
+(`Panel → Clientes`) las pestañas Historial (con recibo en PDF no fiscal, generado en el navegador
+con `jspdf`), Editar, Notas (tabla `client_notes`), Tareas (tabla `client_tasks`) e Informe (resumen
+generado por Gemini, tabla `client_ai_reports`); más una sección nueva **Seguimiento** en el sidebar
+psicólogo con las citas de hoy en curso (mismo cálculo por ventana de tiempo que "Plano de sala",
+sin cronómetro). Todo gateado por tipo tanto en el frontend como en la Edge Function
+`generate-client-ai-report` (que además vuelve a comprobar `business.type` en el servidor, no confía
+solo en el gate del panel).
+
+**Por qué clave de Gemini por negocio y no una compartida de la plataforma**: el tier gratuito de
+Gemini es ~10 peticiones/min y ~500-1500/día *por clave de API*, no por proyecto — compartirla entre
+varios negocios psicólogo agotaría el límite rápido y mezclaría el uso (y los datos clínicos) de
+distintos tenants bajo una sola clave. Cada negocio pega la suya en
+`Configuración → Informes con IA`, guardada con el mismo patrón secreto-por-negocio que Resend/
+WhatsApp/Google (RPCs `get_gemini_status`/`set_gemini_key`, nunca expuesta al navegador, y sin tocar
+`get_business_integration`/`set_business_integration` para no cambiar la firma de una RPC ya
+expuesta).
+
+**"Recibo" = PDF no fiscal**: generado 100% en el navegador con `jspdf`+`jspdf-autotable`, sin
+numeración secuencial ni backend — no cumple (ni pretende cumplir) requisitos de factura legal.
+
+**Pendiente de confirmación explícita**: migrar "Ana Sánchez Psicóloga" a `type='psicologo'` (hoy
+`citas`) es un `UPDATE` manual de super-admin — el panel no tiene UI para cambiar el tipo tras crear
+el negocio. No se ha hecho todavía; pedir confirmación antes de ejecutarlo.
+
 ## Más contexto
 
 Ver `README.md` (sección "## Pendientes" para la lista canónica de tareas pendientes) y
