@@ -1,5 +1,5 @@
 // generate-client-ai-report — Endpoint AUTENTICADO (verify_jwt = true).
-// Genera un informe con Gemini a partir de las notas de sesión y tareas
+// Genera un informe con Gemini a partir de todas las sesiones (client_sessions)
 // de un cliente, usando la clave de Gemini propia del negocio (nunca una
 // compartida por la plataforma). Solo disponible para negocios tipo
 // psicólogo — comprobado aquí también, no solo en el panel. Patrón
@@ -48,18 +48,18 @@ Deno.serve(async (req) => {
     return json({ ok: false, error: "Este negocio no tiene configurada su clave de Gemini (Configuración → Informes con IA)." }, 200);
   }
 
-  const [{ data: notes }, { data: tasks }] = await Promise.all([
-    asCaller.from("client_notes").select("body, created_at").eq("customer_id", customer_id)
-      .order("created_at", { ascending: true }).limit(200),
-    asCaller.from("client_tasks").select("title, description, status, due_date").eq("customer_id", customer_id)
-      .order("created_at", { ascending: true }).limit(200),
-  ]);
+  const { data: sessions } = await asCaller
+    .from("client_sessions")
+    .select("session_date, objetivo, notas, seguimiento, tareas_pautas")
+    .eq("customer_id", customer_id)
+    .order("session_date", { ascending: true })
+    .limit(200);
 
-  if (!notes?.length && !tasks?.length) {
-    return json({ ok: false, error: "No hay notas ni tareas registradas para generar un informe." }, 200);
+  if (!sessions?.length) {
+    return json({ ok: false, error: "No hay sesiones registradas en el Historial para generar un informe." }, 200);
   }
 
-  const prompt = buildPrompt(customer, notes ?? [], tasks ?? []);
+  const prompt = buildPrompt(customer, sessions);
 
   try {
     const resp = await fetch(
@@ -94,9 +94,9 @@ Deno.serve(async (req) => {
       .from("client_ai_reports")
       .insert({
         business_id: customer.business_id, customer_id, content, model: MODEL,
-        notes_count: notes?.length ?? 0, tasks_count: tasks?.length ?? 0,
+        sessions_count: sessions.length,
       })
-      .select("id, content, created_at, notes_count, tasks_count")
+      .select("id, content, created_at, sessions_count")
       .single();
     if (insErr) return json({ ok: false, error: "Informe generado pero no se pudo guardar: " + insErr.message }, 200);
 
@@ -107,23 +107,29 @@ Deno.serve(async (req) => {
   }
 });
 
-function buildPrompt(
-  customer: { full_name: string; last_name: string | null },
-  notes: { body: string; created_at: string }[],
-  tasks: { title: string; description: string | null; status: string; due_date: string | null }[]
-): string {
-  const notesText = notes.map((n) => `- [${n.created_at.slice(0, 10)}] ${n.body}`).join("\n") || "(sin notas)";
-  const tasksText = tasks.map((t) =>
-    `- ${t.title} (${t.status}${t.due_date ? `, vence ${t.due_date}` : ""})${t.description ? `: ${t.description}` : ""}`
-  ).join("\n") || "(sin tareas)";
+type SessionRow = {
+  session_date: string;
+  objetivo: string | null;
+  notas: string | null;
+  seguimiento: string | null;
+  tareas_pautas: string | null;
+};
 
-  return `Eres un asistente que ayuda a un/a psicólogo/a a resumir el seguimiento de un/a paciente. Genera un informe breve, profesional y en español, en formato markdown, con estas secciones: "Resumen general", "Evolución observada", "Tareas y pautas asignadas", "Recomendaciones". Básate ÚNICAMENTE en los datos proporcionados, no inventes diagnósticos ni datos clínicos no mencionados.
+function buildPrompt(customer: { full_name: string; last_name: string | null }, sessions: SessionRow[]): string {
+  const sessionsText = sessions.map((s, i) => {
+    const parts = [
+      s.objetivo && `Objetivo: ${s.objetivo}`,
+      s.notas && `Notas: ${s.notas}`,
+      s.seguimiento && `Seguimiento: ${s.seguimiento}`,
+      s.tareas_pautas && `Tareas/Pautas: ${s.tareas_pautas}`,
+    ].filter(Boolean).join("\n  ");
+    return `Sesión ${i + 1} [${s.session_date.slice(0, 10)}]:\n  ${parts || "(sin contenido)"}`;
+  }).join("\n\n");
+
+  return `Eres un asistente que ayuda a un/a psicólogo/a a resumir el seguimiento de un/a paciente a partir del historial de sesiones registradas. Genera un informe breve, profesional y en español, en formato markdown, con estas secciones: "Resumen general", "Evolución observada", "Tareas y pautas asignadas", "Recomendaciones". Básate ÚNICAMENTE en los datos proporcionados, no inventes diagnósticos ni datos clínicos no mencionados.
 
 Paciente: ${customer.full_name} ${customer.last_name ?? ""}
 
-Notas de sesión (orden cronológico):
-${notesText}
-
-Tareas/pautas asignadas:
-${tasksText}`;
+Historial de sesiones (orden cronológico):
+${sessionsText}`;
 }

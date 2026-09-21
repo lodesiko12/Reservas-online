@@ -91,34 +91,43 @@ function BookingCard({ booking: b, tz, action }: { booking: Row; tz: string; act
 }
 
 function StartSessionModal({ booking, onClose }: { booking: Row; onClose: () => void }) {
-  const [body, setBody] = useState("");
+  const [form, setForm] = useState({ objetivo: "", notas: "", seguimiento: "", tareas_pautas: "" });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function save() {
-    if (!body.trim() || !booking.customer_id) return;
+    if (!booking.customer_id) return;
     setSaving(true); setError(null);
     const { data: { user } } = await supabase.auth.getUser();
-    const { error } = await supabase.from("client_notes").insert({
-      business_id: booking.business_id, customer_id: booking.customer_id,
-      booking_id: booking.id, author_user_id: user?.id ?? null, body: body.trim(),
+    const { error } = await supabase.from("client_sessions").insert({
+      business_id: booking.business_id, customer_id: booking.customer_id, booking_id: booking.id,
+      author_user_id: user?.id ?? null, session_date: booking.starts_at,
+      objetivo: form.objetivo.trim() || null, notas: form.notas.trim() || null,
+      seguimiento: form.seguimiento.trim() || null, tareas_pautas: form.tareas_pautas.trim() || null,
     });
     setSaving(false);
     if (error) { setError(error.message); return; }
     onClose();
   }
 
+  const hasContent = Object.values(form).some((v) => v.trim());
+
   return (
-    <Modal open onClose={onClose} title={`Nota de sesión · ${booking.customer_name}`}>
+    <Modal open onClose={onClose} title={`Sesión · ${booking.customer_name}`} width="max-w-lg">
       {!booking.customer_id ? (
-        <p className="text-sm text-amber-600">Esta reserva no tiene un cliente vinculado, no se puede guardar una nota.</p>
+        <p className="text-sm text-amber-600">Esta reserva no tiene un cliente vinculado, no se puede guardar la sesión.</p>
       ) : (
         <>
-          <textarea className="input" rows={6} placeholder="Notas de la sesión…" value={body} onChange={(e) => setBody(e.target.value)} autoFocus />
+          <div className="space-y-3">
+            <div><label className="label">Objetivo</label><textarea className="input" rows={2} placeholder="Objetivo de la sesión…" value={form.objetivo} onChange={(e) => setForm({ ...form, objetivo: e.target.value })} autoFocus /></div>
+            <div><label className="label">Notas de sesión</label><textarea className="input" rows={3} placeholder="Notas sobre la cita…" value={form.notas} onChange={(e) => setForm({ ...form, notas: e.target.value })} /></div>
+            <div><label className="label">Seguimiento</label><textarea className="input" rows={2} placeholder="Qué revisar en próximas sesiones…" value={form.seguimiento} onChange={(e) => setForm({ ...form, seguimiento: e.target.value })} /></div>
+            <div><label className="label">Tareas/Pautas</label><textarea className="input" rows={2} placeholder="Ejercicios o pautas para el cliente…" value={form.tareas_pautas} onChange={(e) => setForm({ ...form, tareas_pautas: e.target.value })} /></div>
+          </div>
           {error && <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mt-2">{error}</div>}
           <div className="flex justify-end gap-2 mt-4">
             <button className="btn-ghost" onClick={onClose}>Cancelar</button>
-            <button className="btn-primary" disabled={!body.trim() || saving} onClick={save}>{saving ? "Guardando…" : "Guardar nota"}</button>
+            <button className="btn-primary" disabled={!hasContent || saving} onClick={save}>{saving ? "Guardando…" : "Guardar sesión"}</button>
           </div>
         </>
       )}

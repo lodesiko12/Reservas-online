@@ -388,8 +388,7 @@ export type Database = {
           generated_by_user_id: string | null
           id: string
           model: string
-          notes_count: number
-          tasks_count: number
+          sessions_count: number
         }
         Insert: {
           business_id: string
@@ -399,8 +398,7 @@ export type Database = {
           generated_by_user_id?: string | null
           id?: string
           model?: string
-          notes_count?: number
-          tasks_count?: number
+          sessions_count?: number
         }
         Update: {
           business_id?: string
@@ -410,8 +408,7 @@ export type Database = {
           generated_by_user_id?: string | null
           id?: string
           model?: string
-          notes_count?: number
-          tasks_count?: number
+          sessions_count?: number
         }
         Relationships: [
           {
@@ -430,108 +427,69 @@ export type Database = {
           },
         ]
       }
-      client_notes: {
+      client_sessions: {
         Row: {
           author_user_id: string | null
-          body: string
           booking_id: string | null
           business_id: string
           created_at: string
           customer_id: string
           id: string
+          notas: string | null
+          objetivo: string | null
+          seguimiento: string | null
+          session_date: string
+          tareas_pautas: string | null
           updated_at: string
         }
         Insert: {
           author_user_id?: string | null
-          body: string
           booking_id?: string | null
           business_id: string
           created_at?: string
           customer_id: string
           id?: string
+          notas?: string | null
+          objetivo?: string | null
+          seguimiento?: string | null
+          session_date?: string
+          tareas_pautas?: string | null
           updated_at?: string
         }
         Update: {
           author_user_id?: string | null
-          body?: string
           booking_id?: string | null
           business_id?: string
           created_at?: string
           customer_id?: string
           id?: string
+          notas?: string | null
+          objetivo?: string | null
+          seguimiento?: string | null
+          session_date?: string
+          tareas_pautas?: string | null
           updated_at?: string
         }
         Relationships: [
           {
-            foreignKeyName: "client_notes_business_id_fkey"
+            foreignKeyName: "client_sessions_business_id_fkey"
             columns: ["business_id"]
             isOneToOne: false
             referencedRelation: "businesses"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "client_notes_customer_id_fkey"
+            foreignKeyName: "client_sessions_customer_id_fkey"
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "client_notes_booking_id_fkey"
+            foreignKeyName: "client_sessions_booking_id_fkey"
             columns: ["booking_id"]
             isOneToOne: false
             referencedRelation: "bookings"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      client_tasks: {
-        Row: {
-          business_id: string
-          created_at: string
-          customer_id: string
-          description: string | null
-          due_date: string | null
-          id: string
-          status: string
-          title: string
-          updated_at: string
-        }
-        Insert: {
-          business_id: string
-          created_at?: string
-          customer_id: string
-          description?: string | null
-          due_date?: string | null
-          id?: string
-          status?: string
-          title: string
-          updated_at?: string
-        }
-        Update: {
-          business_id?: string
-          created_at?: string
-          customer_id?: string
-          description?: string | null
-          due_date?: string | null
-          id?: string
-          status?: string
-          title?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "client_tasks_business_id_fkey"
-            columns: ["business_id"]
-            isOneToOne: false
-            referencedRelation: "businesses"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "client_tasks_customer_id_fkey"
-            columns: ["customer_id"]
-            isOneToOne: false
-            referencedRelation: "customers"
             referencedColumns: ["id"]
           },
         ]

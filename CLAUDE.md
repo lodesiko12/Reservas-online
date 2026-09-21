@@ -131,13 +131,25 @@ que `psicologo` deja de comportarse igual que `citas`.
 
 Primera feature con checks reales de `business?.type === "psicologo"` en el código (antes solo
 existía el valor del enum, sin ningún comportamiento distinto). Añade a la ficha de cliente
-(`Panel → Clientes`) las pestañas Historial (con recibo en PDF no fiscal, generado en el navegador
-con `jspdf`), Editar, Notas (tabla `client_notes`), Tareas (tabla `client_tasks`) e Informe (resumen
-generado por Gemini, tabla `client_ai_reports`); más una sección nueva **Seguimiento** en el sidebar
-psicólogo con las citas de hoy en curso (mismo cálculo por ventana de tiempo que "Plano de sala",
-sin cronómetro). Todo gateado por tipo tanto en el frontend como en la Edge Function
-`generate-client-ai-report` (que además vuelve a comprobar `business.type` en el servidor, no confía
-solo en el gate del panel).
+(`Panel → Clientes`) las pestañas Historial, Editar, Informe y Recibo; más una sección nueva
+**Seguimiento** en el sidebar psicólogo con la cita de hoy en curso y la siguiente (mismo cálculo
+por ventana de tiempo que "Plano de sala", sin cronómetro). Todo gateado por tipo tanto en el
+frontend como en la Edge Function `generate-client-ai-report` (que además vuelve a comprobar
+`business.type` en el servidor, no confía solo en el gate del panel).
+
+**Rediseñado el mismo día (migración `0030_session_records.sql`)**: la primera versión tenía
+pestañas Notas (tabla `client_notes`) y Tareas (tabla `client_tasks`) sueltas, sin relación entre
+sí. El usuario pidió en su lugar un modelo de "sesión" único con 4 campos estructurados —
+**Objetivo**, **Notas**, **Seguimiento** (qué revisar en próximas sesiones) y **Tareas/Pautas** —,
+tabla `client_sessions`, mostrado en la pestaña **Historial** (una entrada por sesión, la más
+reciente primero) en vez de pestañas separadas. `client_notes`/`client_tasks` se **eliminaron**
+(sin datos reales, solo la prueba de la sesión anterior, ya limpiada) — si se retoma este código en
+otra sesión, esas dos tablas ya no existen. El botón de recibo en PDF se independizó de Historial a
+su propia pestaña **Recibo**. `generate-client-ai-report` ahora construye el prompt a partir de
+todas las filas de `client_sessions` del cliente (antes leía `client_notes`+`client_tasks` por
+separado); `client_ai_reports.notes_count`/`tasks_count` se renombraron a un único `sessions_count`.
+En "Seguimiento", el modal de "Empezar cita"/"Apuntar notas" pasó de un único textarea a los mismos
+4 campos, y al guardar crea una fila en `client_sessions` ligada a la reserva (`booking_id`).
 
 **Por qué clave de Gemini por negocio y no una compartida de la plataforma**: el tier gratuito de
 Gemini es ~10 peticiones/min y ~500-1500/día *por clave de API*, no por proyecto — compartirla entre

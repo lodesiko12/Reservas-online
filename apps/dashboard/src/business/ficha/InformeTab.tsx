@@ -59,7 +59,7 @@ export function InformeTab({ customer }: { customer: Customer }) {
   return (
     <div>
       <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
-        Genera un resumen con IA a partir de las notas de sesión y las tareas registradas de este cliente.
+        Genera un resumen con IA a partir de todas las sesiones registradas en el Historial de este cliente.
         Requiere haber configurado una clave de Gemini en Configuración → Informes con IA.
       </p>
       <button className="btn-primary text-xs mb-4" disabled={generating} onClick={generate}>{generating ? "Generando…" : "Generar informe"}</button>
@@ -70,7 +70,7 @@ export function InformeTab({ customer }: { customer: Customer }) {
         <ul className="space-y-3 max-h-96 overflow-y-auto">
           {reports.map((r) => (
             <li key={r.id} className="card p-3">
-              <div className="text-xs text-slate-400 dark:text-slate-500 mb-2">{formatDateTime(r.created_at, tz)} · basado en {r.notes_count} notas y {r.tasks_count} tareas</div>
+              <div className="text-xs text-slate-400 dark:text-slate-500 mb-2">{formatDateTime(r.created_at, tz)} · basado en {r.sessions_count} sesión{r.sessions_count === 1 ? "" : "es"}</div>
               <pre className="whitespace-pre-wrap text-sm font-sans">{r.content}</pre>
             </li>
           ))}

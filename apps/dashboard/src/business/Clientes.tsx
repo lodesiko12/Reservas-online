@@ -7,9 +7,8 @@ import { formatDateTime } from "@reservas/shared";
 import { PageHeader, Spinner, Modal, StatusBadge, EmptyState } from "../components/ui";
 import { HistorialTab } from "./ficha/HistorialTab";
 import { EditarTab } from "./ficha/EditarTab";
-import { NotasTab } from "./ficha/NotasTab";
-import { TareasTab } from "./ficha/TareasTab";
 import { InformeTab } from "./ficha/InformeTab";
+import { ReciboTab } from "./ficha/ReciboTab";
 
 /** Parser CSV mínimo: soporta comillas, comas y saltos de línea dentro de campos. */
 function parseCsv(text: string): string[][] {
@@ -273,7 +272,7 @@ function CustomerModal({ customer, onClose, onDeleted }: { customer: Customer; o
   const [notes, setNotes] = useState(customer.notes ?? "");
   const [savingNotes, setSavingNotes] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [tab, setTab] = useState<"historial" | "editar" | "notas" | "tareas" | "informe">("historial");
+  const [tab, setTab] = useState<"historial" | "editar" | "informe" | "recibo">("historial");
 
   useEffect(() => { setNotes(customer.notes ?? ""); }, [customer]);
 
@@ -305,19 +304,18 @@ function CustomerModal({ customer, onClose, onDeleted }: { customer: Customer; o
         <>
           <div className="flex gap-1 border-b border-slate-200 dark:border-slate-800 mb-4 overflow-x-auto">
             {([
-              ["historial", "Historial"], ["editar", "Editar"], ["notas", "Notas"],
-              ["tareas", "Tareas"], ["informe", "Informe"],
+              ["historial", "Historial"], ["editar", "Editar"],
+              ["informe", "Informe"], ["recibo", "Recibo"],
             ] as const).map(([k, l]) => (
               <button key={k} type="button"
                 className={`px-3 py-2 text-sm font-medium whitespace-nowrap ${tab === k ? "border-b-2 border-brand-500 text-brand-600" : "text-slate-500 dark:text-slate-400"}`}
                 onClick={() => setTab(k)}>{l}</button>
             ))}
           </div>
-          {tab === "historial" && <HistorialTab customer={customer} history={history} isLoading={isLoading} />}
+          {tab === "historial" && <HistorialTab customer={customer} />}
           {tab === "editar" && <EditarTab customer={customer} onSaved={() => qc.invalidateQueries({ queryKey: ["customers", bid] })} />}
-          {tab === "notas" && <NotasTab customer={customer} />}
-          {tab === "tareas" && <TareasTab customer={customer} />}
           {tab === "informe" && <InformeTab customer={customer} />}
+          {tab === "recibo" && <ReciboTab customer={customer} />}
         </>
       ) : (
         <>
