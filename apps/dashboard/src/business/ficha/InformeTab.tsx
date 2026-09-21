@@ -26,11 +26,29 @@ export function InformeTab({ customer }: { customer: Customer }) {
 
   async function generate() {
     setGenerating(true); setError(null);
+    // Gemini devuelve 503 ("alta demanda") con cierta frecuencia ahora mismo
+    // (problema de capacidad conocido y documentado del lado de Google, no
+    // de nuestra clave/código). Reintentamos un par de veces desde el
+    // navegador antes de rendirnos — sin riesgo de colgar el servidor,
+    // porque cada intento es una llamada independiente a la Edge Function.
+    const MAX_ATTEMPTS = 3;
     try {
-      const { data, error } = await supabase.functions.invoke("generate-client-ai-report", { body: { customer_id: customer.id } });
-      const body = data as any;
-      if (error || body?.ok === false) { setError(body?.error ?? error?.message ?? "Error al generar el informe"); return; }
-      qc.invalidateQueries({ queryKey: ["customer-ai-reports", customer.id] });
+      for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+        const { data, error } = await supabase.functions.invoke("generate-client-ai-report", { body: { customer_id: customer.id } });
+        const body = data as any;
+        const isSaturated = !error && body?.ok === false && /satur/i.test(body?.error ?? "");
+        if (!error && body?.ok !== false) {
+          qc.invalidateQueries({ queryKey: ["customer-ai-reports", customer.id] });
+          return;
+        }
+        if (isSaturated && attempt < MAX_ATTEMPTS) {
+          setError(`Gemini está saturado, reintentando… (${attempt}/${MAX_ATTEMPTS})`);
+          await new Promise((r) => setTimeout(r, 2000));
+          continue;
+        }
+        setError(body?.error ?? error?.message ?? "Error al generar el informe");
+        return;
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error inesperado al generar el informe");
     } finally {
