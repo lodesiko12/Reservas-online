@@ -256,7 +256,7 @@ function EditBusiness({ business, onSaved }: { business: Business; onSaved: () =
   const qc = useQueryClient();
   const [form, setForm] = useState({
     name: business.name, slug: business.slug, primary_color: business.primary_color,
-    timezone: business.timezone, is_active: business.is_active,
+    timezone: business.timezone, is_active: business.is_active, type: business.type,
     default_capacity: business.default_capacity, slot_interval_min: business.slot_interval_min,
   });
   const [saving, setSaving] = useState(false);
@@ -267,7 +267,7 @@ function EditBusiness({ business, onSaved }: { business: Business; onSaved: () =
     setSaving(true); setErr(null); setMsg(null);
     const { error } = await supabase.from("businesses").update({
       name: form.name.trim(), slug: form.slug.trim().toLowerCase(), primary_color: form.primary_color,
-      timezone: form.timezone.trim(), is_active: form.is_active,
+      timezone: form.timezone.trim(), is_active: form.is_active, type: form.type,
       default_capacity: Number(form.default_capacity), slot_interval_min: Number(form.slot_interval_min),
     }).eq("id", business.id);
     setSaving(false);
@@ -285,7 +285,15 @@ function EditBusiness({ business, onSaved }: { business: Business; onSaved: () =
           <input className="input" value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} />
           <p className="text-xs text-amber-600 mt-1">⚠ Cambiar el slug rompe los widgets ya insertados.</p>
         </div>
-        <div><label className="label">Tipo</label><input className="input bg-slate-50 dark:bg-slate-800/60" value={BUSINESS_TYPE_LABELS[business.type] ?? business.type} disabled /><p className="text-xs text-slate-400 dark:text-slate-500 mt-1">El tipo no se puede cambiar.</p></div>
+        <div>
+          <label className="label">Tipo</label>
+          <select className="input" value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value as Business["type"] })}>
+            <option value="citas">Citas / turnos</option>
+            <option value="psicologo">Psicólogo</option>
+            <option value="restaurante">Restaurante</option>
+          </select>
+          <p className="text-xs text-amber-600 mt-1">⚠ Cambiar el tipo cambia qué secciones ve el negocio en su panel. Solo el super-admin puede hacerlo.</p>
+        </div>
         <div><label className="label">Color primario</label><input type="color" className="input h-[42px] p-1" value={form.primary_color} onChange={(e) => setForm({ ...form, primary_color: e.target.value })} /></div>
         <div><label className="label">Timezone</label><input className="input" value={form.timezone} onChange={(e) => setForm({ ...form, timezone: e.target.value })} placeholder="Europe/Madrid" /></div>
         <div className="flex items-end">
@@ -294,7 +302,7 @@ function EditBusiness({ business, onSaved }: { business: Business; onSaved: () =
             Negocio activo (suscripción)
           </label>
         </div>
-        {(business.type === "citas" || business.type === "psicologo") && (
+        {(form.type === "citas" || form.type === "psicologo") && (
           <>
             <div><label className="label">Aforo por defecto</label><input type="number" min={1} className="input" value={form.default_capacity} onChange={(e) => setForm({ ...form, default_capacity: +e.target.value })} /></div>
             <div><label className="label">Granularidad (min)</label><input type="number" min={5} step={5} className="input" value={form.slot_interval_min} onChange={(e) => setForm({ ...form, slot_interval_min: +e.target.value })} /></div>
