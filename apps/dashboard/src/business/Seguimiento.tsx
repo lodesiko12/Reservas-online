@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../lib/auth";
 import { useBookings, useBookingsRealtime, type Booking } from "./hooks";
@@ -33,28 +33,59 @@ export function Seguimiento() {
     );
   }, [bookings, now]);
 
+  const next = useMemo(() => {
+    const nowMs = now.getTime();
+    const upcoming = ((bookings ?? []) as Row[])
+      .filter((b) => b.status === "confirmada" && new Date(b.starts_at).getTime() > nowMs)
+      .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime());
+    return upcoming[0] ?? null;
+  }, [bookings, now]);
+
   const [active, setActive] = useState<Row | null>(null);
 
   return (
     <div>
-      <PageHeader title="Seguimiento" subtitle="Citas de hoy en curso ahora mismo" />
+      <PageHeader title="Seguimiento" subtitle="La cita en curso y la siguiente" />
       {isLoading ? (
         <div className="grid place-items-center py-20"><Spinner /></div>
-      ) : !inProgress.length ? (
-        <EmptyState title="No hay citas en curso" hint="Aquí aparecerán las citas de hoy mientras están teniendo lugar." />
+      ) : !inProgress.length && !next ? (
+        <EmptyState title="No hay citas hoy" hint="Aquí aparecerán la cita en curso y la siguiente, mientras haya citas pendientes hoy." />
       ) : (
-        <div className="grid sm:grid-cols-2 gap-3">
-          {inProgress.map((b) => (
-            <div key={b.id} className="card p-4">
-              <div className="font-semibold">{b.customer_name} {b.customer_last_name ?? ""}</div>
-              <div className="text-sm text-slate-500 dark:text-slate-400">{b.services?.name ?? "—"} · {formatTime(b.starts_at, tz)}–{formatTime(b.ends_at, tz)}</div>
-              {b.professionals?.name && <div className="text-xs text-slate-400 dark:text-slate-500 mt-1">{b.professionals.name}</div>}
-              <button className="btn-primary text-xs mt-3" onClick={() => setActive(b)}>Empezar cita</button>
+        <div className="space-y-6">
+          <div>
+            <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 mb-2">En curso</h3>
+            {!inProgress.length ? (
+              <p className="text-sm text-slate-400 dark:text-slate-500">Ninguna cita en curso ahora mismo.</p>
+            ) : (
+              <div className="grid sm:grid-cols-2 gap-3">
+                {inProgress.map((b) => (
+                  <BookingCard key={b.id} booking={b} tz={tz} action={<button className="btn-primary text-xs mt-3" onClick={() => setActive(b)}>Empezar cita</button>} />
+                ))}
+              </div>
+            )}
+          </div>
+          {next && (
+            <div>
+              <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 mb-2">Siguiente</h3>
+              <div className="grid sm:grid-cols-2 gap-3">
+                <BookingCard booking={next} tz={tz} />
+              </div>
             </div>
-          ))}
+          )}
         </div>
       )}
       {active && <StartSessionModal booking={active} onClose={() => setActive(null)} />}
+    </div>
+  );
+}
+
+function BookingCard({ booking: b, tz, action }: { booking: Row; tz: string; action?: ReactNode }) {
+  return (
+    <div className="card p-4">
+      <div className="font-semibold">{b.customer_name} {b.customer_last_name ?? ""}</div>
+      <div className="text-sm text-slate-500 dark:text-slate-400">{b.services?.name ?? "—"} · {formatTime(b.starts_at, tz)}–{formatTime(b.ends_at, tz)}</div>
+      {b.professionals?.name && <div className="text-xs text-slate-400 dark:text-slate-500 mt-1">{b.professionals.name}</div>}
+      {action}
     </div>
   );
 }
