@@ -62,14 +62,33 @@ Deno.serve(async (req) => {
   const prompt = buildPrompt(customer, sessions);
 
   try {
-    const resp = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${integ.gemini_api_key}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
+    // Gemini a veces no responde ni con éxito ni con 503, simplemente se queda
+    // colgado — sin este timeout, la función la mata el límite de ejecución de
+    // la plataforma (~75s, comprobado en vivo) antes de poder devolver un error
+    // limpio, y el cliente recibe un "non-2xx" genérico que el reintento del
+    // panel no reconoce como reintentable. Con AbortController, un colgado se
+    // trata igual que un 503 (reintentable).
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 25_000);
+    let resp: Response;
+    try {
+      resp = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${integ.gemini_api_key}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
+          signal: controller.signal,
+        }
+      );
+    } catch (fetchErr) {
+      if ((fetchErr as Error).name === "AbortError") {
+        return json({ ok: false, error: "Gemini está saturado ahora mismo (alta demanda). Inténtalo de nuevo en un minuto." }, 200);
       }
-    );
+      throw fetchErr;
+    } finally {
+      clearTimeout(timeoutId);
+    }
 
     if (!resp.ok) {
       const errBody = await resp.text();
