@@ -121,3 +121,64 @@ export async function queryFreeBusy(accessToken: string, calendarId: string, tim
   const data = await res.json();
   return data.calendars?.[calendarId]?.busy ?? [];
 }
+
+// ---------------------------------------------------------------------
+// Business Profile (ficha de Google Business): a diferencia de Calendar,
+// la conexión es POR NEGOCIO (una ficha, no una por profesional), así que
+// el `state` firmado no lleva professional_id.
+// ---------------------------------------------------------------------
+
+/** Firma un state `${business_id}.${expiresAtMs}` para el flujo OAuth de Business Profile (a nivel de negocio). */
+export async function signBusinessState(businessId: string, secret: string, ttlMs = 10 * 60 * 1000): Promise<string> {
+  const payload = `${businessId}.${Date.now() + ttlMs}`;
+  const sig = await hmac(secret, payload);
+  return `${btoa(payload)}.${sig}`;
+}
+
+/** Verifica el state de signBusinessState y devuelve {businessId} o null si no es válido/ha caducado. */
+export async function verifyBusinessState(state: string, secret: string): Promise<{ businessId: string } | null> {
+  const [payloadB64, sig] = state.split(".");
+  if (!payloadB64 || !sig) return null;
+  let payload: string;
+  try { payload = atob(payloadB64); } catch { return null; }
+  const expectedSig = await hmac(secret, payload);
+  if (expectedSig !== sig) return null;
+  const [businessId, expiresAt] = payload.split(".");
+  if (!businessId || !expiresAt) return null;
+  if (Date.now() > Number(expiresAt)) return null;
+  return { businessId };
+}
+
+export type GbpAccount = { name: string };
+export type GbpLocation = { name: string; title?: string };
+
+/** Lista las cuentas de Google Business Profile que gestiona el usuario conectado. */
+export async function listGoogleBusinessAccounts(accessToken: string): Promise<GbpAccount[]> {
+  const res = await fetch("https://mybusinessaccountmanagement.googleapis.com/v1/accounts", {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  if (!res.ok) throw new Error(`Google Business accounts error ${res.status}: ${await res.text()}`);
+  const data = await res.json();
+  return data.accounts ?? [];
+}
+
+/** Lista las ubicaciones (fichas) de una cuenta de Business Profile. */
+export async function listGoogleBusinessLocations(accessToken: string, accountName: string): Promise<GbpLocation[]> {
+  const url = `https://mybusinessbusinessinformation.googleapis.com/v1/${accountName}/locations?readMask=name,title`;
+  const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+  if (!res.ok) throw new Error(`Google Business locations error ${res.status}: ${await res.text()}`);
+  const data = await res.json();
+  return data.locations ?? [];
+}
+
+export type GbpTime = { hours?: number; minutes?: number };
+export type GbpPeriod = { openDay: string; openTime: GbpTime; closeDay: string; closeTime: GbpTime };
+
+/** Lee el horario semanal general (`regularHours`) de una ubicación de Business Profile. */
+export async function getGoogleBusinessLocationHours(accessToken: string, locationName: string): Promise<GbpPeriod[]> {
+  const url = `https://mybusinessbusinessinformation.googleapis.com/v1/${locationName}?readMask=regularHours`;
+  const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+  if (!res.ok) throw new Error(`Google Business hours error ${res.status}: ${await res.text()}`);
+  const data = await res.json();
+  return data.regularHours?.periods ?? [];
+}

@@ -9,7 +9,7 @@ export const supabase = createSupabase(url, anon, { persistSession: false });
 export type PublicBusiness = {
   id: string;
   name: string;
-  type: "citas" | "restaurante";
+  type: "citas" | "restaurante" | "psicologo";
   primary_color: string;
   logo_url: string | null;
   timezone: string;
@@ -164,7 +164,7 @@ export async function createBooking(input: BookingInput): Promise<BookingResult>
 export type BookingLookup = {
   locator: string;
   status: "confirmada" | "cancelada" | "completada" | "no_show" | "pendiente";
-  type: "citas" | "restaurante";
+  type: "citas" | "restaurante" | "psicologo";
   starts_at: string;
   ends_at: string;
   business_name: string;

@@ -58,19 +58,19 @@ proyecto de Google Cloud (gratis: Google Cloud Console → habilitar Calendar AP
 con la URI de redirección `https://fjpbruwczuovvynhlnzv.supabase.co/functions/v1/google-oauth-callback`
 autorizada en ese proyecto de Google Cloud.
 
-## Crons de recordatorio y reseña — falta configurar 1 secreto de Edge Functions
+## Crons de recordatorio y reseña — `CRON_SECRET` ya configurado (confirmado 2026-09-21)
 
 Migración `0025_reminder_review_cron.sql` (2026-09-20) programó dos cron jobs cada hora
 (`whatsapp-reminders-hourly`, `request-reviews-hourly`) que llaman a las Edge Functions del mismo
 nombre, que hasta entonces estaban desplegadas pero sin nada que las invocara periódicamente (a
-diferencia de `sync-google-busy`, programado en la Fase 5). **Falta el secreto `CRON_SECRET`**: sin
-él, ambas funciones responden 401 a la llamada del cron. El valor real está embebido en los propios
-cron jobs de la base de datos (nunca se commitea al repo):
+diferencia de `sync-google-busy`, programado en la Fase 5). El secreto `CRON_SECRET` que protege
+ambas ya está configurado por el usuario — no debería haber más 401 por falta de secreto. Este
+mismo `CRON_SECRET` se reutiliza también para `sync-google-business-hours-hourly` (Fase 8, ver
+abajo), así que tampoco hizo falta configurar nada nuevo para esa función. El valor real está
+embebido en los propios cron jobs de la base de datos (nunca se commitea al repo), recuperable con:
 ```sql
 select command from cron.job where jobname='whatsapp-reminders-hourly';
 ```
-Una vez copiado ese valor, configurarlo como secreto `CRON_SECRET` (mismo sitio que los 3 de Google
-Calendar arriba).
 
 Además, para que `request-reviews` envíe algo, cada negocio necesita rellenar su **"Enlace de
 reseña"** en `Panel → Configuración → Reseñas` (vacío por defecto = no se envía nada para ese
@@ -86,6 +86,36 @@ defecto de siempre. La lógica de sustitución vive en `supabase/functions/_shar
 (`applyPlaceholders`) — no es un motor de plantillas de propósito general, solo sustituye el
 párrafo de introducción; el resto del diseño del email (cabecera de color, tarjeta del código
 localizador...) sigue siendo fijo, decisión explícita para no arriesgar con HTML libre por negocio.
+
+## Sincronización de horario desde Google Business Profile (Fase 8, 2026-09-21)
+
+Sincroniza automáticamente `business_hours` (horario general de apertura) desde la ficha de Google
+Business Profile del negocio, cada hora, **sin revisión manual** — Google es la fuente de verdad
+mientras la sincronización esté activada (decisión explícita del usuario).
+
+**No hace falta ningún secreto nuevo**: reutiliza el mismo Client ID/Secret de Google Cloud que ya
+usa Google Calendar (`business_integrations.google_client_id/secret`) y los mismos
+`GOOGLE_STATE_SECRET`/`CRON_SECRET` de plataforma ya configurados arriba. Lo único nuevo que cada
+negocio debe hacer en su proyecto de Google Cloud: habilitar las APIs "Business Information" y
+"Account Management", y autorizar la segunda URI de redirección
+(`https://fjpbruwczuovvynhlnzv.supabase.co/functions/v1/google-business-oauth-callback`) en la
+misma credencial OAuth que ya tiene para Calendar.
+
+**Bloqueo externo real — mismo que ya frenaba "Resumen de reseñas con IA"**: Google exige una
+aprobación manual ("Basic API Access") por proyecto de Google Cloud antes de que la Business
+Profile API funcione. Requisitos: ficha de Google Business Profile verificada y activa 60+ días,
+web propia enlazada en la ficha, y el solicitante debe figurar como owner/manager de esa ficha. Se
+pide desde el formulario de contacto de la API de GBP ("Application for Basic API Access"),
+revisión manual de Google, sin plazo garantizado (días a semanas). **Código desplegado pero
+inerte** hasta que algún negocio consiga esa aprobación — mismo patrón que Google Calendar en la
+Fase 5.
+
+**v1 solo soporta una ficha por cuenta de Google conectada**: si la cuenta de Google que se conecta
+gestiona 0 o 2+ fichas de Business Profile, la conexión queda guardada (tokens, email) pero sin
+resolver ubicación y con la sincronización desactivada — visible en el panel
+(`Configuración → Horario en Google Business Profile`) pero sin selector para elegir cuál. No
+construido a propósito: es el caso menos común y esta feature ya va a estar inerte para la mayoría
+por el bloqueo de arriba.
 
 ## Más contexto
 

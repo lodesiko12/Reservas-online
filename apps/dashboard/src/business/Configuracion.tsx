@@ -6,6 +6,7 @@ import { useBusinessId, useDiningSettings } from "./hooks";
 import { shortTime } from "@reservas/shared";
 import { PageHeader, Spinner } from "../components/ui";
 import { IntegrationsForm } from "../components/IntegrationsForm";
+import { GoogleBusinessProfileSection } from "../components/GoogleBusinessProfileSection";
 import { WindowsEditor, type Win } from "../components/WindowsEditor";
 
 const WIDGET_URL = ((import.meta.env.VITE_WIDGET_URL as string) || "").replace(/\/+$/, "");
@@ -39,6 +40,15 @@ export function Configuracion() {
     supabase.from("business_hours").select("weekday, open_time, close_time").eq("business_id", bid).order("weekday")
       .then(({ data }) => setHours((data ?? []).map((h) => ({ weekday: h.weekday, start_time: shortTime(h.open_time), end_time: shortTime(h.close_time) }))));
   }, [bid]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("google_business") === "connected") setToast("Google Business Profile conectado ✅");
+    else if (params.get("google_business_error")) setToast("No se pudo conectar: " + params.get("google_business_error"));
+    if (params.has("google_business") || params.has("google_business_error")) {
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+  }, []);
 
   function flash(m: string) { setToast(m); setTimeout(() => setToast(null), 2500); }
 
@@ -160,6 +170,20 @@ export function Configuracion() {
             <div><button className="btn-primary mt-4" onClick={saveHours} disabled={savingHours}>{savingHours ? "Guardando…" : "Guardar horario"}</button></div>
           </>
         )}
+      </section>
+
+      {/* Horario sincronizado desde Google Business Profile */}
+      <section className="card p-6">
+        <h2 className="font-semibold mb-1">Horario en Google Business Profile</h2>
+        <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
+          Conecta tu ficha de Google y el horario de arriba se sincroniza automáticamente cada hora,
+          sobrescribiendo cualquier cambio manual con lo que diga Google.
+          {isRestaurant && " Este negocio usa franjas de turno para las reservas (ver \"Franjas y aforo\"), así que este horario no afecta la disponibilidad de mesas — solo alimenta el indicador del panel."}
+          {" "}Requiere que Google haya aprobado el acceso a la Business Profile API para tu proyecto de
+          Google Cloud (aprobación manual, no siempre inmediata) — usa las mismas credenciales que Google
+          Calendar en "Integraciones" más abajo.
+        </p>
+        <GoogleBusinessProfileSection businessId={bid} />
       </section>
 
       {/* Reservas */}

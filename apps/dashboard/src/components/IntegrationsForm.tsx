@@ -106,11 +106,14 @@ export function IntegrationsForm({ businessId, onToast }: { businessId: string; 
         </div>
       )}
 
-      <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200 mt-6 mb-2">Google Calendar</h3>
+      <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200 mt-6 mb-2">Google Calendar y Google Business Profile</h3>
       <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
-        Crea un proyecto en Google Cloud Console con la API de Google Calendar habilitada y una credencial OAuth
-        "Aplicación web" (URI de redirección autorizada: añade la que se muestra abajo). Pega aquí su Client ID y
-        Client Secret; cada profesional podrá luego conectar su propia cuenta desde su ficha en "Servicios".
+        Crea un proyecto en Google Cloud Console con las APIs de Google Calendar habilitada (y, si quieres
+        sincronizar el horario desde tu ficha de Google, también "Business Information" y "Account
+        Management" — requieren aprobación manual de Google, ver "Horario en Google Business Profile" más
+        arriba) y una credencial OAuth "Aplicación web" (con las dos URIs de redirección de abajo
+        autorizadas). Pega aquí su Client ID y Client Secret: se usan para ambas integraciones. Cada
+        profesional podrá luego conectar su propia cuenta de Calendar desde su ficha en "Servicios".
       </p>
       <div className="grid sm:grid-cols-2 gap-4">
         <div><label className="label">Client ID</label><input className="input" value={googleClientId} onChange={(e) => setGoogleClientId(e.target.value)} placeholder="xxxx.apps.googleusercontent.com" /></div>
@@ -120,7 +123,9 @@ export function IntegrationsForm({ businessId, onToast }: { businessId: string; 
         </div>
       </div>
       <p className="text-xs text-slate-400 dark:text-slate-500 mt-2">
-        URI de redirección a autorizar en Google Cloud: <code className="bg-slate-100 dark:bg-slate-800 px-1 rounded">{`${(import.meta as any).env.VITE_SUPABASE_URL}/functions/v1/google-oauth-callback`}</code>
+        URIs de redirección a autorizar en Google Cloud (añade las dos):
+        <br /><code className="bg-slate-100 dark:bg-slate-800 px-1 rounded">{`${(import.meta as any).env.VITE_SUPABASE_URL}/functions/v1/google-oauth-callback`}</code>
+        <br /><code className="bg-slate-100 dark:bg-slate-800 px-1 rounded">{`${(import.meta as any).env.VITE_SUPABASE_URL}/functions/v1/google-business-oauth-callback`}</code>
       </p>
 
       <button className="btn-primary mt-5" onClick={save} disabled={saving}>{saving ? "Guardando…" : "Guardar integraciones"}</button>

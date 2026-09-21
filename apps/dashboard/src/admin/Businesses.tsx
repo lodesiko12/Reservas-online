@@ -10,6 +10,10 @@ type Business = Tables<"businesses">;
 
 const WIDGET_URL = ((import.meta.env.VITE_WIDGET_URL as string) || "").replace(/\/+$/, "");
 
+export const BUSINESS_TYPE_LABELS: Record<string, string> = {
+  citas: "Citas", restaurante: "Restaurante", psicologo: "Psicólogo",
+};
+
 export function Businesses() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
@@ -97,7 +101,7 @@ export function Businesses() {
                       </div>
                     </div>
                   </td>
-                  <td className="px-5 py-3 capitalize">{b.type}</td>
+                  <td className="px-5 py-3">{BUSINESS_TYPE_LABELS[b.type] ?? b.type}</td>
                   <td className="px-5 py-3">{b.bookings?.[0]?.count ?? 0}</td>
                   <td className="px-5 py-3">
                     <span className={`badge ${b.is_active ? "bg-green-100 text-green-700" : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400"}`}>
@@ -258,6 +262,7 @@ function NewBusinessModal({ open, onClose, onCreated }: { open: boolean; onClose
               <label className="label">Tipo</label>
               <select className="input" value={form.type} onChange={(e) => set("type", e.target.value)}>
                 <option value="citas">Citas / turnos</option>
+                <option value="psicologo">Psicólogo</option>
                 <option value="restaurante">Restaurante</option>
               </select>
             </div>

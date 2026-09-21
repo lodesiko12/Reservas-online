@@ -1297,6 +1297,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      disconnect_business_google_profile: {
+        Args: { p_business_id: string }
+        Returns: undefined
+      }
       disconnect_professional_google: {
         Args: { p_professional_id: string }
         Returns: undefined
@@ -1395,6 +1399,18 @@ export type Database = {
           is_free: boolean
           name: string
           zone_name: string
+        }[]
+      }
+      get_business_google_profile_status: {
+        Args: { p_business_id: string }
+        Returns: {
+          connected: boolean
+          google_email: string
+          last_sync_error: string
+          last_sync_status: string
+          last_synced_at: string
+          location_title: string
+          sync_enabled: boolean
         }[]
       }
       get_google_credentials_status: {
@@ -1498,6 +1514,14 @@ export type Database = {
         Args: { p_enabled: boolean; p_professional_id: string }
         Returns: undefined
       }
+      set_business_google_profile_sync: {
+        Args: { p_business_id: string; p_enabled: boolean }
+        Returns: undefined
+      }
+      replace_business_hours_from_sync: {
+        Args: { p_business_id: string; p_rows: Json }
+        Returns: undefined
+      }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
     }
@@ -1511,7 +1535,7 @@ export type Database = {
         | "no_show"
         | "pendiente"
         | "sentada"
-      business_type: "citas" | "restaurante"
+      business_type: "citas" | "restaurante" | "psicologo"
       business_user_role: "owner" | "staff"
       waitlist_status: "esperando" | "avisado" | "sentado" | "cancelado"
     }
@@ -1651,7 +1675,7 @@ export const Constants = {
         "pendiente",
         "sentada",
       ],
-      business_type: ["citas", "restaurante"],
+      business_type: ["citas", "restaurante", "psicologo"],
       business_user_role: ["owner", "staff"],
       waitlist_status: ["esperando", "avisado", "sentado", "cancelado"],
     },

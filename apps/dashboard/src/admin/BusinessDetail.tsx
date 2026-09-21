@@ -7,7 +7,7 @@ import type { Tables } from "@reservas/shared";
 import { ymdInTz, addDaysYmd, zonedDayRange, formatDateTime } from "@reservas/shared";
 import { PageHeader, StatCard, Spinner, StatusBadge } from "../components/ui";
 import { IntegrationsForm } from "../components/IntegrationsForm";
-import { DeleteBusinessModal } from "./Businesses";
+import { DeleteBusinessModal, BUSINESS_TYPE_LABELS } from "./Businesses";
 
 type Business = Tables<"businesses">;
 const WIDGET_URL = ((import.meta.env.VITE_WIDGET_URL as string) || "").replace(/\/+$/, "");
@@ -34,7 +34,7 @@ export function BusinessDetail() {
       <Link to="/admin" className="text-sm text-brand-600 hover:underline">← Todos los negocios</Link>
       <PageHeader
         title={business.name}
-        subtitle={`/${business.slug} · ${business.type}`}
+        subtitle={`/${business.slug} · ${BUSINESS_TYPE_LABELS[business.type] ?? business.type}`}
         actions={
           <a className="btn-ghost" href={`${WIDGET_URL}/?slug=${business.slug}`} target="_blank" rel="noreferrer">Abrir widget ↗</a>
         }
@@ -285,7 +285,7 @@ function EditBusiness({ business, onSaved }: { business: Business; onSaved: () =
           <input className="input" value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} />
           <p className="text-xs text-amber-600 mt-1">⚠ Cambiar el slug rompe los widgets ya insertados.</p>
         </div>
-        <div><label className="label">Tipo</label><input className="input bg-slate-50 dark:bg-slate-800/60" value={business.type} disabled /><p className="text-xs text-slate-400 dark:text-slate-500 mt-1">El tipo no se puede cambiar.</p></div>
+        <div><label className="label">Tipo</label><input className="input bg-slate-50 dark:bg-slate-800/60" value={BUSINESS_TYPE_LABELS[business.type] ?? business.type} disabled /><p className="text-xs text-slate-400 dark:text-slate-500 mt-1">El tipo no se puede cambiar.</p></div>
         <div><label className="label">Color primario</label><input type="color" className="input h-[42px] p-1" value={form.primary_color} onChange={(e) => setForm({ ...form, primary_color: e.target.value })} /></div>
         <div><label className="label">Timezone</label><input className="input" value={form.timezone} onChange={(e) => setForm({ ...form, timezone: e.target.value })} placeholder="Europe/Madrid" /></div>
         <div className="flex items-end">
@@ -294,7 +294,7 @@ function EditBusiness({ business, onSaved }: { business: Business; onSaved: () =
             Negocio activo (suscripción)
           </label>
         </div>
-        {business.type === "citas" && (
+        {(business.type === "citas" || business.type === "psicologo") && (
           <>
             <div><label className="label">Aforo por defecto</label><input type="number" min={1} className="input" value={form.default_capacity} onChange={(e) => setForm({ ...form, default_capacity: +e.target.value })} /></div>
             <div><label className="label">Granularidad (min)</label><input type="number" min={5} step={5} className="input" value={form.slot_interval_min} onChange={(e) => setForm({ ...form, slot_interval_min: +e.target.value })} /></div>

@@ -6,7 +6,7 @@ import { json, handleOptions } from "../_shared/cors.ts";
 type Body = {
   name?: string;
   slug?: string;
-  type?: "citas" | "restaurante";
+  type?: "citas" | "restaurante" | "psicologo";
   timezone?: string;
   primary_color?: string;
   staff_email?: string;
