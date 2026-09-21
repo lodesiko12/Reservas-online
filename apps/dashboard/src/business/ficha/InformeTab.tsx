@@ -26,11 +26,16 @@ export function InformeTab({ customer }: { customer: Customer }) {
 
   async function generate() {
     setGenerating(true); setError(null);
-    const { data, error } = await supabase.functions.invoke("generate-client-ai-report", { body: { customer_id: customer.id } });
-    setGenerating(false);
-    const body = data as any;
-    if (error || body?.ok === false) { setError(body?.error ?? error?.message ?? "Error al generar el informe"); return; }
-    qc.invalidateQueries({ queryKey: ["customer-ai-reports", customer.id] });
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-client-ai-report", { body: { customer_id: customer.id } });
+      const body = data as any;
+      if (error || body?.ok === false) { setError(body?.error ?? error?.message ?? "Error al generar el informe"); return; }
+      qc.invalidateQueries({ queryKey: ["customer-ai-reports", customer.id] });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error inesperado al generar el informe");
+    } finally {
+      setGenerating(false);
+    }
   }
 
   return (

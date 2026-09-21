@@ -9,7 +9,7 @@
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { json, handleOptions } from "../_shared/cors.ts";
 
-const MODEL = "gemini-2.5-flash";
+const MODEL = "gemini-3.6-flash";
 
 Deno.serve(async (req) => {
   const pre = handleOptions(req);
@@ -79,6 +79,9 @@ Deno.serve(async (req) => {
       }
       if (resp.status === 400 || resp.status === 403) {
         return json({ ok: false, error: "Clave de Gemini inválida o sin permisos. Revísala en Configuración." }, 200);
+      }
+      if (resp.status === 503) {
+        return json({ ok: false, error: "Gemini está saturado ahora mismo (alta demanda). Inténtalo de nuevo en un minuto." }, 200);
       }
       return json({ ok: false, error: "Error al contactar con Gemini." }, 200);
     }
