@@ -24,6 +24,31 @@ const BLOCK_STYLE: Record<string, { bg: string; border: string; text: string }> 
   cancelada: { bg: "#f8fafc", border: "#94a3b8", text: "#475569" },
 };
 
+// Convierte "#rrggbb" a rgba con la opacidad dada (para teñir el fondo del bloque).
+function hexAlpha(hex: string, alpha: number): string {
+  const m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex);
+  if (!m) return hex;
+  return `rgba(${parseInt(m[1], 16)}, ${parseInt(m[2], 16)}, ${parseInt(m[3], 16)}, ${alpha})`;
+}
+
+// Color de profesional de una cita (null para restaurante o sin profesional).
+function proColor(b: any): string | null {
+  return b.type === "citas" && b.professionals?.color ? b.professionals.color : null;
+}
+
+// Estilo del bloque en Semana/Mes: en citas el color lo marca el profesional (fondo teñido +
+// borde grueso), y el estado se expresa con opacidad/tachado; en restaurante, por estado.
+function blockStyle(b: any): { style: React.CSSProperties; className: string } {
+  const color = proColor(b);
+  const st = BLOCK_STYLE[b.status] ?? BLOCK_STYLE.confirmada;
+  if (!color) return { style: { background: st.bg, borderLeft: `3px solid ${st.border}`, color: st.text }, className: "" };
+  const muted = b.status === "cancelada" || b.status === "no_show";
+  return {
+    style: { background: hexAlpha(color, muted ? 0.12 : 0.28), borderLeft: `4px solid ${color}` },
+    className: `text-slate-900 dark:text-slate-50 ${muted ? "opacity-60" : ""} ${b.status === "cancelada" ? "line-through" : ""}`,
+  };
+}
+
 function tableLabel(b: any): string {
   if (b.table_combo_id) return b.dining_table_combos?.name ?? "Combinación";
   return b.dining_tables?.name ?? "Sin mesa";
@@ -113,8 +138,8 @@ export function Agenda() {
       {business?.type !== "restaurante" && activePros.length > 0 && (
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mb-3 text-xs text-slate-500 dark:text-slate-400">
           {activePros.map((p) => (
-            <span key={p.id} className="inline-flex items-center gap-1.5">
-              <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ background: p.color }} />
+            <span key={p.id} className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-medium text-slate-800 dark:text-slate-100"
+              style={{ background: hexAlpha(p.color, 0.28), borderLeft: `4px solid ${p.color}` }}>
               {p.name}
             </span>
           ))}
@@ -135,22 +160,37 @@ export function Agenda() {
         <EmptyState title="Sin reservas este día" hint="Prueba otra fecha o crea una reserva manual." />
       ) : (
         <div className="card divide-y divide-slate-100 dark:divide-slate-800">
-          {bookings.map((b) => (
-            <button key={b.id} onClick={() => setSelected(b)} className="w-full flex items-center gap-4 px-5 py-3 hover:bg-slate-50 dark:hover:bg-slate-800 text-left">
+          {bookings.map((b) => {
+            const color = proColor(b);
+            return (
+            <button
+              key={b.id}
+              onClick={() => setSelected(b)}
+              className={`w-full flex items-center gap-4 px-5 py-3 hover:bg-slate-50 dark:hover:bg-slate-800 text-left ${b.status === "cancelada" ? "opacity-60" : ""}`}
+              style={color ? { borderLeft: `5px solid ${color}`, background: hexAlpha(color, 0.10) } : undefined}
+            >
               <div className="w-16 shrink-0">
                 <div className="font-bold text-brand-600">{formatTime(b.starts_at, tz)}</div>
                 <div className="text-xs text-slate-400 dark:text-slate-500">{formatTime(b.ends_at, tz)}</div>
               </div>
               <div className="flex-1 min-w-0">
                 <div className="font-medium truncate">{b.customer_name} {b.customer_last_name ?? ""}</div>
-                <div className="text-xs text-slate-500 dark:text-slate-400 truncate">{detail(b)}{" · "}{b.customer_phone}</div>
+                <div className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                  {b.type === "citas" ? (b.services?.name ?? "") : detail(b)}{" · "}{b.customer_phone}
+                </div>
               </div>
               <div className="flex items-center gap-2 shrink-0">
+                {color && b.professionals?.name && (
+                  <span className="badge font-semibold text-slate-900 dark:text-slate-50" style={{ background: hexAlpha(color, 0.35) }}>
+                    {b.professionals.name}
+                  </span>
+                )}
                 <span className={`badge ${b.channel === "web" ? "bg-brand-50 text-brand-700" : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400"}`}>{b.channel}</span>
                 <StatusBadge status={b.status} />
               </div>
             </button>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -235,15 +275,14 @@ function WeekGrid({ weekDays, tz, bookings, today, onSelect }: {
                 if (e <= s) e = 24 * 60;
                 const top = ((s - startH * 60) / 60) * HOUR;
                 const height = Math.max(20, ((e - s) / 60) * HOUR - 2);
-                const st = BLOCK_STYLE[b.status] ?? BLOCK_STYLE.confirmada;
-                const borderColor = b.type === "citas" && b.professionals?.color ? b.professionals.color : st.border;
+                const bs = blockStyle(b);
                 return (
                   <button
                     key={b.id}
                     onClick={() => onSelect(b)}
                     title={`${b.customer_name} · ${detail(b)}`}
-                    className="absolute left-0.5 right-0.5 rounded-md px-1.5 py-1 text-left overflow-hidden hover:z-10 hover:shadow-md transition"
-                    style={{ top, height, background: st.bg, borderLeft: `3px solid ${borderColor}`, color: st.text }}
+                    className={`absolute left-0.5 right-0.5 rounded-md px-1.5 py-1 text-left overflow-hidden hover:z-10 hover:shadow-md transition ${bs.className}`}
+                    style={{ top, height, ...bs.style }}
                   >
                     <div className="text-[11px] font-semibold leading-tight">{formatTime(b.starts_at, tz)}</div>
                     <div className="text-[11px] font-medium leading-tight truncate">{b.customer_name}</div>
@@ -304,16 +343,15 @@ function MonthGrid({ monthDays, tz, bookings, today, anchorMonth, onSelect, onDa
                 </div>
                 <div className="space-y-0.5">
                   {dayBookings.slice(0, MAX_VISIBLE).map((b) => {
-                    const st = BLOCK_STYLE[b.status] ?? BLOCK_STYLE.confirmada;
-                    const borderColor = b.type === "citas" && b.professionals?.color ? b.professionals.color : st.border;
+                    const bs = blockStyle(b);
                     return (
                       <div
                         key={b.id}
                         role="button"
                         onClick={(e) => { e.stopPropagation(); onSelect(b); }}
                         title={`${b.customer_name} · ${detail(b)}`}
-                        className="text-[10px] leading-tight truncate rounded px-1 py-0.5"
-                        style={{ background: st.bg, borderLeft: `2px solid ${borderColor}`, color: st.text }}
+                        className={`text-[10px] leading-tight truncate rounded px-1 py-0.5 ${bs.className}`}
+                        style={bs.style}
                       >
                         {formatTime(b.starts_at, tz)} {b.customer_name}
                       </div>
