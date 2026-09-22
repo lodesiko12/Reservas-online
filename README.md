@@ -139,7 +139,7 @@ Workers Builds está conectado al repo `github.com/lodesiko12/Reservas-online`: 
 
 ### Comunes (todos los tipos)
 - **Widget**: flujo de reserva por pasos, solo muestra días con huecos (`get_available_days`), branding por negocio (color + logo), "Mi reserva" por localizador (consulta/cancelación). Embebido: `<div id="reservas-widget" data-slug="…"></div><script src="https://turnigo-widget.lodesiko12.workers.dev/embed.js" async></script>` (iframe aislado, autoajuste de altura vía `postMessage`; `data-view="mi-reserva"` abre la consulta directamente).
-- **Agenda** con vistas Día / Semana / Mes, edición al clic (estado, reprogramar, reasignar mesa), leyenda de colores por profesional. En citas solo se ofrece completada/cancelada/ausente.
+- **Agenda** con vistas Día / Semana / Mes, edición al clic (estado, reprogramar, reasignar mesa). En citas, cada bloque se tiñe del color de la profesional (también en la vista Día, con etiqueta de nombre); canceladas tachadas, ausentes atenuadas. La leyenda de profesionales filtra al hacer clic (se pueden combinar varias; "Todas" quita el filtro). En citas solo se ofrece completada/cancelada/ausente.
 - **Nueva reserva manual** (sin límites de antelación ni stock; selector de profesional o mesa).
 - **Clientes**: ficha, alta manual, importación CSV (`import_customer`), notas privadas, eliminación (conserva el historial de reservas).
 - **Reportes**: estadísticas históricas (últimos N días) + sección "Próximas reservas".
@@ -210,6 +210,8 @@ Lista única. Si retomas el proyecto, empieza por aquí.
 - Página de "ayuda de configuración" en el panel que resuma pasos y costes de cada integración para negocios nuevos (idea, no pedida).
 
 ### Mejoras menores
+- **Verificar en vivo en el negocio Mimate** (2026-09-22, sin verificar porque requiere que el usuario inicie sesión en el navegador de pruebas): colores por profesional en Semana/Mes/Día, filtro por profesional en la leyenda, y que al cambiar de pestaña del navegador y volver ya no se reinicia la pantalla (fix en `lib/auth.tsx`: supabase-js re-emite `SIGNED_IN` al volver a la pestaña y antes eso desmontaba todo el panel).
+- **Conservar borradores al cambiar de sección dentro del panel** (p.ej. formulario a medias en Clientes → ir a Agenda → volver): hoy se pierde porque la pantalla se desmonta, comportamiento normal de una SPA. Ofrecido al usuario como trabajo aparte; sin respuesta todavía.
 - Probar en vivo añadir/quitar/cambiar rol en la pestaña "Usuarios" del super-admin (solo se ha verificado el listado).
 - Selector de ubicación de Google Business Profile para cuentas con varias fichas.
 - Editor visual de posiciones de mesa (drag & drop; `dining_tables.pos_x/pos_y` existen sin usar).

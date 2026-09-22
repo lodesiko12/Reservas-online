@@ -59,6 +59,16 @@ Flujo tras cualquier cambio de código:
 - Para citas/psicólogo se usa un negocio **real** del usuario, *Ana Sánchez Psicóloga*
   (`ana-sanchez-psicologa`, `type='psicologo'`): crear solo datos de prueba propios y borrarlos al
   terminar; no tocar clientes/reservas reales.
+- *Mimate* (`mimate`, tipo citas, 5 profesionales) es un negocio de **demo comercial** para un
+  cliente potencial: el 2026-09-22 se cargaron 48 clientes y 821 reservas ficticias (14 sept–10 oct)
+  para que la Agenda se vea llena. Sirve para verificar features de citas sin miedo a tocar datos
+  reales, pero dejarlo presentable (sin basura visible). Credenciales en la memoria local.
+- **El asistente no puede teclear contraseñas en formularios de login** (restricción fija). Para
+  verificar en vivo con sesión, pedir al usuario que inicie sesión él mismo en el navegador
+  integrado y continuar desde ahí.
+- Para insertar muchos datos de prueba por el MCP de Supabase, generar un CTE compacto
+  `with r(...) as (values ...) insert ... select ... from r join ...` en tandas de ~200 filas
+  (un INSERT por fila en 500 KB no cabe en una llamada).
 
 ## Cómo prefiere trabajar el usuario
 
