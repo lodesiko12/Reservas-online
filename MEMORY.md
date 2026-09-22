@@ -1,4 +1,5 @@
-- [SaaS Reservas (proyecto)](memory/project-reservas-saas.md) — infra Supabase en vivo, credenciales demo, decisiones de arquitectura; pendientes canónicos en README sección "## Pendientes"
+- [Decisiones de diseño y comprobaciones hechas](memory/project-reservas-saas.md) — el porqué de decisiones que el código no explica; features y pendientes en README
 - [RPC overloads en Supabase](memory/feedback-supabase-rpc-overloads.md) — nunca cambiar la firma de un RPC expuesto sin dropear la firma vieja
 - [select (fn()).* ejecuta la función N veces](memory/feedback-sql-function-dot-star-side-effects.md) — usar `select * from fn(...)` al probar funciones con efectos secundarios
 - [Upsert de PostgREST e índices parciales](memory/feedback-postgrest-upsert-partial-index.md) — `.upsert()` no funciona sobre un índice único con WHERE; usar un RPC
+- [Timeout propio en fetch dentro de Edge Functions](memory/feedback-edge-function-fetch-timeout.md) — AbortController a 25s, y desplegar leyendo el archivo real

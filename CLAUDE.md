@@ -1,187 +1,68 @@
 # Turnigo — instrucciones del proyecto
 
-## Verificación de cambios: SIEMPRE contra Cloudflare, NUNCA localhost
+Qué es el proyecto, qué hace cada feature y la lista de pendientes están en `README.md`
+(sección "Funcionalidades" y "Pendientes"). Este archivo solo contiene reglas de trabajo y datos
+que no se deducen del código.
 
-La app está desplegada en Cloudflare Workers y **eso es lo único que el usuario considera
-"la app funcionando"**. Un `npm run dev` en local no cuenta como verificación válida.
+## Verificar SIEMPRE contra Cloudflare, nunca localhost
 
-- Panel de administración (dashboard + superadmin): **https://turnigo-panel.lodesiko12.workers.dev/**
-- Widget de reservas (cliente): **https://turnigo-widget.lodesiko12.workers.dev/?slug=<slug-del-negocio>**
+Solo cuenta como "funciona" lo que se ve en producción:
 
-**Despliegue**: Cloudflare Workers Builds está conectado por Git al repo
-(`github.com/lodesiko12/Reservas-online`) — cualquier `git push` a `main` dispara el build y
-deploy automáticamente en Cloudflare, tanto para `apps/dashboard` (worker `turnigo-panel`) como
-para `apps/widget` (worker `turnigo-widget`). No hay que ejecutar `wrangler deploy` a mano.
+- Panel (negocio + superadmin): https://turnigo-panel.lodesiko12.workers.dev/
+- Widget: https://turnigo-widget.lodesiko12.workers.dev/?slug=<slug>
 
-Flujo de verificación tras cualquier cambio de código:
-1. `npm run build` en el/los workspace(s) afectados para detectar errores de tipos.
-2. Commit y `git push` a `main` (previa confirmación del usuario, como con cualquier push).
-3. Esperar a que Cloudflare termine el build/deploy (unos minutos) antes de verificar — un
-   `git push` no es instantáneo en producción.
-4. Verificar el cambio abriendo la URL de Cloudflare de arriba en el navegador, **no**
-   `localhost:5173` / `localhost:5174`. Esas URLs solo sirven para desarrollo rápido, no como
-   prueba de que algo "funciona".
+Flujo tras cualquier cambio de código:
+1. `npm run build` en los workspaces afectados.
+2. Commit y **pedir confirmación antes de `git push` a `main`** (siempre, aunque el usuario suela
+   decir "hazlo ya"). El push dispara Cloudflare Workers Builds (`turnigo-panel` y `turnigo-widget`,
+   deploys separados que no siempre acaban a la vez). Nunca `wrangler deploy` a mano.
+3. Esperar el deploy (minutos) con la tool `Monitor`: `curl` a la URL, extraer el hash del bundle
+   (`grep -o 'assets/index-[a-zA-Z0-9]*\.js'`) y comparar con el anterior. Sin `sleep` en primer plano.
+4. Verificar el flujo completo en el navegador contra las URLs de arriba (completar una reserva real,
+   no solo ver que aparece un botón). Borrar cualquier dato de prueba justo después.
 
-## Infra
+## Backend (Supabase) — reglas
 
-- Backend: Supabase, proyecto `reservas-saas` (`project_id` / ref `fjpbruwczuovvynhlnzv`, región
-  eu-west-1). URL `https://fjpbruwczuovvynhlnzv.supabase.co`.
-- El widget y el dashboard comparten ese mismo proyecto Supabase (ver `.env.production` de cada app).
-- Migraciones SQL en `supabase/migrations/`, aplicadas directamente al proyecto de producción de
-  arriba (no hay entorno de staging separado). Nunca cambiar la firma de un RPC ya expuesto sin
-  `drop function` de la firma vieja primero (si no, PostgREST deja una sobrecarga ambigua).
-- Superadmin real: `lodesiko12@gmail.com` (coincide con la cuenta del usuario). No hay credenciales
-  de prueba con contraseña conocida para este entorno — para probar flujos de superadmin, pedir al
-  usuario que inicie sesión él mismo en el panel.
+- Proyecto `reservas-saas`, ref `fjpbruwczuovvynhlnzv`, `https://fjpbruwczuovvynhlnzv.supabase.co`,
+  plan **Free** (riesgo de pausado por inactividad; recomendado Pro, el usuario no lo ha decidido).
+- No hay staging: las migraciones de `supabase/migrations/` se aplican directamente a producción.
+  **Pedir confirmación antes de cualquier migración o cambio en la BD**, sin excepción por
+  "es aditivo/bajo riesgo". Se pueden agrupar varias migraciones ya presentadas en una sola
+  confirmación si el usuario lo pide así.
+- Edge Functions: se despliegan con `deploy_edge_function` del MCP de Supabase (Cloudflare solo
+  cubre las dos apps). Generar el payload leyendo el archivo real de disco, nunca retipeándolo.
+- Secretos de Edge Functions: solo el usuario puede ponerlos, en Supabase → menú principal →
+  **Edge Functions → Manage secrets** (ya no están en Project Settings). Los ya configurados:
+  `CRON_SECRET`, `GOOGLE_STATE_SECRET`, `DASHBOARD_URL`, `GOOGLE_SYNC_CRON_SECRET`. El valor real de
+  `CRON_SECRET` está embebido en los cron jobs:
+  `select command from cron.job where jobname='whatsapp-reminders-hourly';`
+- Esta sesión sí puede usar `pg_cron`/`pg_net` por SQL directo.
+- Lecciones técnicas de Postgres/Supabase ya aprendidas (leer antes de tocar RPCs o probar funciones
+  por SQL): `memory/feedback-*.md` — firma de RPC, reescribir desde `pg_get_functiondef`, upsert con
+  índice parcial, `select (fn()).*`, timeout en `fetch` de Edge Functions.
+- El trigger `guard_business_update` exige sesión real de super-admin para cambiar `type`/`slug`/
+  `is_active` de un negocio. No intentar saltarlo por SQL (`DISABLE TRIGGER`, spoof de
+  `request.jwt.claims`): está bloqueado por el clasificador de seguridad. Usar la UI
+  (`Admin → Editar negocio`).
+- Antes de añadir un valor a un enum compartido (`business_type`, `booking_status`...), auditar
+  con agentes Explore toda comparación literal en SQL y TS; hay datos reales en producción.
+- Gemini (`generate-client-ai-report`): modelo en la constante `MODEL`
+  (`gemini-3.6-flash`; `gemini-2.5-flash` ya no existe para claves nuevas). Devuelve 503/429 con
+  frecuencia — el panel reintenta 3 veces. Si Google lo retira, el 404 indica el modelo sustituto.
 
-## Dónde se configuran los secretos de Edge Functions
+## Cuentas para probar
 
-Ya **no** están en Project Settings del dashboard de Supabase. Hay que ir al menú principal
-(el de siempre, con Table Editor/SQL Editor/Database/Auth...) → **Edge Functions** → botón/pestaña
-**"Manage secrets"** (arriba de la lista de funciones). Son secretos compartidos por **todas** las
-funciones del proyecto. Esta sesión no tiene forma de configurarlos vía API/MCP — solo el usuario
-puede hacerlo a mano.
+- Super-admin real: `lodesiko12@gmail.com` (la cuenta del usuario). Credenciales en la memoria
+  local del asistente, nunca en el repo.
+- Negocio demo restaurante: `restaurante-la-plaza` (`staff@restaurante.test` / `Restaurante1234!`).
+- `barberia-demo` y `admin@reservas.test` **ya no existen** en producción (`seed.sql` los recrearía).
+- Para citas/psicólogo se usa un negocio **real** del usuario, *Ana Sánchez Psicóloga*
+  (`ana-sanchez-psicologa`, `type='psicologo'`): crear solo datos de prueba propios y borrarlos al
+  terminar; no tocar clientes/reservas reales.
 
-## Google Calendar — 3 secretos de plataforma ya configurados (2026-09-20)
+## Cómo prefiere trabajar el usuario
 
-El código de sincronización con Google Calendar (`google-oauth-start`, `google-oauth-callback`,
-`sync-google-event`, `sync-google-busy`) está desplegado y los 3 secretos de plataforma que
-necesitaba (`GOOGLE_STATE_SECRET`, `DASHBOARD_URL`, `GOOGLE_SYNC_CRON_SECRET`) ya fueron
-configurados por el usuario. **Pendiente de verificar el flujo completo end-to-end**: ningún negocio
-tiene todavía su propio Client ID/Secret de Google Cloud configurado (paso previo distinto, por
-negocio, ver abajo), así que "Conectar con Google Calendar" no se ha podido probar de principio a
-fin todavía.
-
-Cada negocio que quiera usar Google Calendar necesita su propio Client ID/Secret de un
-proyecto de Google Cloud (gratis: Google Cloud Console → habilitar Calendar API → credencial OAuth
-"Aplicación web"), pegado en `Configuración → Integraciones → Google Calendar` dentro del panel,
-con la URI de redirección `https://fjpbruwczuovvynhlnzv.supabase.co/functions/v1/google-oauth-callback`
-autorizada en ese proyecto de Google Cloud.
-
-## Crons de recordatorio y reseña — `CRON_SECRET` ya configurado (confirmado 2026-09-21)
-
-Migración `0025_reminder_review_cron.sql` (2026-09-20) programó dos cron jobs cada hora
-(`whatsapp-reminders-hourly`, `request-reviews-hourly`) que llaman a las Edge Functions del mismo
-nombre, que hasta entonces estaban desplegadas pero sin nada que las invocara periódicamente (a
-diferencia de `sync-google-busy`, programado en la Fase 5). El secreto `CRON_SECRET` que protege
-ambas ya está configurado por el usuario — no debería haber más 401 por falta de secreto. Este
-mismo `CRON_SECRET` se reutiliza también para `sync-google-business-hours-hourly` (Fase 8, ver
-abajo), así que tampoco hizo falta configurar nada nuevo para esa función. El valor real está
-embebido en los propios cron jobs de la base de datos (nunca se commitea al repo), recuperable con:
-```sql
-select command from cron.job where jobname='whatsapp-reminders-hourly';
-```
-
-Además, para que `request-reviews` envíe algo, cada negocio necesita rellenar su **"Enlace de
-reseña"** en `Panel → Configuración → Reseñas` (vacío por defecto = no se envía nada para ese
-negocio).
-
-## Mensajes de email personalizables (Fase 7, 2026-09-20)
-
-Cada negocio puede personalizar, desde `Panel → Configuración`, el párrafo de introducción del
-email de confirmación (`businesses.confirmation_email_message`) y del email de petición de reseña
-(`businesses.review_email_message`), con placeholders `{cliente}` `{negocio}` `{servicio}`
-`{fecha}` `{hora}` (los dos últimos solo en confirmación). Si se deja vacío, se usa el texto por
-defecto de siempre. La lógica de sustitución vive en `supabase/functions/_shared/email.ts`
-(`applyPlaceholders`) — no es un motor de plantillas de propósito general, solo sustituye el
-párrafo de introducción; el resto del diseño del email (cabecera de color, tarjeta del código
-localizador...) sigue siendo fijo, decisión explícita para no arriesgar con HTML libre por negocio.
-
-## Sincronización de horario desde Google Business Profile (Fase 8, 2026-09-21)
-
-Sincroniza automáticamente `business_hours` (horario general de apertura) desde la ficha de Google
-Business Profile del negocio, cada hora, **sin revisión manual** — Google es la fuente de verdad
-mientras la sincronización esté activada (decisión explícita del usuario).
-
-**No hace falta ningún secreto nuevo**: reutiliza el mismo Client ID/Secret de Google Cloud que ya
-usa Google Calendar (`business_integrations.google_client_id/secret`) y los mismos
-`GOOGLE_STATE_SECRET`/`CRON_SECRET` de plataforma ya configurados arriba. Lo único nuevo que cada
-negocio debe hacer en su proyecto de Google Cloud: habilitar las APIs "Business Information" y
-"Account Management", y autorizar la segunda URI de redirección
-(`https://fjpbruwczuovvynhlnzv.supabase.co/functions/v1/google-business-oauth-callback`) en la
-misma credencial OAuth que ya tiene para Calendar.
-
-**Bloqueo externo real — mismo que ya frenaba "Resumen de reseñas con IA"**: Google exige una
-aprobación manual ("Basic API Access") por proyecto de Google Cloud antes de que la Business
-Profile API funcione. Requisitos: ficha de Google Business Profile verificada y activa 60+ días,
-web propia enlazada en la ficha, y el solicitante debe figurar como owner/manager de esa ficha. Se
-pide desde el formulario de contacto de la API de GBP ("Application for Basic API Access"),
-revisión manual de Google, sin plazo garantizado (días a semanas). **Código desplegado pero
-inerte** hasta que algún negocio consiga esa aprobación — mismo patrón que Google Calendar en la
-Fase 5.
-
-**v1 solo soporta una ficha por cuenta de Google conectada**: si la cuenta de Google que se conecta
-gestiona 0 o 2+ fichas de Business Profile, la conexión queda guardada (tokens, email) pero sin
-resolver ubicación y con la sincronización desactivada — visible en el panel
-(`Configuración → Horario en Google Business Profile`) pero sin selector para elegir cuál. No
-construido a propósito: es el caso menos común y esta feature ya va a estar inerte para la mayoría
-por el bloqueo de arriba.
-
-## Categoría de negocio "Psicólogo" (Fase 8, 2026-09-21)
-
-`business_type` ganó un tercer valor de enum, `psicologo` (migración `0027`), pensado para el
-negocio real "Ana Sánchez Psicóloga" (hoy sigue como `type='citas'`, sin migrar — ver Fase 9 abajo).
-Al añadirse, era **funcionalmente idéntico a `citas`**: una auditoría exhaustiva del código (dos
-agentes Explore) confirmó que casi todo el proyecto ya distingue tipos como `type === 'restaurante'
-? ... : ...`, nunca un switch cerrado de dos casos, así que un negocio `psicologo` caía
-automáticamente en el camino de citas sin más cambios. La Fase 9 (justo debajo) es la primera vez
-que `psicologo` deja de comportarse igual que `citas`.
-
-## Ficha de cliente ampliada para Psicólogo + clave de Gemini por negocio (Fase 9, 2026-09-21)
-
-Primera feature con checks reales de `business?.type === "psicologo"` en el código (antes solo
-existía el valor del enum, sin ningún comportamiento distinto). Añade a la ficha de cliente
-(`Panel → Clientes`) las pestañas Historial, Editar, Informe y Recibo; más una sección nueva
-**Seguimiento** en el sidebar psicólogo con la cita de hoy en curso y la siguiente (mismo cálculo
-por ventana de tiempo que "Plano de sala", sin cronómetro). Todo gateado por tipo tanto en el
-frontend como en la Edge Function `generate-client-ai-report` (que además vuelve a comprobar
-`business.type` en el servidor, no confía solo en el gate del panel).
-
-**Rediseñado el mismo día (migración `0030_session_records.sql`)**: la primera versión tenía
-pestañas Notas (tabla `client_notes`) y Tareas (tabla `client_tasks`) sueltas, sin relación entre
-sí. El usuario pidió en su lugar un modelo de "sesión" único con 4 campos estructurados —
-**Objetivo**, **Notas**, **Seguimiento** (qué revisar en próximas sesiones) y **Tareas/Pautas** —,
-tabla `client_sessions`, mostrado en la pestaña **Historial** (una entrada por sesión, la más
-reciente primero) en vez de pestañas separadas. `client_notes`/`client_tasks` se **eliminaron**
-(sin datos reales, solo la prueba de la sesión anterior, ya limpiada) — si se retoma este código en
-otra sesión, esas dos tablas ya no existen. El botón de recibo en PDF se independizó de Historial a
-su propia pestaña **Recibo**. `generate-client-ai-report` ahora construye el prompt a partir de
-todas las filas de `client_sessions` del cliente (antes leía `client_notes`+`client_tasks` por
-separado); `client_ai_reports.notes_count`/`tasks_count` se renombraron a un único `sessions_count`.
-En "Seguimiento", el modal de "Empezar cita"/"Apuntar notas" pasó de un único textarea a los mismos
-4 campos, y al guardar crea una fila en `client_sessions` ligada a la reserva (`booking_id`).
-
-**Por qué clave de Gemini por negocio y no una compartida de la plataforma**: el tier gratuito de
-Gemini es ~10 peticiones/min y ~500-1500/día *por clave de API*, no por proyecto — compartirla entre
-varios negocios psicólogo agotaría el límite rápido y mezclaría el uso (y los datos clínicos) de
-distintos tenants bajo una sola clave. Cada negocio pega la suya en
-`Configuración → Informes con IA`, guardada con el mismo patrón secreto-por-negocio que Resend/
-WhatsApp/Google (RPCs `get_gemini_status`/`set_gemini_key`, nunca expuesta al navegador, y sin tocar
-`get_business_integration`/`set_business_integration` para no cambiar la firma de una RPC ya
-expuesta).
-
-**"Recibo" = PDF no fiscal**: generado 100% en el navegador con `jspdf`+`jspdf-autotable`, sin
-numeración secuencial ni backend — no cumple (ni pretende cumplir) requisitos de factura legal.
-
-**Ana Sánchez Psicóloga ya está migrada a `type='psicologo'`** (2026-09-21) — el campo "Tipo" de
-`Admin → Editar negocio` ahora es un `<select>` editable solo para super-admin (antes deshabilitado
-a propósito); esa es la única vía correcta para cambiar el tipo de un negocio real, porque el
-trigger `guard_business_update` exige una sesión de super-admin *realmente autenticada* — un
-`UPDATE` directo por SQL/MCP queda bloqueado por el clasificador de seguridad de Claude Code
-(correctamente: es indistinguible de un intento de saltarse el trigger). No intentar rodearlo con
-`ALTER TABLE ... DISABLE TRIGGER` ni con `set_config('request.jwt.claims', ...)` — ambos ya se
-probaron y están bloqueados; usar siempre el flujo real de la UI.
-
-**Modelo de Gemini: `gemini-3.6-flash`, no `gemini-2.5-flash`** — Google retiró `gemini-2.5-flash`
-para claves nuevas (404 "no longer available to new users"). Además, `gemini-3.6-flash` está dando
-503 "high demand" con bastante frecuencia (problema de capacidad conocido y documentado en los
-foros de Google, no de esta clave ni de este código) — `generate-client-ai-report` reintenta hasta
-3 veces desde el navegador con una pequeña espera entre intentos antes de mostrar error. Si Google
-retira `gemini-3.6-flash` en el futuro, el error será un 404 con el nombre del modelo recomendado
-en el propio mensaje — cambiar solo la constante `MODEL` en
-`supabase/functions/generate-client-ai-report/index.ts`.
-
-## Más contexto
-
-Ver `README.md` (sección "## Pendientes" para la lista canónica de tareas pendientes) y
-`memory/project-reservas-saas.md` para el historial de decisiones de arquitectura.
+- Pide tandas de 3-5 cambios y espera que se hagan todos en la sesión, con commits por tanda.
+- Si pide "otra forma de hacer X", quiere opciones en el chat antes de tocar código.
+- Suele probar lo entregado y pedir un ajuste fino después: es la misma feature, mismo flujo.
+- Da credenciales reales en el chat y pide guardarlas: van a la memoria local, nunca al repo.
