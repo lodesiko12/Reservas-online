@@ -65,6 +65,8 @@ export function Agenda() {
   const [view, setView] = useState<"day" | "week" | "month">("week");
   const [anchor, setAnchor] = useState(ymdInTz(new Date(), tz));
   const [selected, setSelected] = useState<any | null>(null);
+  // Filtro por profesional (clic en la leyenda). Vacío = todas.
+  const [proFilter, setProFilter] = useState<Set<string>>(new Set());
 
   // Días (lunes→domingo) de la semana que contiene `anchor`.
   const weekDays = useMemo(() => {
@@ -95,9 +97,23 @@ export function Agenda() {
     ? [zonedDayRange(weekDays[0], tz)[0], zonedDayRange(weekDays[6], tz)[1]]
     : [zonedDayRange(monthDays[0], tz)[0], zonedDayRange(monthDays[monthDays.length - 1], tz)[1]];
 
-  const { data: bookings, isLoading, refetch } = useBookings(from, to);
+  const { data: allBookings, isLoading, refetch } = useBookings(from, to);
   const { data: professionals } = useProfessionals();
   const activePros = (professionals ?? []).filter((p) => p.is_active);
+
+  const bookings = useMemo(() => {
+    if (!allBookings) return allBookings;
+    if (proFilter.size === 0) return allBookings;
+    return allBookings.filter((b) => b.professional_id && proFilter.has(b.professional_id));
+  }, [allBookings, proFilter]);
+
+  function toggleProFilter(id: string) {
+    setProFilter((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
 
   function goBack() {
     if (view === "day") setAnchor(addDaysYmd(anchor, -1));
@@ -136,13 +152,36 @@ export function Agenda() {
       />
 
       {business?.type !== "restaurante" && activePros.length > 0 && (
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mb-3 text-xs text-slate-500 dark:text-slate-400">
-          {activePros.map((p) => (
-            <span key={p.id} className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-medium text-slate-800 dark:text-slate-100"
-              style={{ background: hexAlpha(p.color, 0.28), borderLeft: `4px solid ${p.color}` }}>
-              {p.name}
+        <div className="flex flex-wrap items-center gap-2 mb-3 text-xs">
+          <button
+            type="button"
+            onClick={() => setProFilter(new Set())}
+            className={`rounded-full px-2.5 py-1 font-medium border transition ${proFilter.size === 0
+              ? "bg-slate-800 text-white border-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:border-slate-100"
+              : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 dark:hover:bg-slate-700"}`}
+          >
+            Todas
+          </button>
+          {activePros.map((p) => {
+            const active = proFilter.size === 0 || proFilter.has(p.id);
+            return (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => toggleProFilter(p.id)}
+                title={proFilter.has(p.id) ? "Quitar del filtro" : `Ver solo las citas de ${p.name}`}
+                className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-medium transition text-slate-800 dark:text-slate-100 ${active ? "" : "opacity-40 grayscale"} ${proFilter.has(p.id) ? "ring-2 ring-offset-1 ring-slate-800 dark:ring-slate-100 dark:ring-offset-slate-900" : ""}`}
+                style={{ background: hexAlpha(p.color, 0.28), borderLeft: `4px solid ${p.color}` }}
+              >
+                {p.name}
+              </button>
+            );
+          })}
+          {proFilter.size > 0 && (
+            <span className="text-slate-400 dark:text-slate-500">
+              {bookings?.length ?? 0} cita{(bookings?.length ?? 0) === 1 ? "" : "s"}
             </span>
-          ))}
+          )}
         </div>
       )}
 
