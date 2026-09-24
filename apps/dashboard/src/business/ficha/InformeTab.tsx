@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "../../lib/supabase";
 import { useAuth } from "../../lib/auth";
-import { Spinner } from "../../components/ui";
+import { Spinner, ConfirmDialog } from "../../components/ui";
 import { formatDateTime } from "@reservas/shared";
 import { generateClientReportPdf } from "./InformePdf";
 import type { Customer } from "../hooks";
@@ -16,6 +16,7 @@ export function InformeTab({ customer }: { customer: Customer }) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
   const [saving, setSaving] = useState(false);
+  const [removingId, setRemovingId] = useState<string | null>(null);
 
   function startEditing(id: string, content: string) {
     setEditingId(id);
@@ -29,6 +30,12 @@ export function InformeTab({ customer }: { customer: Customer }) {
     setSaving(false);
     if (error) { setError(error.message); return; }
     setEditingId(null);
+    qc.invalidateQueries({ queryKey: ["customer-ai-reports", customer.id] });
+  }
+
+  async function removeReport(id: string) {
+    setRemovingId(null);
+    await supabase.from("client_ai_reports").delete().eq("id", id);
     qc.invalidateQueries({ queryKey: ["customer-ai-reports", customer.id] });
   }
 
@@ -100,6 +107,7 @@ export function InformeTab({ customer }: { customer: Customer }) {
                     >
                       📄 Descargar PDF
                     </button>
+                    <button className="btn-ghost text-xs text-red-600" onClick={() => setRemovingId(r.id)}>🗑 Eliminar</button>
                   </div>
                 )}
               </div>
@@ -123,6 +131,13 @@ export function InformeTab({ customer }: { customer: Customer }) {
           ))}
         </ul>
       )}
+      <ConfirmDialog
+        open={!!removingId}
+        title="Eliminar informe"
+        message="¿Eliminar este informe? Esta acción no se puede deshacer."
+        onConfirm={() => removingId && removeReport(removingId)}
+        onCancel={() => setRemovingId(null)}
+      />
     </div>
   );
 }
