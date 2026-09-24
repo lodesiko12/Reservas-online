@@ -4,6 +4,7 @@ import { supabase } from "../../lib/supabase";
 import { useAuth } from "../../lib/auth";
 import { Spinner } from "../../components/ui";
 import { formatDateTime } from "@reservas/shared";
+import { generateClientReportPdf } from "./InformePdf";
 import type { Customer } from "../hooks";
 
 export function InformeTab({ customer }: { customer: Customer }) {
@@ -12,6 +13,24 @@ export function InformeTab({ customer }: { customer: Customer }) {
   const qc = useQueryClient();
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [draft, setDraft] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  function startEditing(id: string, content: string) {
+    setEditingId(id);
+    setDraft(content);
+  }
+
+  async function saveEdit() {
+    if (!editingId) return;
+    setSaving(true);
+    const { error } = await supabase.from("client_ai_reports").update({ content: draft }).eq("id", editingId);
+    setSaving(false);
+    if (error) { setError(error.message); return; }
+    setEditingId(null);
+    qc.invalidateQueries({ queryKey: ["customer-ai-reports", customer.id] });
+  }
 
   const { data: reports, isLoading } = useQuery({
     queryKey: ["customer-ai-reports", customer.id],
@@ -59,8 +78,8 @@ export function InformeTab({ customer }: { customer: Customer }) {
   return (
     <div>
       <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
-        Genera un resumen con IA a partir de todas las sesiones registradas en el Historial de este cliente.
-        Requiere haber configurado una clave de Gemini en Configuración → Informes con IA.
+        Genera un borrador de informe psicológico con IA a partir de todas las sesiones registradas en el Historial.
+        Puedes editarlo antes de descargarlo en PDF. Requiere haber configurado una clave de Gemini en Configuración → Informes con IA.
       </p>
       <button className="btn-primary text-xs mb-4" disabled={generating} onClick={generate}>{generating ? "Generando…" : "Generar informe"}</button>
       {error && <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-3">{error}</div>}
@@ -70,8 +89,36 @@ export function InformeTab({ customer }: { customer: Customer }) {
         <ul className="space-y-3 max-h-96 overflow-y-auto">
           {reports.map((r) => (
             <li key={r.id} className="card p-3">
-              <div className="text-xs text-slate-400 dark:text-slate-500 mb-2">{formatDateTime(r.created_at, tz)} · basado en {r.sessions_count} sesión{r.sessions_count === 1 ? "" : "es"}</div>
-              <pre className="whitespace-pre-wrap text-sm font-sans">{r.content}</pre>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs text-slate-400 dark:text-slate-500">{formatDateTime(r.created_at, tz)} · basado en {r.sessions_count} sesión{r.sessions_count === 1 ? "" : "es"}</span>
+                {editingId !== r.id && (
+                  <div className="flex gap-2">
+                    <button className="btn-ghost text-xs" onClick={() => startEditing(r.id, r.content)}>✏️ Editar</button>
+                    <button
+                      className="btn-ghost text-xs"
+                      onClick={() => generateClientReportPdf(customer, r.content, tz)}
+                    >
+                      📄 Descargar PDF
+                    </button>
+                  </div>
+                )}
+              </div>
+              {editingId === r.id ? (
+                <div className="space-y-2">
+                  <textarea
+                    className="input w-full font-mono text-xs"
+                    rows={16}
+                    value={draft}
+                    onChange={(e) => setDraft(e.target.value)}
+                  />
+                  <div className="flex gap-2">
+                    <button className="btn-primary text-xs" disabled={saving} onClick={saveEdit}>{saving ? "Guardando…" : "Guardar cambios"}</button>
+                    <button className="btn-ghost text-xs" onClick={() => setEditingId(null)}>Cancelar</button>
+                  </div>
+                </div>
+              ) : (
+                <pre className="whitespace-pre-wrap text-sm font-sans">{r.content}</pre>
+              )}
             </li>
           ))}
         </ul>

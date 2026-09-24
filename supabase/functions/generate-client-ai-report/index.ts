@@ -32,7 +32,7 @@ Deno.serve(async (req) => {
   if (!customer_id) return json({ error: "Falta customer_id" }, 400);
 
   const { data: customer } = await asCaller
-    .from("customers").select("id, business_id, full_name, last_name")
+    .from("customers").select("id, business_id, full_name, last_name, birth_date, profession")
     .eq("id", customer_id).maybeSingle();
   if (!customer) return json({ error: "Cliente no encontrado o sin acceso" }, 404);
 
@@ -134,7 +134,27 @@ type SessionRow = {
   tareas_pautas: string | null;
 };
 
-function buildPrompt(customer: { full_name: string; last_name: string | null }, sessions: SessionRow[]): string {
+type ReportCustomer = {
+  full_name: string;
+  last_name: string | null;
+  birth_date: string | null;
+  profession: string | null;
+};
+
+function calculateAge(birthDate: string): number {
+  const today = new Date();
+  const birth = new Date(birthDate);
+  let age = today.getFullYear() - birth.getFullYear();
+  const hasHadBirthdayThisYear = today.getMonth() > birth.getMonth() ||
+    (today.getMonth() === birth.getMonth() && today.getDate() >= birth.getDate());
+  if (!hasHadBirthdayThisYear) age--;
+  return age;
+}
+
+// Borrador de informe clínico, editable después por el psicólogo desde el
+// panel (InformeTab) antes de exportarlo a PDF. Sigue el formato real que
+// usa Ana Sánchez fuera de Turnigo (plantilla INFORME ANA.doc).
+function buildPrompt(customer: ReportCustomer, sessions: SessionRow[]): string {
   const sessionsText = sessions.map((s, i) => {
     const parts = [
       s.objetivo && `Objetivo: ${s.objetivo}`,
@@ -145,9 +165,16 @@ function buildPrompt(customer: { full_name: string; last_name: string | null }, 
     return `Sesión ${i + 1} [${s.session_date.slice(0, 10)}]:\n  ${parts || "(sin contenido)"}`;
   }).join("\n\n");
 
-  return `Eres un asistente que ayuda a un/a psicólogo/a a resumir el seguimiento de un/a paciente a partir del historial de sesiones registradas. Genera un informe breve, profesional y en español, en formato markdown, con estas secciones: "Resumen general", "Evolución observada", "Tareas y pautas asignadas", "Recomendaciones". Básate ÚNICAMENTE en los datos proporcionados, no inventes diagnósticos ni datos clínicos no mencionados.
+  const datosPersonales = [
+    `Nombre: ${customer.full_name} ${customer.last_name ?? ""}`.trim(),
+    customer.birth_date && `Edad: ${calculateAge(customer.birth_date)} años`,
+    customer.profession && `Profesión: ${customer.profession}`,
+  ].filter(Boolean).join("\n");
 
-Paciente: ${customer.full_name} ${customer.last_name ?? ""}
+  return `Eres un asistente que ayuda a un/a psicólogo/a a redactar un informe psicológico a partir del historial de sesiones registradas. Genera un informe profesional y en español, en formato markdown, con exactamente estas secciones (como títulos de nivel 2, "## "): "Motivo de consulta", "Antecedentes y descripción de la situación", "Sintomatología referida", "Observación clínica", "Valoración psicológica", "Recomendaciones". Básate ÚNICAMENTE en los datos proporcionados, no inventes diagnósticos ni datos clínicos no mencionados. Es un borrador que el/la psicólogo/a revisará y editará antes de entregarlo, así que si falta información en alguna sección indícalo brevemente en vez de rellenar con suposiciones.
+
+Datos del paciente:
+${datosPersonales}
 
 Historial de sesiones (orden cronológico):
 ${sessionsText}`;

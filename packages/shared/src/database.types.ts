@@ -196,6 +196,65 @@ export type Database = {
           },
         ]
       }
+      business_google_profile_accounts: {
+        Row: {
+          access_token: string | null
+          business_id: string
+          created_at: string
+          gbp_account_name: string | null
+          gbp_location_name: string | null
+          gbp_location_title: string | null
+          google_email: string | null
+          last_sync_error: string | null
+          last_sync_status: string
+          last_synced_at: string | null
+          refresh_token: string | null
+          sync_enabled: boolean
+          token_expires_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          access_token?: string | null
+          business_id: string
+          created_at?: string
+          gbp_account_name?: string | null
+          gbp_location_name?: string | null
+          gbp_location_title?: string | null
+          google_email?: string | null
+          last_sync_error?: string | null
+          last_sync_status?: string
+          last_synced_at?: string | null
+          refresh_token?: string | null
+          sync_enabled?: boolean
+          token_expires_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          access_token?: string | null
+          business_id?: string
+          created_at?: string
+          gbp_account_name?: string | null
+          gbp_location_name?: string | null
+          gbp_location_title?: string | null
+          google_email?: string | null
+          last_sync_error?: string | null
+          last_sync_status?: string
+          last_synced_at?: string | null
+          refresh_token?: string | null
+          sync_enabled?: boolean
+          token_expires_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_google_profile_accounts_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: true
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       business_hours: {
         Row: {
           business_id: string
@@ -472,6 +531,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "client_sessions_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "client_sessions_business_id_fkey"
             columns: ["business_id"]
             isOneToOne: false
@@ -485,19 +551,15 @@ export type Database = {
             referencedRelation: "customers"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "client_sessions_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "bookings"
-            referencedColumns: ["id"]
-          },
         ]
       }
       customers: {
         Row: {
+          address: string | null
+          birth_date: string | null
           bookings_count: number
           business_id: string
+          city: string | null
           created_at: string
           email: string | null
           full_name: string
@@ -508,12 +570,18 @@ export type Database = {
           notes: string | null
           phone: string | null
           phone_norm: string | null
+          postal_code: string | null
+          profession: string | null
+          province: string | null
           tags: string[]
           updated_at: string
         }
         Insert: {
+          address?: string | null
+          birth_date?: string | null
           bookings_count?: number
           business_id: string
+          city?: string | null
           created_at?: string
           email?: string | null
           full_name: string
@@ -524,12 +592,18 @@ export type Database = {
           notes?: string | null
           phone?: string | null
           phone_norm?: string | null
+          postal_code?: string | null
+          profession?: string | null
+          province?: string | null
           tags?: string[]
           updated_at?: string
         }
         Update: {
+          address?: string | null
+          birth_date?: string | null
           bookings_count?: number
           business_id?: string
+          city?: string | null
           created_at?: string
           email?: string | null
           full_name?: string
@@ -540,6 +614,9 @@ export type Database = {
           notes?: string | null
           phone?: string | null
           phone_norm?: string | null
+          postal_code?: string | null
+          profession?: string | null
+          province?: string | null
           tags?: string[]
           updated_at?: string
         }
@@ -1494,6 +1571,18 @@ export type Database = {
           type: Database["public"]["Enums"]["business_type"]
         }[]
       }
+      get_business_google_profile_status: {
+        Args: { p_business_id: string }
+        Returns: {
+          connected: boolean
+          google_email: string
+          last_sync_error: string
+          last_sync_status: string
+          last_synced_at: string
+          location_title: string
+          sync_enabled: boolean
+        }[]
+      }
       get_business_integration: {
         Args: { p_business_id: string }
         Returns: {
@@ -1522,25 +1611,11 @@ export type Database = {
           zone_name: string
         }[]
       }
-      get_business_google_profile_status: {
-        Args: { p_business_id: string }
-        Returns: {
-          connected: boolean
-          google_email: string
-          last_sync_error: string
-          last_sync_status: string
-          last_synced_at: string
-          location_title: string
-          sync_enabled: boolean
-        }[]
-      }
       get_gemini_status: {
         Args: { p_business_id: string }
-        Returns: { has_gemini_key: boolean }[]
-      }
-      set_gemini_key: {
-        Args: { p_api_key?: string; p_business_id: string }
-        Returns: undefined
+        Returns: {
+          has_gemini_key: boolean
+        }[]
       }
       get_google_credentials_status: {
         Args: { p_business_id: string }
@@ -1596,17 +1671,24 @@ export type Database = {
           p_phone?: string
         }
         Returns: {
+          address: string | null
+          birth_date: string | null
           bookings_count: number
           business_id: string
+          city: string | null
           created_at: string
           email: string | null
           full_name: string
           id: string
           last_name: string | null
+          nif: string | null
           no_show_count: number
           notes: string | null
           phone: string | null
           phone_norm: string | null
+          postal_code: string | null
+          profession: string | null
+          province: string | null
           tags: string[]
           updated_at: string
         }
@@ -1621,6 +1703,14 @@ export type Database = {
       is_super_admin: { Args: never; Returns: boolean }
       normalize_phone: { Args: { p: string }; Returns: string }
       recount_customer: { Args: { cid: string }; Returns: undefined }
+      replace_business_hours_from_sync: {
+        Args: { p_business_id: string; p_rows: Json }
+        Returns: undefined
+      }
+      set_business_google_profile_sync: {
+        Args: { p_business_id: string; p_enabled: boolean }
+        Returns: undefined
+      }
       set_business_integration: {
         Args: {
           p_business_id: string
@@ -1629,6 +1719,10 @@ export type Database = {
           p_whatsapp_phone_number_id: string
           p_whatsapp_token?: string
         }
+        Returns: undefined
+      }
+      set_gemini_key: {
+        Args: { p_api_key?: string; p_business_id: string }
         Returns: undefined
       }
       set_google_credentials: {
@@ -1641,14 +1735,6 @@ export type Database = {
       }
       set_professional_google_sync: {
         Args: { p_enabled: boolean; p_professional_id: string }
-        Returns: undefined
-      }
-      set_business_google_profile_sync: {
-        Args: { p_business_id: string; p_enabled: boolean }
-        Returns: undefined
-      }
-      replace_business_hours_from_sync: {
-        Args: { p_business_id: string; p_rows: Json }
         Returns: undefined
       }
       show_limit: { Args: never; Returns: number }

@@ -9,6 +9,12 @@ export function EditarTab({ customer, onSaved }: { customer: Customer; onSaved: 
     phone: customer.phone ?? "",
     email: customer.email ?? "",
     nif: customer.nif ?? "",
+    birth_date: customer.birth_date ?? "",
+    profession: customer.profession ?? "",
+    address: customer.address ?? "",
+    city: customer.city ?? "",
+    province: customer.province ?? "",
+    postal_code: customer.postal_code ?? "",
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -21,6 +27,12 @@ export function EditarTab({ customer, onSaved }: { customer: Customer; onSaved: 
       phone: form.phone.trim() || null,
       email: form.email.trim() || null,
       nif: form.nif.trim() || null,
+      birth_date: form.birth_date || null,
+      profession: form.profession.trim() || null,
+      address: form.address.trim() || null,
+      city: form.city.trim() || null,
+      province: form.province.trim() || null,
+      postal_code: form.postal_code.trim() || null,
     }).eq("id", customer.id);
     setSaving(false);
     if (error) { setError(error.message); return; }
@@ -37,7 +49,17 @@ export function EditarTab({ customer, onSaved }: { customer: Customer; onSaved: 
         <div><label className="label">Teléfono</label><input className="input" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></div>
         <div><label className="label">Email</label><input type="email" className="input" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
       </div>
-      <div><label className="label">NIF/NIE</label><input className="input max-w-xs" value={form.nif} onChange={(e) => setForm({ ...form, nif: e.target.value })} /></div>
+      <div className="grid grid-cols-2 gap-3">
+        <div><label className="label">NIF/NIE</label><input className="input" value={form.nif} onChange={(e) => setForm({ ...form, nif: e.target.value })} /></div>
+        <div><label className="label">Fecha de nacimiento</label><input type="date" className="input" value={form.birth_date} onChange={(e) => setForm({ ...form, birth_date: e.target.value })} /></div>
+      </div>
+      <div><label className="label">Profesión</label><input className="input" value={form.profession} onChange={(e) => setForm({ ...form, profession: e.target.value })} /></div>
+      <div><label className="label">Dirección</label><input className="input" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} /></div>
+      <div className="grid grid-cols-3 gap-3">
+        <div><label className="label">Ciudad</label><input className="input" value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} /></div>
+        <div><label className="label">Provincia</label><input className="input" value={form.province} onChange={(e) => setForm({ ...form, province: e.target.value })} /></div>
+        <div><label className="label">C.P.</label><input className="input" value={form.postal_code} onChange={(e) => setForm({ ...form, postal_code: e.target.value })} /></div>
+      </div>
       {error && <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</div>}
       <button className="btn-primary" disabled={!form.full_name.trim() || saving} onClick={save}>{saving ? "Guardando…" : "Guardar cambios"}</button>
     </div>

@@ -40,12 +40,17 @@ export function ReciboTab({ customer }: { customer: Customer }) {
         <button
           className="btn-ghost text-xs"
           disabled={!business || !completed.length}
-          onClick={() => business && generateClientReceiptPdf(business, customer, history ?? [], tz)}
+          onClick={() => {
+            if (!business) return;
+            const invoiceNumber = window.prompt("Número de factura (ej. 141-26):", "");
+            if (invoiceNumber === null) return;
+            generateClientReceiptPdf(business, customer, history ?? [], tz, invoiceNumber.trim());
+          }}
         >
-          📄 Generar recibo PDF
+          📄 Generar factura PDF
         </button>
       </div>
-      <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">Resumen de asistencias e importes, sin validez fiscal.</p>
+      <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">Genera la factura en el formato de Ana Sánchez con las sesiones completadas. Pide el número de factura antes de crear el PDF.</p>
       {isLoading ? <Spinner /> : !history?.length ? (
         <p className="text-sm text-slate-400 dark:text-slate-500">Sin reservas.</p>
       ) : (
