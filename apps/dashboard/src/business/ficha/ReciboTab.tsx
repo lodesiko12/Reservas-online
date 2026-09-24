@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "../../lib/supabase";
 import { useAuth } from "../../lib/auth";
@@ -18,6 +19,7 @@ type HistoryRow = {
 export function ReciboTab({ customer }: { customer: Customer }) {
   const { business } = useAuth();
   const tz = business?.timezone ?? "Europe/Madrid";
+  const [invoiceNumber, setInvoiceNumber] = useState("");
 
   const { data: history, isLoading } = useQuery({
     queryKey: ["customer-history", customer.id],
@@ -35,22 +37,23 @@ export function ReciboTab({ customer }: { customer: Customer }) {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="font-semibold text-sm">Recibo</h3>
+      <h3 className="font-semibold text-sm mb-3">Recibo</h3>
+      <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">Genera la factura en el formato de Ana Sánchez con las sesiones completadas.</p>
+      <div className="flex items-center gap-2 mb-3">
+        <input
+          className="input text-xs max-w-[160px]"
+          placeholder="Nº factura (ej. 141-26)"
+          value={invoiceNumber}
+          onChange={(e) => setInvoiceNumber(e.target.value)}
+        />
         <button
           className="btn-ghost text-xs"
-          disabled={!business || !completed.length}
-          onClick={() => {
-            if (!business) return;
-            const invoiceNumber = window.prompt("Número de factura (ej. 141-26):", "");
-            if (invoiceNumber === null) return;
-            generateClientReceiptPdf(business, customer, history ?? [], tz, invoiceNumber.trim());
-          }}
+          disabled={!business || !completed.length || !invoiceNumber.trim()}
+          onClick={() => business && generateClientReceiptPdf(business, customer, history ?? [], tz, invoiceNumber.trim())}
         >
           📄 Generar factura PDF
         </button>
       </div>
-      <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">Genera la factura en el formato de Ana Sánchez con las sesiones completadas. Pide el número de factura antes de crear el PDF.</p>
       {isLoading ? <Spinner /> : !history?.length ? (
         <p className="text-sm text-slate-400 dark:text-slate-500">Sin reservas.</p>
       ) : (
