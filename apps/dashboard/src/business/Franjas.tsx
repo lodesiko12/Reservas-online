@@ -4,7 +4,7 @@ import { supabase } from "../lib/supabase";
 import { useBusinessId } from "./hooks";
 import type { Tables } from "@reservas/shared";
 import { WEEKDAYS_SHORT_ES, shortTime } from "@reservas/shared";
-import { PageHeader, Spinner, Modal, EmptyState } from "../components/ui";
+import { PageHeader, Spinner, Modal, EmptyState, ConfirmDialog } from "../components/ui";
 
 type Shift = Tables<"dining_shifts">;
 
@@ -12,6 +12,7 @@ export function Franjas() {
   const bid = useBusinessId();
   const qc = useQueryClient();
   const [editing, setEditing] = useState<Shift | "new" | null>(null);
+  const [removing, setRemoving] = useState<Shift | null>(null);
 
   const { data: shifts, isLoading } = useQuery({
     queryKey: ["dining_shifts", bid],
@@ -28,7 +29,7 @@ export function Franjas() {
     qc.invalidateQueries({ queryKey: ["dining_shifts", bid] });
   }
   async function remove(s: Shift) {
-    if (!confirm(`¿Eliminar la franja "${s.name}"?`)) return;
+    setRemoving(null);
     await supabase.from("dining_shifts").delete().eq("id", s.id);
     qc.invalidateQueries({ queryKey: ["dining_shifts", bid] });
   }
@@ -71,7 +72,7 @@ export function Franjas() {
                 </div>
                 <div className="mt-4 flex gap-2">
                   <button className="btn-ghost text-xs" onClick={() => setEditing(s)}>Editar</button>
-                  <button className="btn-ghost text-xs" onClick={() => remove(s)}>🗑 Eliminar</button>
+                  <button className="btn-ghost text-xs" onClick={() => setRemoving(s)}>🗑 Eliminar</button>
                 </div>
               </div>
             ))}
@@ -79,6 +80,13 @@ export function Franjas() {
         )}
 
       {editing && <ShiftModal bid={bid} shift={editing === "new" ? null : editing} onClose={() => setEditing(null)} onSaved={() => { qc.invalidateQueries({ queryKey: ["dining_shifts", bid] }); setEditing(null); }} />}
+      <ConfirmDialog
+        open={!!removing}
+        title="Eliminar franja"
+        message={removing ? `¿Eliminar la franja "${removing.name}"?` : ""}
+        onConfirm={() => removing && remove(removing)}
+        onCancel={() => setRemoving(null)}
+      />
     </div>
   );
 }

@@ -5,7 +5,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGri
 import { supabase } from "../lib/supabase";
 import type { Tables } from "@reservas/shared";
 import { ymdInTz, addDaysYmd, zonedDayRange, formatDateTime } from "@reservas/shared";
-import { PageHeader, StatCard, Spinner, StatusBadge } from "../components/ui";
+import { PageHeader, StatCard, Spinner, StatusBadge, ConfirmDialog } from "../components/ui";
 import { IntegrationsForm } from "../components/IntegrationsForm";
 import { DeleteBusinessModal, BUSINESS_TYPE_LABELS } from "./Businesses";
 
@@ -72,6 +72,7 @@ function BusinessUsersSection({ businessId }: { businessId: string }) {
   const [form, setForm] = useState({ email: "", password: "", role: "staff" as "owner" | "staff" });
   const [saving, setSaving] = useState(false);
   const [busyUserId, setBusyUserId] = useState<string | null>(null);
+  const [removingUserId, setRemovingUserId] = useState<string | null>(null);
 
   async function load() {
     setLoading(true); setError(null);
@@ -97,7 +98,7 @@ function BusinessUsersSection({ businessId }: { businessId: string }) {
   }
 
   async function removeMember(userId: string) {
-    if (!confirm("¿Quitar a este usuario del negocio? Dejará de poder entrar al panel.")) return;
+    setRemovingUserId(null);
     setBusyUserId(userId);
     const { data, error } = await supabase.functions.invoke("admin-business-users", { body: { action: "remove", business_id: businessId, user_id: userId } });
     setBusyUserId(null);
@@ -154,12 +155,20 @@ function BusinessUsersSection({ businessId }: { businessId: string }) {
                   <option value="staff">Staff</option>
                   <option value="owner">Owner</option>
                 </select>
-                <button className="btn-ghost text-xs text-red-600" disabled={busyUserId === m.user_id} onClick={() => removeMember(m.user_id)}>Quitar</button>
+                <button className="btn-ghost text-xs text-red-600" disabled={busyUserId === m.user_id} onClick={() => setRemovingUserId(m.user_id)}>Quitar</button>
               </div>
             </div>
           ))}
         </div>
       )}
+      <ConfirmDialog
+        open={!!removingUserId}
+        title="Quitar usuario"
+        message="¿Quitar a este usuario del negocio? Dejará de poder entrar al panel."
+        confirmLabel="Quitar"
+        onConfirm={() => removingUserId && removeMember(removingUserId)}
+        onCancel={() => setRemovingUserId(null)}
+      />
     </div>
   );
 }

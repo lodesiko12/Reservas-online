@@ -4,7 +4,7 @@ import { supabase } from "../lib/supabase";
 import { useAuth } from "../lib/auth";
 import { useServices, useProfessionals, useServiceProfessionals, useBusinessId, type Service, type Professional } from "./hooks";
 import { formatDuration, formatCurrency, shortTime } from "@reservas/shared";
-import { PageHeader, Spinner, Modal, EmptyState } from "../components/ui";
+import { PageHeader, Spinner, Modal, EmptyState, ConfirmDialog } from "../components/ui";
 import { WindowsEditor, type Win } from "../components/WindowsEditor";
 
 const DEFAULT_COLORS = [
@@ -44,9 +44,10 @@ function ProfessionalsSection() {
   const qc = useQueryClient();
   const { data: pros, isLoading } = useProfessionals();
   const [editing, setEditing] = useState<Professional | "new" | null>(null);
+  const [removing, setRemoving] = useState<Professional | null>(null);
 
   async function remove(p: Professional) {
-    if (!confirm(`¿Eliminar a ${p.name}? Sus servicios quedarán sin este profesional asignado.`)) return;
+    setRemoving(null);
     await supabase.from("professionals").delete().eq("id", p.id);
     qc.invalidateQueries();
   }
@@ -72,7 +73,7 @@ function ProfessionalsSection() {
               </div>
               <div className="flex gap-1">
                 <button className="btn-ghost text-xs" onClick={() => setEditing(p)}>Editar</button>
-                <button className="btn-ghost text-xs" onClick={() => remove(p)}>🗑</button>
+                <button className="btn-ghost text-xs" onClick={() => setRemoving(p)}>🗑</button>
               </div>
             </div>
           ))}
@@ -87,6 +88,13 @@ function ProfessionalsSection() {
           onSaved={() => { qc.invalidateQueries(); setEditing(null); }}
         />
       )}
+      <ConfirmDialog
+        open={!!removing}
+        title="Eliminar profesional"
+        message={removing ? `¿Eliminar a ${removing.name}? Sus servicios quedarán sin este profesional asignado.` : ""}
+        onConfirm={() => removing && remove(removing)}
+        onCancel={() => setRemoving(null)}
+      />
     </section>
   );
 }
@@ -180,6 +188,7 @@ function GoogleCalendarSection({ professionalId }: { professionalId: string }) {
   const [status, setStatus] = useState<{ connected: boolean; google_email: string | null; sync_enabled: boolean } | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [confirmingDisconnect, setConfirmingDisconnect] = useState(false);
 
   async function load() {
     const { data } = await supabase.rpc("get_professional_google_status", { p_professional_id: professionalId });
@@ -198,7 +207,7 @@ function GoogleCalendarSection({ professionalId }: { professionalId: string }) {
   }
 
   async function disconnect() {
-    if (!confirm("¿Desconectar Google Calendar de este profesional?")) return;
+    setConfirmingDisconnect(false);
     setBusy(true);
     await supabase.rpc("disconnect_professional_google", { p_professional_id: professionalId });
     setBusy(false);
@@ -226,7 +235,7 @@ function GoogleCalendarSection({ professionalId }: { professionalId: string }) {
               Sincronizar (exportar citas y bloquear huecos ocupados en Google)
             </label>
           </div>
-          <button type="button" className="btn-ghost text-xs" disabled={busy} onClick={disconnect}>Desconectar</button>
+          <button type="button" className="btn-ghost text-xs" disabled={busy} onClick={() => setConfirmingDisconnect(true)}>Desconectar</button>
         </div>
       ) : (
         <button type="button" className="btn-ghost text-xs" disabled={busy} onClick={connect}>
@@ -234,6 +243,14 @@ function GoogleCalendarSection({ professionalId }: { professionalId: string }) {
         </button>
       )}
       {error && <p className="text-xs text-red-600 mt-1">{error}</p>}
+      <ConfirmDialog
+        open={confirmingDisconnect}
+        title="Desconectar Google Calendar"
+        message="¿Desconectar Google Calendar de este profesional?"
+        confirmLabel="Desconectar"
+        onConfirm={disconnect}
+        onCancel={() => setConfirmingDisconnect(false)}
+      />
     </div>
   );
 }
@@ -246,6 +263,7 @@ function ServicesSection() {
   const { data: links } = useServiceProfessionals();
   const bid = useBusinessId();
   const [editing, setEditing] = useState<Service | "new" | null>(null);
+  const [removing, setRemoving] = useState<Service | null>(null);
 
   function prosForService(serviceId: string): Professional[] {
     const ids = new Set((links ?? []).filter((l) => l.service_id === serviceId).map((l) => l.professional_id));
@@ -257,7 +275,7 @@ function ServicesSection() {
     qc.invalidateQueries();
   }
   async function remove(s: Service) {
-    if (!confirm(`¿Eliminar "${s.name}"?`)) return;
+    setRemoving(null);
     await supabase.from("services").delete().eq("id", s.id);
     qc.invalidateQueries();
   }
@@ -296,7 +314,7 @@ function ServicesSection() {
                   <td className="px-5 py-3"><button onClick={() => toggle(s)} className={`badge ${s.is_active ? "bg-green-100 text-green-700" : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400"}`}>{s.is_active ? "Activo" : "Inactivo"}</button></td>
                   <td className="px-5 py-3 text-right whitespace-nowrap">
                     <button className="btn-ghost text-xs" onClick={() => setEditing(s)}>Editar</button>
-                    <button className="btn-ghost text-xs ml-1" onClick={() => remove(s)}>🗑</button>
+                    <button className="btn-ghost text-xs ml-1" onClick={() => setRemoving(s)}>🗑</button>
                   </td>
                 </tr>
               ))}
@@ -306,6 +324,13 @@ function ServicesSection() {
         </div>
       )}
       {editing && <ServiceModal bid={bid} service={editing === "new" ? null : editing} pros={pros ?? []} onClose={() => setEditing(null)} onSaved={() => { qc.invalidateQueries(); setEditing(null); }} />}
+      <ConfirmDialog
+        open={!!removing}
+        title="Eliminar servicio"
+        message={removing ? `¿Eliminar "${removing.name}"?` : ""}
+        onConfirm={() => removing && remove(removing)}
+        onCancel={() => setRemoving(null)}
+      />
     </section>
   );
 }

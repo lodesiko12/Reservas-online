@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { WEEKDAYS_ES } from "@reservas/shared";
+import { ConfirmDialog } from "./ui";
 
 export type Win = { weekday: number; start_time: string; end_time: string };
 
@@ -74,13 +75,14 @@ function QuickFill({ wins, onChange, onDone }: { wins: Win[]; onChange: (w: Win[
   const [splitLunch, setSplitLunch] = useState(false);
   const [start2, setStart2] = useState("16:00");
   const [end2, setEnd2] = useState("20:00");
+  const [confirmingApply, setConfirmingApply] = useState(false);
 
   function toggleDay(wd: number) {
     setDays((d) => (d.includes(wd) ? d.filter((x) => x !== wd) : [...d, wd]));
   }
 
-  function apply() {
-    if (wins.length > 0 && !confirm("Esto sustituye el horario actual por la(s) franja(s) seleccionada(s) en esos días. ¿Continuar?")) return;
+  function doApply() {
+    setConfirmingApply(false);
     const rows = days.flatMap((wd) => {
       const r = [{ weekday: wd, start_time: start, end_time: end }];
       if (splitLunch) r.push({ weekday: wd, start_time: start2, end_time: end2 });
@@ -88,6 +90,11 @@ function QuickFill({ wins, onChange, onDone }: { wins: Win[]; onChange: (w: Win[
     });
     onChange(rows);
     onDone();
+  }
+
+  function apply() {
+    if (wins.length > 0) { setConfirmingApply(true); return; }
+    doApply();
   }
 
   return (
@@ -131,6 +138,14 @@ function QuickFill({ wins, onChange, onDone }: { wins: Win[]; onChange: (w: Win[
       <button type="button" className="btn-primary text-xs" disabled={!days.length} onClick={apply}>
         Aplicar (sustituye el horario actual)
       </button>
+      <ConfirmDialog
+        open={confirmingApply}
+        title="Sustituir horario"
+        message="Esto sustituye el horario actual por la(s) franja(s) seleccionada(s) en esos días. ¿Continuar?"
+        confirmLabel="Continuar"
+        onConfirm={doApply}
+        onCancel={() => setConfirmingApply(false)}
+      />
     </div>
   );
 }

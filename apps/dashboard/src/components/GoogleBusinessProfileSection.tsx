@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
+import { ConfirmDialog } from "./ui";
 
 type Status = {
   connected: boolean;
@@ -31,6 +32,7 @@ export function GoogleBusinessProfileSection({ businessId }: { businessId: strin
   const [status, setStatus] = useState<Status | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [confirmingDisconnect, setConfirmingDisconnect] = useState(false);
 
   async function load() {
     const { data } = await supabase.rpc("get_business_google_profile_status", { p_business_id: businessId });
@@ -54,7 +56,7 @@ export function GoogleBusinessProfileSection({ businessId }: { businessId: strin
   }
 
   async function disconnect() {
-    if (!confirm("¿Desconectar Google Business Profile de este negocio? El horario ya sincronizado se mantiene, pero dejará de actualizarse solo.")) return;
+    setConfirmingDisconnect(false);
     setBusy(true);
     await supabase.rpc("disconnect_business_google_profile", { p_business_id: businessId });
     setBusy(false);
@@ -81,12 +83,24 @@ export function GoogleBusinessProfileSection({ businessId }: { businessId: strin
     );
   }
 
+  const disconnectDialog = (
+    <ConfirmDialog
+      open={confirmingDisconnect}
+      title="Desconectar Google Business Profile"
+      message="¿Desconectar Google Business Profile de este negocio? El horario ya sincronizado se mantiene, pero dejará de actualizarse solo."
+      confirmLabel="Desconectar"
+      onConfirm={disconnect}
+      onCancel={() => setConfirmingDisconnect(false)}
+    />
+  );
+
   if (status.last_sync_status === "multiple_locations") {
     return (
       <div className="border border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-900 rounded-lg px-3 py-2 text-sm text-amber-800 dark:text-amber-300">
         Tu cuenta de Google gestiona varias fichas de empresa; de momento solo admitimos negocios con
         una sola ficha en esa cuenta. Contacta con soporte si necesitas este caso.
-        <div className="mt-2"><button type="button" className="btn-ghost text-xs" disabled={busy} onClick={disconnect}>Desconectar</button></div>
+        <div className="mt-2"><button type="button" className="btn-ghost text-xs" disabled={busy} onClick={() => setConfirmingDisconnect(true)}>Desconectar</button></div>
+        {disconnectDialog}
       </div>
     );
   }
@@ -96,7 +110,8 @@ export function GoogleBusinessProfileSection({ businessId }: { businessId: strin
       <div className="border border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-900 rounded-lg px-3 py-2 text-sm text-amber-800 dark:text-amber-300">
         No encontramos ninguna ficha de Google Business Profile en la cuenta de Google conectada
         {status.google_email ? ` (${status.google_email})` : ""}.
-        <div className="mt-2"><button type="button" className="btn-ghost text-xs" disabled={busy} onClick={disconnect}>Desconectar</button></div>
+        <div className="mt-2"><button type="button" className="btn-ghost text-xs" disabled={busy} onClick={() => setConfirmingDisconnect(true)}>Desconectar</button></div>
+        {disconnectDialog}
       </div>
     );
   }
@@ -122,7 +137,8 @@ export function GoogleBusinessProfileSection({ businessId }: { businessId: strin
           <p className={`text-xs mt-1 ${status.last_sync_status === "error" ? "text-red-600" : "text-amber-600"}`}>{status.last_sync_error}</p>
         )}
       </div>
-      <button type="button" className="btn-ghost text-xs" disabled={busy} onClick={disconnect}>Desconectar</button>
+      <button type="button" className="btn-ghost text-xs" disabled={busy} onClick={() => setConfirmingDisconnect(true)}>Desconectar</button>
+      {disconnectDialog}
     </div>
   );
 }

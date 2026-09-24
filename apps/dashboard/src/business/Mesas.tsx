@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "../lib/supabase";
 import { useBusinessId, useDiningZones, useDiningTables, useDiningTableCombos, type DiningZone, type DiningTable, type DiningTableCombo } from "./hooks";
-import { PageHeader, Spinner, Modal, EmptyState } from "../components/ui";
+import { PageHeader, Spinner, Modal, EmptyState, ConfirmDialog } from "../components/ui";
 
 export function Mesas() {
   const bid = useBusinessId();
@@ -13,6 +13,9 @@ export function Mesas() {
   const [editingZone, setEditingZone] = useState<DiningZone | "new" | null>(null);
   const [editingTable, setEditingTable] = useState<DiningTable | "new" | null>(null);
   const [editingCombo, setEditingCombo] = useState<DiningTableCombo | "new" | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<
+    { kind: "zone"; item: DiningZone } | { kind: "table"; item: DiningTable } | { kind: "combo"; item: DiningTableCombo } | null
+  >(null);
 
   const isLoading = loadingZones || loadingTables;
 
@@ -22,12 +25,12 @@ export function Mesas() {
   }
 
   async function removeZone(z: DiningZone) {
-    if (!confirm(`¿Eliminar la zona "${z.name}"? Las mesas de esa zona quedarán sin zona asignada.`)) return;
+    setPendingDelete(null);
     await supabase.from("dining_zones").delete().eq("id", z.id);
     invalidate();
   }
   async function removeTable(t: DiningTable) {
-    if (!confirm(`¿Eliminar la mesa "${t.name}"?`)) return;
+    setPendingDelete(null);
     await supabase.from("dining_tables").delete().eq("id", t.id);
     invalidate();
   }
@@ -36,7 +39,7 @@ export function Mesas() {
     invalidate();
   }
   async function removeCombo(c: DiningTableCombo) {
-    if (!confirm(`¿Eliminar la combinación "${c.name ?? "sin nombre"}"?`)) return;
+    setPendingDelete(null);
     await supabase.from("dining_table_combos").delete().eq("id", c.id);
     qc.invalidateQueries({ queryKey: ["dining_table_combos", bid] });
   }
@@ -82,17 +85,17 @@ export function Mesas() {
                 <div className="flex items-center gap-2">
                   <span className={`badge ${z.is_active ? "bg-green-100 text-green-700" : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400"}`}>{z.is_active ? "Activa" : "Inactiva"}</span>
                   <button className="btn-ghost text-xs" onClick={() => setEditingZone(z)}>Editar</button>
-                  <button className="btn-ghost text-xs" onClick={() => removeZone(z)}>🗑</button>
+                  <button className="btn-ghost text-xs" onClick={() => setPendingDelete({ kind: "zone", item: z })}>🗑</button>
                 </div>
               </div>
-              <TableGrid tables={tablesByZone.get(z.id) ?? []} onEdit={setEditingTable} onRemove={removeTable} onToggle={toggleTable} />
+              <TableGrid tables={tablesByZone.get(z.id) ?? []} onEdit={setEditingTable} onRemove={(t) => setPendingDelete({ kind: "table", item: t })} onToggle={toggleTable} />
             </div>
           ))}
 
           {(tablesByZone.get(null)?.length ?? 0) > 0 && (
             <div className="card p-5">
               <div className="font-semibold text-lg text-slate-500 dark:text-slate-400">Sin zona</div>
-              <TableGrid tables={tablesByZone.get(null) ?? []} onEdit={setEditingTable} onRemove={removeTable} onToggle={toggleTable} />
+              <TableGrid tables={tablesByZone.get(null) ?? []} onEdit={setEditingTable} onRemove={(t) => setPendingDelete({ kind: "table", item: t })} onToggle={toggleTable} />
             </div>
           )}
         </div>
@@ -122,7 +125,7 @@ export function Mesas() {
                 <div className="text-xs text-slate-500 dark:text-slate-400 mt-2">{c.cap_min}–{c.cap_max} comensales{c.priority > 0 ? ` · prioridad ${c.priority}` : ""}</div>
                 <div className="mt-2 flex gap-2">
                   <button className="btn-ghost text-xs" onClick={() => setEditingCombo(c)}>Editar</button>
-                  <button className="btn-ghost text-xs" onClick={() => removeCombo(c)}>🗑</button>
+                  <button className="btn-ghost text-xs" onClick={() => setPendingDelete({ kind: "combo", item: c })}>🗑</button>
                 </div>
               </div>
             ))}
@@ -142,6 +145,23 @@ export function Mesas() {
         <ComboModal bid={bid} tables={tables ?? []} combo={editingCombo === "new" ? null : editingCombo} onClose={() => setEditingCombo(null)}
           onSaved={() => { qc.invalidateQueries({ queryKey: ["dining_table_combos", bid] }); setEditingCombo(null); }} />
       )}
+      <ConfirmDialog
+        open={!!pendingDelete}
+        title="Eliminar"
+        message={
+          pendingDelete?.kind === "zone" ? `¿Eliminar la zona "${pendingDelete.item.name}"? Las mesas de esa zona quedarán sin zona asignada.`
+          : pendingDelete?.kind === "table" ? `¿Eliminar la mesa "${pendingDelete.item.name}"?`
+          : pendingDelete?.kind === "combo" ? `¿Eliminar la combinación "${pendingDelete.item.name ?? "sin nombre"}"?`
+          : ""
+        }
+        onConfirm={() => {
+          if (!pendingDelete) return;
+          if (pendingDelete.kind === "zone") removeZone(pendingDelete.item);
+          else if (pendingDelete.kind === "table") removeTable(pendingDelete.item);
+          else removeCombo(pendingDelete.item);
+        }}
+        onCancel={() => setPendingDelete(null)}
+      />
     </div>
   );
 }

@@ -7,7 +7,7 @@ import {
   ymdInTz, addDaysYmd, zonedDayRange, formatTime, formatDate,
   minutesOfDayInTz, WEEKDAYS_SHORT_ES,
 } from "@reservas/shared";
-import { PageHeader, Spinner, StatusBadge, Modal, EmptyState } from "../components/ui";
+import { PageHeader, Spinner, StatusBadge, Modal, EmptyState, ConfirmDialog } from "../components/ui";
 
 // Restaurante usa el ciclo completo (sentada, confirmada...); citas solo
 // necesita marcar el desenlace de la cita: completada, cancelada o ausente.
@@ -421,6 +421,7 @@ function BookingModal({ booking, tz, onClose, onChanged }: {
   const [tableOptions, setTableOptions] = useState<{ id: string; name: string; zone_name: string | null; is_free: boolean }[] | null>(null);
   const [tableId, setTableId] = useState(booking.dining_table_id ?? "");
   const [savingTable, setSavingTable] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   async function loadTableOptions() {
     const { data } = await supabase.rpc("get_dining_table_options", {
@@ -453,7 +454,7 @@ function BookingModal({ booking, tz, onClose, onChanged }: {
     qc.invalidateQueries(); onChanged();
   }
   async function remove() {
-    if (!confirm("¿Eliminar esta reserva definitivamente?")) return;
+    setConfirmingDelete(false);
     setBusy(true);
     // Borra primero el evento de Google (necesita leer la reserva, que
     // desaparece en cuanto la eliminamos) y luego la reserva en sí.
@@ -531,9 +532,16 @@ function BookingModal({ booking, tz, onClose, onChanged }: {
             <button key={s} className="btn-ghost" disabled={busy} onClick={() => setStatus(s)}>Marcar {label(s)}</button>
           ))}
           <button className="btn-ghost" onClick={() => setReschedule(true)}>Reprogramar</button>
-          <button className="btn-danger ml-auto" disabled={busy} onClick={remove}>Eliminar</button>
+          <button className="btn-danger ml-auto" disabled={busy} onClick={() => setConfirmingDelete(true)}>Eliminar</button>
         </div>
       )}
+      <ConfirmDialog
+        open={confirmingDelete}
+        title="Eliminar reserva"
+        message="¿Eliminar esta reserva definitivamente?"
+        onConfirm={remove}
+        onCancel={() => setConfirmingDelete(false)}
+      />
     </Modal>
   );
 }

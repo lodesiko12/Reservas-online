@@ -5,7 +5,7 @@ import { useAuth } from "../lib/auth";
 import { useProfessionals, useBusinessId } from "./hooks";
 import { fromLocalInput } from "../lib/datetime";
 import { formatDateTime } from "@reservas/shared";
-import { PageHeader, Spinner, Modal, EmptyState } from "../components/ui";
+import { PageHeader, Spinner, Modal, EmptyState, ConfirmDialog } from "../components/ui";
 
 export function Bloqueos() {
   const bid = useBusinessId();
@@ -13,6 +13,7 @@ export function Bloqueos() {
   const tz = business?.timezone ?? "Europe/Madrid";
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
+  const [removingId, setRemovingId] = useState<string | null>(null);
 
   const { data: blocks, isLoading } = useQuery({
     queryKey: ["blocks", bid],
@@ -26,7 +27,7 @@ export function Bloqueos() {
   });
 
   async function remove(id: string) {
-    if (!confirm("¿Eliminar este bloqueo?")) return;
+    setRemovingId(null);
     await supabase.from("blocks").delete().eq("id", id);
     qc.invalidateQueries({ queryKey: ["blocks", bid] });
   }
@@ -49,13 +50,20 @@ export function Bloqueos() {
                     {b.reason ? ` · ${b.reason}` : ""}
                   </div>
                 </div>
-                <button className="btn-ghost text-xs" onClick={() => remove(b.id)}>Eliminar</button>
+                <button className="btn-ghost text-xs" onClick={() => setRemovingId(b.id)}>Eliminar</button>
               </div>
             ))}
           </div>
         )}
 
       {open && <BlockModal bid={bid} tz={tz} onClose={() => setOpen(false)} onSaved={() => { qc.invalidateQueries(); setOpen(false); }} />}
+      <ConfirmDialog
+        open={!!removingId}
+        title="Eliminar bloqueo"
+        message="¿Eliminar este bloqueo?"
+        onConfirm={() => removingId && remove(removingId)}
+        onCancel={() => setRemovingId(null)}
+      />
     </div>
   );
 }
