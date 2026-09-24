@@ -4,7 +4,7 @@ import { supabase } from "../lib/supabase";
 import { useAuth } from "../lib/auth";
 import { useBusinessId, type Customer } from "./hooks";
 import { formatDateTime } from "@reservas/shared";
-import { PageHeader, Spinner, Modal, StatusBadge, EmptyState } from "../components/ui";
+import { PageHeader, Spinner, Modal, StatusBadge, EmptyState, ConfirmDialog } from "../components/ui";
 import { HistorialTab } from "./ficha/HistorialTab";
 import { EditarTab } from "./ficha/EditarTab";
 import { InformeTab } from "./ficha/InformeTab";
@@ -57,6 +57,7 @@ export function Clientes() {
   const [sel, setSel] = useState<Customer | null>(null);
   const [importing, setImporting] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [toDelete, setToDelete] = useState<Customer | null>(null);
 
   const { data: customers, isLoading } = useQuery({
     queryKey: ["customers", bid, q],
@@ -71,7 +72,7 @@ export function Clientes() {
   });
 
   async function removeCustomer(c: Customer) {
-    if (!confirm(`¿Eliminar a ${c.full_name}? Su historial de reservas se conserva, pero dejará de estar vinculado a esta ficha.`)) return;
+    setToDelete(null);
     await supabase.from("customers").delete().eq("id", c.id);
     qc.invalidateQueries({ queryKey: ["customers", bid] });
   }
@@ -112,7 +113,7 @@ export function Clientes() {
                     <td className="px-5 py-3 cursor-pointer" onClick={() => setSel(c)}>{c.bookings_count}</td>
                     <td className="px-5 py-3 cursor-pointer" onClick={() => setSel(c)}>{c.no_show_count > 0 ? <span className="text-red-600 font-semibold">{c.no_show_count}</span> : 0}</td>
                     <td className="px-5 py-3 text-right">
-                      <button className="btn-ghost text-xs" onClick={() => removeCustomer(c)}>🗑</button>
+                      <button className="btn-ghost text-xs" onClick={() => setToDelete(c)}>🗑</button>
                     </td>
                   </tr>
                 ))}
@@ -125,6 +126,13 @@ export function Clientes() {
       {sel && <CustomerModal customer={sel} onClose={() => setSel(null)} onDeleted={() => setSel(null)} />}
       {importing && <ImportCsvModal bid={bid} onClose={() => setImporting(false)} />}
       {creating && <NewCustomerModal bid={bid} onClose={() => setCreating(false)} />}
+      <ConfirmDialog
+        open={!!toDelete}
+        title="Eliminar cliente"
+        message={toDelete ? `¿Eliminar a ${toDelete.full_name}? Su historial de reservas se conserva, pero dejará de estar vinculado a esta ficha.` : ""}
+        onConfirm={() => toDelete && removeCustomer(toDelete)}
+        onCancel={() => setToDelete(null)}
+      />
     </div>
   );
 }
@@ -272,12 +280,13 @@ function CustomerModal({ customer, onClose, onDeleted }: { customer: Customer; o
   const [notes, setNotes] = useState(customer.notes ?? "");
   const [savingNotes, setSavingNotes] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [tab, setTab] = useState<"historial" | "editar" | "informe" | "recibo">("historial");
 
   useEffect(() => { setNotes(customer.notes ?? ""); }, [customer]);
 
   async function remove() {
-    if (!confirm(`¿Eliminar a ${customer.full_name}? Su historial de reservas se conserva, pero dejará de estar vinculado a esta ficha.`)) return;
+    setConfirmingDelete(false);
     setDeleting(true);
     await supabase.from("customers").delete().eq("id", customer.id);
     qc.invalidateQueries({ queryKey: ["customers", bid] });
@@ -339,8 +348,15 @@ function CustomerModal({ customer, onClose, onDeleted }: { customer: Customer; o
       )}
 
       <div className="mt-5 border-t pt-4">
-        <button className="btn-danger" disabled={deleting} onClick={remove}>{deleting ? "Eliminando…" : "Eliminar cliente"}</button>
+        <button className="btn-danger" disabled={deleting} onClick={() => setConfirmingDelete(true)}>{deleting ? "Eliminando…" : "Eliminar cliente"}</button>
       </div>
+      <ConfirmDialog
+        open={confirmingDelete}
+        title="Eliminar cliente"
+        message={`¿Eliminar a ${customer.full_name}? Su historial de reservas se conserva, pero dejará de estar vinculado a esta ficha.`}
+        onConfirm={remove}
+        onCancel={() => setConfirmingDelete(false)}
+      />
     </Modal>
   );
 }

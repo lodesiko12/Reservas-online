@@ -55,6 +55,24 @@ export function Modal({ open, onClose, title, children, width = "max-w-lg" }: {
   );
 }
 
+/** Diálogo de confirmación en modal, para reemplazar window.confirm() —
+ * no funciona en todos los navegadores (confirmado en vivo con el
+ * navegador de pruebas de Claude: "confirm() is not supported"). */
+export function ConfirmDialog({ open, title, message, confirmLabel = "Eliminar", onConfirm, onCancel }: {
+  open: boolean; title: string; message: string; confirmLabel?: string; onConfirm: () => void; onCancel: () => void;
+}) {
+  if (!open) return null;
+  return (
+    <Modal open onClose={onCancel} title={title} width="max-w-sm">
+      <p className="text-sm text-slate-600 dark:text-slate-300 mb-5">{message}</p>
+      <div className="flex justify-end gap-2">
+        <button className="btn-ghost" onClick={onCancel}>Cancelar</button>
+        <button className="btn-danger" onClick={onConfirm}>{confirmLabel}</button>
+      </div>
+    </Modal>
+  );
+}
+
 const STATUS_STYLES: Record<string, string> = {
   pendiente: "bg-amber-100 text-amber-700",
   confirmada: "bg-sky-100 text-sky-700",
