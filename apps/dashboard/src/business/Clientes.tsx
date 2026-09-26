@@ -64,7 +64,8 @@ export function Clientes() {
     enabled: !!bid,
     queryFn: async () => {
       let query = supabase.from("customers").select("*").eq("business_id", bid).order("updated_at", { ascending: false }).limit(200);
-      if (q.trim()) query = query.ilike("full_name", `%${q.trim()}%`);
+      const term = q.trim();
+      if (term) query = query.ilike("full_name", `%${term.replace(/[%_\\]/g, "\\$&")}%`);
       const { data, error } = await query;
       if (error) throw error;
       return data as Customer[];
