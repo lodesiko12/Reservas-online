@@ -6,7 +6,7 @@ import {
   useBusinessId, useDiningZones, useDiningTables, useDiningTableCombos, useDiningShifts,
   useBookings, useBookingsRealtime, useWaitlist, type Booking, type WaitlistEntry,
 } from "./hooks";
-import { ymdInTz, zonedDayRange, weekdayInTz, minutesOfDayInTz, formatTime } from "@reservas/shared";
+import { ymdInTz, zonedDayRange, weekdayInTz, minutesOfDayInTz, formatTime, waitlistEntrySchema } from "@reservas/shared";
 import { PageHeader, Spinner, Modal, EmptyState } from "../components/ui";
 
 type Row = Booking & { dining_tables: { name: string } | null; dining_table_combos: { name: string | null } | null };
@@ -280,12 +280,17 @@ function AddWaitlistModal({ bid, onClose, onDone }: { bid: string; onClose: () =
   const [party, setParty] = useState(2);
   const [notes, setNotes] = useState("");
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function save() {
+    setError(null);
+    const result = waitlistEntrySchema.safeParse({ name, phone, notes });
+    if (!result.success) { setError(result.error.issues[0]?.message ?? "Revisa los datos."); return; }
     setBusy(true);
+    const v = result.data;
     await supabase.from("waitlist").insert({
-      business_id: bid, name: name.trim() || "Cliente", phone: phone.trim() || null,
-      party_size: party, notes: notes.trim() || null,
+      business_id: bid, name: v.name ?? "Cliente", phone: v.phone ?? null,
+      party_size: party, notes: v.notes ?? null,
     });
     setBusy(false); onDone();
   }
@@ -305,6 +310,7 @@ function AddWaitlistModal({ bid, onClose, onDone }: { bid: string; onClose: () =
         <div><label className="label">Nombre</label><input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Nombre del cliente" /></div>
         <div><label className="label">Teléfono (para avisar por WhatsApp)</label><input className="input" value={phone} onChange={(e) => setPhone(e.target.value)} /></div>
         <div><label className="label">Notas (opcional)</label><input className="input" value={notes} onChange={(e) => setNotes(e.target.value)} /></div>
+        {error && <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</div>}
         <div className="flex justify-end gap-2"><button className="btn-ghost" onClick={onClose}>Cancelar</button><button className="btn-primary" disabled={busy} onClick={save}>Añadir</button></div>
       </div>
     </Modal>
@@ -321,10 +327,14 @@ function WalkinModal({ bid, shiftId, table, onClose, onDone }: {
   const [error, setError] = useState<string | null>(null);
 
   async function save() {
-    setBusy(true); setError(null);
+    setError(null);
+    const result = waitlistEntrySchema.safeParse({ name, phone, notes: "" });
+    if (!result.success) { setError(result.error.issues[0]?.message ?? "Revisa los datos."); return; }
+    setBusy(true);
+    const v = result.data;
     const { error } = await supabase.rpc("create_walkin_booking", {
       p_business_id: bid, p_shift_id: shiftId, p_party_size: party,
-      p_name: name.trim() || "Walk-in", p_phone: phone.trim() || undefined, p_table_id: table.id,
+      p_name: v.name ?? "Walk-in", p_phone: v.phone ?? undefined, p_table_id: table.id,
     });
     setBusy(false);
     if (error) { setError(error.message); return; }

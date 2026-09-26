@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { supabase } from "../../lib/supabase";
+import { customerProfileSchema } from "@reservas/shared";
 import type { Customer } from "../hooks";
 
 export function EditarTab({ customer, onSaved }: { customer: Customer; onSaved: () => void }) {
@@ -20,19 +21,23 @@ export function EditarTab({ customer, onSaved }: { customer: Customer; onSaved: 
   const [error, setError] = useState<string | null>(null);
 
   async function save() {
-    setSaving(true); setError(null);
+    setError(null);
+    const result = customerProfileSchema.safeParse(form);
+    if (!result.success) { setError(result.error.issues[0]?.message ?? "Revisa los datos."); return; }
+    setSaving(true);
+    const v = result.data;
     const { error } = await supabase.from("customers").update({
-      full_name: form.full_name.trim(),
-      last_name: form.last_name.trim() || null,
-      phone: form.phone.trim() || null,
-      email: form.email.trim() || null,
-      nif: form.nif.trim() || null,
+      full_name: v.full_name,
+      last_name: v.last_name ?? null,
+      phone: v.phone ?? null,
+      email: v.email ?? null,
+      nif: v.nif ?? null,
       birth_date: form.birth_date || null,
-      profession: form.profession.trim() || null,
-      address: form.address.trim() || null,
-      city: form.city.trim() || null,
-      province: form.province.trim() || null,
-      postal_code: form.postal_code.trim() || null,
+      profession: v.profession ?? null,
+      address: v.address ?? null,
+      city: v.city ?? null,
+      province: v.province ?? null,
+      postal_code: v.postal_code ?? null,
     }).eq("id", customer.id);
     setSaving(false);
     if (error) { setError(error.message); return; }

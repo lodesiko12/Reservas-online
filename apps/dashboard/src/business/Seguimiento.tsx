@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../lib/auth";
 import { useBookings, useBookingsRealtime, type Booking } from "./hooks";
-import { ymdInTz, zonedDayRange, formatTime } from "@reservas/shared";
+import { ymdInTz, zonedDayRange, formatTime, clientSessionSchema } from "@reservas/shared";
 import { PageHeader, Spinner, Modal, EmptyState } from "../components/ui";
 
 type Row = Booking & { services: { name: string } | null; professionals: { name: string; color: string } | null };
@@ -97,13 +97,17 @@ function StartSessionModal({ booking, onClose }: { booking: Row; onClose: () => 
 
   async function save() {
     if (!booking.customer_id) return;
-    setSaving(true); setError(null);
+    setError(null);
+    const result = clientSessionSchema.safeParse(form);
+    if (!result.success) { setError(result.error.issues[0]?.message ?? "Revisa los datos."); return; }
+    setSaving(true);
+    const v = result.data;
     const { data: { user } } = await supabase.auth.getUser();
     const { error } = await supabase.from("client_sessions").insert({
       business_id: booking.business_id, customer_id: booking.customer_id, booking_id: booking.id,
       author_user_id: user?.id ?? null, session_date: booking.starts_at,
-      objetivo: form.objetivo.trim() || null, notas: form.notas.trim() || null,
-      seguimiento: form.seguimiento.trim() || null, tareas_pautas: form.tareas_pautas.trim() || null,
+      objetivo: v.objetivo ?? null, notas: v.notas ?? null,
+      seguimiento: v.seguimiento ?? null, tareas_pautas: v.tareas_pautas ?? null,
     });
     setSaving(false);
     if (error) { setError(error.message); return; }

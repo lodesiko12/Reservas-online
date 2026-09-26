@@ -3,7 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../lib/auth";
 import { useBusinessId, useDiningSettings } from "./hooks";
-import { shortTime } from "@reservas/shared";
+import { shortTime, businessBrandingSchema, businessReviewSchema, optionalText, BUSINESS_MESSAGE_MAX } from "@reservas/shared";
 import { PageHeader, Spinner } from "../components/ui";
 import { IntegrationsForm } from "../components/IntegrationsForm";
 import { GoogleBusinessProfileSection } from "../components/GoogleBusinessProfileSection";
@@ -55,8 +55,10 @@ export function Configuracion() {
   function flash(m: string) { setToast(m); setTimeout(() => setToast(null), 2500); }
 
   async function saveBranding() {
+    const result = businessBrandingSchema.safeParse({ name });
+    if (!result.success) { flash(result.error.issues[0]?.message ?? "Revisa el nombre."); return; }
     setSavingBranding(true);
-    await supabase.from("businesses").update({ name: name.trim(), primary_color: color, logo_url: logoUrl || null }).eq("id", bid);
+    await supabase.from("businesses").update({ name: result.data.name, primary_color: color, logo_url: logoUrl || null }).eq("id", bid);
     await refresh(); qc.invalidateQueries();
     setSavingBranding(false); flash("Branding guardado");
   }
@@ -72,18 +74,22 @@ export function Configuracion() {
   }
 
   async function saveReview() {
+    const result = businessReviewSchema.safeParse({ reviewUrl, reviewMessage });
+    if (!result.success) { flash(result.error.issues[0]?.message ?? "Revisa el enlace de reseña."); return; }
     setSavingReview(true);
     await supabase.from("businesses").update({
-      google_review_url: reviewUrl.trim() || null,
-      review_email_message: reviewMessage.trim() || null,
+      google_review_url: result.data.reviewUrl ?? null,
+      review_email_message: result.data.reviewMessage ?? null,
     }).eq("id", bid);
     await refresh();
     setSavingReview(false); flash("Enlace de reseña guardado");
   }
 
   async function saveConfirmationMessage() {
+    const result = optionalText(BUSINESS_MESSAGE_MAX).safeParse(confirmationMessage);
+    if (!result.success) { flash(result.error.issues[0]?.message ?? "Mensaje demasiado largo."); return; }
     setSavingConfirmation(true);
-    await supabase.from("businesses").update({ confirmation_email_message: confirmationMessage.trim() || null }).eq("id", bid);
+    await supabase.from("businesses").update({ confirmation_email_message: result.data ?? null }).eq("id", bid);
     await refresh();
     setSavingConfirmation(false); flash("Mensaje de confirmación guardado");
   }

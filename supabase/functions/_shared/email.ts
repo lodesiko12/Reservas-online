@@ -26,7 +26,7 @@ function fmtTime(iso: string, tz: string): string {
 }
 
 function escapeHtml(s: string): string {
-  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
 /** Sustituye placeholders tipo {clave} por su valor; deja intacto lo que no reconoce. */
@@ -121,7 +121,7 @@ export function buildReviewRequestEmail(d: ReviewRequestData): { subject: string
     <div style="padding:24px">
       <p style="margin:0 0 16px">${introHtml}</p>
       <p style="text-align:center;margin:24px 0">
-        <a href="${d.reviewUrl}" style="background:${color};color:#fff;text-decoration:none;padding:12px 24px;border-radius:10px;font-weight:600;display:inline-block">Dejar una reseña</a>
+        <a href="${escapeHtml(d.reviewUrl)}" style="background:${color};color:#fff;text-decoration:none;padding:12px 24px;border-radius:10px;font-weight:600;display:inline-block">Dejar una reseña</a>
       </p>
       <p style="margin:18px 0 0;color:#94a3b8;font-size:12px">Gracias por confiar en nosotros.</p>
     </div>

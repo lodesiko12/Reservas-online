@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "../../lib/supabase";
 import { useAuth } from "../../lib/auth";
 import { Spinner, Modal } from "../../components/ui";
-import { formatDateTime } from "@reservas/shared";
+import { formatDateTime, clientSessionSchema } from "@reservas/shared";
 import type { Customer } from "../hooks";
 
 const FIELDS = [
@@ -79,12 +79,16 @@ function AddSessionModal({ customer, onClose, onSaved }: { customer: Customer; o
 
   async function save() {
     if (!business?.id) return;
-    setSaving(true); setError(null);
+    setError(null);
+    const result = clientSessionSchema.safeParse(form);
+    if (!result.success) { setError(result.error.issues[0]?.message ?? "Revisa los datos."); return; }
+    setSaving(true);
+    const v = result.data;
     const { data: { user } } = await supabase.auth.getUser();
     const { error } = await supabase.from("client_sessions").insert({
       business_id: business.id, customer_id: customer.id, author_user_id: user?.id ?? null,
-      objetivo: form.objetivo.trim() || null, notas: form.notas.trim() || null,
-      seguimiento: form.seguimiento.trim() || null, tareas_pautas: form.tareas_pautas.trim() || null,
+      objetivo: v.objetivo ?? null, notas: v.notas ?? null,
+      seguimiento: v.seguimiento ?? null, tareas_pautas: v.tareas_pautas ?? null,
     });
     setSaving(false);
     if (error) { setError(error.message); return; }
