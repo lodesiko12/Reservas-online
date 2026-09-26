@@ -41,14 +41,20 @@ export function buildConfirmationEmail(d: ConfirmationData): { subject: string; 
   const pending = !!d.isPending;
   const subject = pending ? `Solicitud recibida · ${d.businessName}` : `Reserva confirmada · ${d.businessName}`;
   const heading = pending ? "Pendiente de confirmación" : "Reserva confirmada";
+  const customerNameHtml = escapeHtml(d.customerName);
   const defaultIntro = pending
     ? `Hola ${d.customerName}, hemos recibido tu solicitud de reserva. El negocio la confirmará en breve. Estos son los detalles:`
     : `Hola ${d.customerName}, tu reserva está confirmada. Estos son los detalles:`;
+  const defaultIntroHtml = pending
+    ? `Hola ${customerNameHtml}, hemos recibido tu solicitud de reserva. El negocio la confirmará en breve. Estos son los detalles:`
+    : `Hola ${customerNameHtml}, tu reserva está confirmada. Estos son los detalles:`;
   const custom = d.customMessage?.trim();
+  // Nota: el placeholder {cliente} usa el nombre sin escapar aquí porque
+  // introPlain (custom) se escapa entero justo debajo antes de ir al HTML.
   const introPlain = custom
     ? applyPlaceholders(custom, { cliente: d.customerName, negocio: d.businessName, servicio: d.serviceName ?? "", fecha: date, hora: time })
     : defaultIntro;
-  const introHtml = custom ? escapeHtml(introPlain).replace(/\n/g, "<br>") : introPlain;
+  const introHtml = custom ? escapeHtml(introPlain).replace(/\n/g, "<br>") : defaultIntroHtml;
 
   const manage = d.manageUrl
     ? `<p style="margin:16px 0 0">Puedes consultar o cancelar tu reserva aquí:<br>
@@ -101,10 +107,11 @@ export function buildReviewRequestEmail(d: ReviewRequestData): { subject: string
   const subject = `¿Qué tal tu visita a ${d.businessName}?`;
   const custom = d.customMessage?.trim();
   const defaultIntro = `Hola ${d.customerName}, esperamos que lo hayas pasado genial. Si tienes un minuto, nos ayudaría muchísimo que dejaras tu opinión:`;
+  const defaultIntroHtml = `Hola ${escapeHtml(d.customerName)}, esperamos que lo hayas pasado genial. Si tienes un minuto, nos ayudaría muchísimo que dejaras tu opinión:`;
   const introPlain = custom
     ? applyPlaceholders(custom, { cliente: d.customerName, negocio: d.businessName })
     : defaultIntro;
-  const introHtml = custom ? escapeHtml(introPlain).replace(/\n/g, "<br>") : introPlain;
+  const introHtml = custom ? escapeHtml(introPlain).replace(/\n/g, "<br>") : defaultIntroHtml;
   const html = `<!doctype html><html><body style="margin:0;background:#f1f5f9;padding:24px;font-family:system-ui,Segoe UI,Arial,sans-serif;color:#0f172a">
   <div style="max-width:520px;margin:0 auto;background:#fff;border-radius:14px;overflow:hidden;border:1px solid #e2e8f0">
     <div style="background:${color};color:#fff;padding:20px 24px">
