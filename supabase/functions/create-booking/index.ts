@@ -4,6 +4,7 @@
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { corsHeaders, json, handleOptions } from "../_shared/cors.ts";
 import { buildConfirmationEmail, sendEmail } from "../_shared/email.ts";
+import { cleanOptionalText, cleanText, isEmail, isIsoDate, isPhone, isPositiveInt, isUuid } from "../_shared/validation.ts";
 
 type Body = {
   business_id?: string;
@@ -30,18 +31,28 @@ Deno.serve(async (req) => {
   let body: Body;
   try { body = await req.json(); } catch { return json({ error: "JSON inválido" }, 400); }
 
-  const { business_id, service_id, dining_shift_id, party_size, starts_at, name, phone, email } = body;
+  const { business_id, service_id, dining_shift_id, party_size, starts_at } = body;
   const isRestaurant = !!dining_shift_id;
 
-  if (!business_id || !starts_at || !name || !phone || !email) {
-    return json({ error: "Faltan campos obligatorios (fecha, nombre, teléfono, email)." }, 400);
+  if (!isUuid(business_id)) return json({ error: "Negocio no válido." }, 400);
+  if (!isIsoDate(starts_at)) return json({ error: "Fecha/hora no válida." }, 400);
+
+  const name = cleanText(body.name, 100);
+  const phone = body.phone && isPhone(body.phone, 30) ? body.phone.trim() : null;
+  const email = body.email && isEmail(body.email, 254) ? body.email.trim() : null;
+  if (!name || !phone || !email) {
+    return json({ error: "Faltan campos obligatorios o no son válidos (nombre, teléfono, email)." }, 400);
   }
+  const lastName = cleanOptionalText(body.last_name, 100);
+  const notes = cleanOptionalText(body.notes, 1000) || undefined;
+
   if (isRestaurant) {
-    if (!party_size || party_size < 1) return json({ error: "Indica el número de comensales." }, 400);
-  } else if (!service_id) {
-    return json({ error: "Falta el servicio." }, 400);
+    if (!isUuid(dining_shift_id)) return json({ error: "Turno no válido." }, 400);
+    if (!isPositiveInt(party_size, 50)) return json({ error: "Indica el número de comensales." }, 400);
+  } else {
+    if (!isUuid(service_id)) return json({ error: "Falta el servicio." }, 400);
+    if (body.professional_id && !isUuid(body.professional_id)) return json({ error: "Profesional no válido." }, 400);
   }
-  if (!/^\S+@\S+\.\S+$/.test(email)) return json({ error: "Email no válido." }, 400);
 
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL")!,
@@ -56,22 +67,22 @@ Deno.serve(async (req) => {
         p_shift_id: dining_shift_id,
         p_starts_at: starts_at,
         p_party_size: party_size,
-        p_name: name.trim(),
-        p_last_name: (body.last_name ?? "").trim(),
-        p_phone: phone.trim(),
-        p_email: email.trim(),
-        p_notes: body.notes?.trim() || undefined,
+        p_name: name,
+        p_last_name: lastName,
+        p_phone: phone,
+        p_email: email,
+        p_notes: notes,
         p_channel: "web",
       })
     : await supabase.rpc("create_public_booking", {
         p_business_id: business_id,
         p_service_id: service_id,
         p_starts_at: starts_at,
-        p_name: name.trim(),
-        p_last_name: (body.last_name ?? "").trim(),
-        p_phone: phone.trim(),
-        p_email: email.trim(),
-        p_notes: body.notes?.trim() || undefined,
+        p_name: name,
+        p_last_name: lastName,
+        p_phone: phone,
+        p_email: email,
+        p_notes: notes,
         p_channel: "web",
         p_professional_id: body.professional_id || undefined,
       });
@@ -106,13 +117,13 @@ Deno.serve(async (req) => {
       startsAt: booking.starts_at,
       timezone: biz?.timezone ?? "Europe/Madrid",
       locator: booking.locator,
-      customerName: name.trim(),
+      customerName: name,
       manageUrl,
       primaryColor: biz?.primary_color,
       isPending: booking.status === "pendiente",
       customMessage: biz?.confirmation_email_message,
     });
-    await sendEmail(email.trim(), mail.subject, mail.html, mail.text, integ?.resend_api_key, integ?.email_from);
+    await sendEmail(email, mail.subject, mail.html, mail.text, integ?.resend_api_key, integ?.email_from);
   } catch (e) {
     console.error("Email no enviado:", (e as Error).message);
   }

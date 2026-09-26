@@ -3,7 +3,10 @@ import {
   fetchDiningSlots, fetchDiningSettings, fetchAvailableDiningDays, createBooking,
   type PublicBusiness, type DiningSlot, type BookingResult, type DiningSettings,
 } from "./api";
-import { formatDate, formatTime, WEEKDAYS_SHORT_ES, ymdInTz, weekdayInTz } from "@reservas/shared";
+import {
+  formatDate, formatTime, WEEKDAYS_SHORT_ES, ymdInTz, weekdayInTz,
+  validateBookingContact, NAME_MAX, PHONE_MAX, NOTES_MAX,
+} from "@reservas/shared";
 
 type Step = "party" | "when" | "form" | "done";
 const ALL_PARTY_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8, 10, 12];
@@ -197,19 +200,26 @@ function DiningForm({ business, party, slot, onBack, onDone, onError }: {
   const [email, setEmail] = useState("");
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
-  const valid = name.trim() && phone.trim() && /\S+@\S+\.\S+/.test(email);
+  const validation = validateBookingContact({ name, lastName, phone, email, notes });
+  const valid = validation.success;
 
   async function submit() {
-    onError(null); setSaving(true);
+    onError(null);
+    if (!validation.success) {
+      onError(validation.error.issues[0]?.message ?? "Revisa los datos del formulario.");
+      return;
+    }
+    setSaving(true);
     try {
+      const c = validation.data;
       const r = await createBooking({
         business_id: business.id,
         dining_shift_id: slot.shift_id,
         party_size: party,
         starts_at: slot.slot_start,
-        name: name.trim(), last_name: lastName.trim(),
-        phone: phone.trim(), email: email.trim(),
-        notes: notes.trim() || undefined,
+        name: c.name, last_name: c.lastName,
+        phone: c.phone, email: c.email,
+        notes: c.notes || undefined,
       });
       onDone(r);
     } catch (e: any) {
@@ -229,12 +239,12 @@ function DiningForm({ business, party, slot, onBack, onDone, onError }: {
         <div className="line"><span className="k">Hora</span><span>{formatTime(slot.slot_start, business.timezone)}</span></div>
       </div>
       <div className="row2">
-        <div className="field"><label>Nombre *</label><input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nombre" /></div>
-        <div className="field"><label>Apellidos</label><input value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="Apellidos" /></div>
+        <div className="field"><label>Nombre *</label><input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nombre" maxLength={NAME_MAX} /></div>
+        <div className="field"><label>Apellidos</label><input value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="Apellidos" maxLength={NAME_MAX} /></div>
       </div>
-      <div className="field"><label>Teléfono *</label><input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+34 600 000 000" inputMode="tel" /></div>
+      <div className="field"><label>Teléfono *</label><input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+34 600 000 000" inputMode="tel" maxLength={PHONE_MAX} /></div>
       <div className="field"><label>Email *</label><input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="tu@email.com" inputMode="email" /></div>
-      <div className="field"><label>Notas (opcional)</label><textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} placeholder="Alergias, trona, celebración…" /></div>
+      <div className="field"><label>Notas (opcional)</label><textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} placeholder="Alergias, trona, celebración…" maxLength={NOTES_MAX} /></div>
       <button className="btn" disabled={!valid || saving} onClick={submit}>{saving ? "Reservando…" : "Confirmar reserva"}</button>
     </>
   );

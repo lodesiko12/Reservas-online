@@ -8,6 +8,9 @@
   "exports": {
     ".": "./src/index.ts"
   },
+  "dependencies": {
+    "zod": "^3.23.8"
+  },
   "peerDependencies": {
     "@supabase/supabase-js": "^2.45.0"
   }

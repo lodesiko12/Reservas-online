@@ -6,6 +6,7 @@ import {
 import {
   formatCurrency, formatDuration, formatDate, formatTime,
   WEEKDAYS_SHORT_ES, ymdInTz, weekdayInTz,
+  validateBookingContact, NAME_MAX, PHONE_MAX, NOTES_MAX,
 } from "@reservas/shared";
 import { Lookup } from "./Lookup";
 import { RestaurantFlow } from "./RestaurantFlow";
@@ -313,22 +314,28 @@ function FormStep({
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
 
-  const valid = name.trim() && phone.trim() && /\S+@\S+\.\S+/.test(email);
+  const validation = validateBookingContact({ name, lastName, phone, email, notes });
+  const valid = validation.success;
 
   async function submit() {
     onError(null);
+    if (!validation.success) {
+      onError(validation.error.issues[0]?.message ?? "Revisa los datos del formulario.");
+      return;
+    }
     setSaving(true);
     try {
+      const c = validation.data;
       const r = await createBooking({
         business_id: business.id,
         service_id: service.id,
         professional_id: professional?.id ?? null,
         starts_at: slot.slot_start,
-        name: name.trim(),
-        last_name: lastName.trim(),
-        phone: phone.trim(),
-        email: email.trim(),
-        notes: notes.trim() || undefined,
+        name: c.name,
+        last_name: c.lastName,
+        phone: c.phone,
+        email: c.email,
+        notes: c.notes || undefined,
       });
       onDone(r);
     } catch (e: any) {
@@ -354,16 +361,16 @@ function FormStep({
       <div className="row2">
         <div className="field">
           <label>Nombre *</label>
-          <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nombre" />
+          <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nombre" maxLength={NAME_MAX} />
         </div>
         <div className="field">
           <label>Apellidos</label>
-          <input value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="Apellidos" />
+          <input value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="Apellidos" maxLength={NAME_MAX} />
         </div>
       </div>
       <div className="field">
         <label>Teléfono *</label>
-        <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+34 600 000 000" inputMode="tel" />
+        <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+34 600 000 000" inputMode="tel" maxLength={PHONE_MAX} />
       </div>
       <div className="field">
         <label>Email *</label>
@@ -371,7 +378,7 @@ function FormStep({
       </div>
       <div className="field">
         <label>Notas (opcional)</label>
-        <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} placeholder="Algo que debamos saber" />
+        <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} placeholder="Algo que debamos saber" maxLength={NOTES_MAX} />
       </div>
 
       <button className="btn" disabled={!valid || saving} onClick={submit}>
