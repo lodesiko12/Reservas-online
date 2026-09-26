@@ -6,6 +6,7 @@
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { json, handleOptions } from "../_shared/cors.ts";
 import { buildConfirmationEmail, sendEmail } from "../_shared/email.ts";
+import { rateLimitHit, tooManyRequests } from "../_shared/rateLimit.ts";
 
 Deno.serve(async (req) => {
   const pre = handleOptions(req);
@@ -28,6 +29,15 @@ Deno.serve(async (req) => {
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     { auth: { persistSession: false } }
   );
+
+  // Autenticado (verify_jwt=true): se limita por usuario, no por IP —
+  // el mismo miembro de staff no debería necesitar reenviar más de 20
+  // confirmaciones por hora.
+  const { data: { user } } = await asCaller.auth.getUser();
+  if (!user) return json({ error: "No autorizado" }, 401);
+  if (!(await rateLimitHit(service, `send-confirmation-email:user:${user.id}`, 20, 3600))) {
+    return tooManyRequests(3600);
+  }
 
   // Búsqueda exacta (no ilike: un patrón sin escapar dejaría colar
   // comodines `%`/`_`) y con RLS (bookings_all → is_business_member), así

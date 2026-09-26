@@ -8,6 +8,7 @@
 // el secreto de business_integrations.
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { json, handleOptions } from "../_shared/cors.ts";
+import { rateLimitHit, tooManyRequests } from "../_shared/rateLimit.ts";
 
 const MODEL = "gemini-3.6-flash";
 
@@ -27,6 +28,15 @@ Deno.serve(async (req) => {
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     { auth: { persistSession: false } }
   );
+
+  // Cada generación cuesta una llamada real a Gemini (y el panel ya
+  // reintenta 3 veces solo por los 503/429 frecuentes); 10/hora por
+  // usuario deja margen a esos reintentos sin permitir abuso del gasto.
+  const { data: { user } } = await asCaller.auth.getUser();
+  if (!user) return json({ error: "No autorizado" }, 401);
+  if (!(await rateLimitHit(service, `generate-client-ai-report:user:${user.id}`, 10, 3600))) {
+    return tooManyRequests(3600);
+  }
 
   const { customer_id } = await req.json().catch(() => ({}));
   if (!customer_id) return json({ error: "Falta customer_id" }, 400);

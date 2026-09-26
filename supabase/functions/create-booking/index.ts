@@ -5,6 +5,7 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 import { corsHeaders, json, handleOptions } from "../_shared/cors.ts";
 import { buildConfirmationEmail, sendEmail } from "../_shared/email.ts";
 import { cleanOptionalText, cleanText, isEmail, isIsoDate, isPhone, isPositiveInt, isUuid } from "../_shared/validation.ts";
+import { getClientIp, rateLimitHit, tooManyRequests } from "../_shared/rateLimit.ts";
 
 type Body = {
   business_id?: string;
@@ -27,6 +28,20 @@ Deno.serve(async (req) => {
   const pre = handleOptions(req);
   if (pre) return pre;
   if (req.method !== "POST") return json({ error: "Método no permitido" }, 405);
+
+  const supabase = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    { auth: { persistSession: false } }
+  );
+
+  // Endpoint público (sin JWT): solo se limita por IP. 8 reservas cada
+  // 10 min es holgado para un uso legítimo (familia reservando varias
+  // mesas) pero corta un bot/script machacando el endpoint.
+  const ip = getClientIp(req);
+  if (!(await rateLimitHit(supabase, `create-booking:ip:${ip}`, 8, 600))) {
+    return tooManyRequests(600);
+  }
 
   let body: Body;
   try { body = await req.json(); } catch { return json({ error: "JSON inválido" }, 400); }
@@ -53,12 +68,6 @@ Deno.serve(async (req) => {
     if (!isUuid(service_id)) return json({ error: "Falta el servicio." }, 400);
     if (body.professional_id && !isUuid(body.professional_id)) return json({ error: "Profesional no válido." }, 400);
   }
-
-  const supabase = createClient(
-    Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-    { auth: { persistSession: false } }
-  );
 
   // 1) Crear la reserva (re-valida disponibilidad/aforo bajo lock dentro del RPC).
   const { data: booking, error } = isRestaurant
