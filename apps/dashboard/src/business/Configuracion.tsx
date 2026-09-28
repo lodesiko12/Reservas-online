@@ -9,6 +9,7 @@ import { IntegrationsForm } from "../components/IntegrationsForm";
 import { GoogleBusinessProfileSection } from "../components/GoogleBusinessProfileSection";
 import { GeminiConfigForm } from "../components/GeminiConfigForm";
 import { WindowsEditor, type Win } from "../components/WindowsEditor";
+import { ConfiguracionFiscalSection } from "./crm/ConfiguracionFiscal";
 
 const WIDGET_URL = ((import.meta.env.VITE_WIDGET_URL as string) || "").replace(/\/+$/, "");
 
@@ -18,6 +19,7 @@ export function Configuracion() {
   const qc = useQueryClient();
   const isRestaurant = business?.type === "restaurante";
   const isPsicologo = business?.type === "psicologo";
+  const isAutonomo = business?.type === "autonomo";
 
   const [name, setName] = useState(business?.name ?? "");
   const [color, setColor] = useState(business?.primary_color ?? "#4f46e5");
@@ -195,7 +197,7 @@ export function Configuracion() {
       </section>
 
       {/* Reservas */}
-      {!isRestaurant && (
+      {!isRestaurant && !isAutonomo && (
         <section className="card p-6">
           <h2 className="font-semibold mb-4">Reservas</h2>
           <div className="grid sm:grid-cols-2 gap-4">
@@ -214,25 +216,30 @@ export function Configuracion() {
       {/* Reglas generales de reserva (restaurante) */}
       {isRestaurant && <DiningSettingsSection bid={bid} flash={flash} />}
 
+      {/* Datos fiscales, catálogo de conceptos y mapeo de etapas (solo autónomo) */}
+      {isAutonomo && <ConfiguracionFiscalSection flash={flash} />}
+
       {/* Petición de reseña post-visita */}
-      <section className="card p-6">
-        <h2 className="font-semibold mb-1">Reseñas</h2>
-        <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
-          Si configuras un enlace, 1–3h después de que termine una reserva (y no haya sido cancelada/no-show) se envía
-          automáticamente un email pidiendo una reseña. Déjalo vacío para no enviar nada.
-        </p>
-        <label className="label">Enlace de reseña (Google, TripAdvisor…)</label>
-        <input className="input" value={reviewUrl} onChange={(e) => setReviewUrl(e.target.value)} placeholder="https://g.page/r/…/review" />
-        <label className="label mt-4">Mensaje personalizado del email</label>
-        <textarea
-          className="input min-h-[80px]"
-          value={reviewMessage}
-          onChange={(e) => setReviewMessage(e.target.value)}
-          placeholder={`Hola {cliente}, gracias por confiar en {negocio}. ¿Nos dejas tu opinión?`}
-        />
-        <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Vacío = mensaje por defecto. Placeholders: {"{cliente}"} {"{negocio}"}.</p>
-        <button className="btn-primary mt-4" onClick={saveReview} disabled={savingReview}>{savingReview ? "Guardando…" : "Guardar"}</button>
-      </section>
+      {!isAutonomo && (
+        <section className="card p-6">
+          <h2 className="font-semibold mb-1">Reseñas</h2>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
+            Si configuras un enlace, 1–3h después de que termine una reserva (y no haya sido cancelada/no-show) se envía
+            automáticamente un email pidiendo una reseña. Déjalo vacío para no enviar nada.
+          </p>
+          <label className="label">Enlace de reseña (Google, TripAdvisor…)</label>
+          <input className="input" value={reviewUrl} onChange={(e) => setReviewUrl(e.target.value)} placeholder="https://g.page/r/…/review" />
+          <label className="label mt-4">Mensaje personalizado del email</label>
+          <textarea
+            className="input min-h-[80px]"
+            value={reviewMessage}
+            onChange={(e) => setReviewMessage(e.target.value)}
+            placeholder={`Hola {cliente}, gracias por confiar en {negocio}. ¿Nos dejas tu opinión?`}
+          />
+          <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Vacío = mensaje por defecto. Placeholders: {"{cliente}"} {"{negocio}"}.</p>
+          <button className="btn-primary mt-4" onClick={saveReview} disabled={savingReview}>{savingReview ? "Guardando…" : "Guardar"}</button>
+        </section>
+      )}
 
       {/* Integraciones: email y WhatsApp por negocio */}
       <section className="card p-6">
@@ -248,14 +255,16 @@ export function Configuracion() {
         </section>
       )}
 
-      {/* Embed */}
-      <section className="card p-6">
-        <h2 className="font-semibold mb-1">Insertar el widget en tu web</h2>
-        <p className="text-sm text-slate-500 dark:text-slate-400 mb-3">Pega este código donde quieras que aparezca el formulario de reservas.</p>
-        <pre className="bg-slate-900 text-slate-100 text-xs rounded-lg p-4 overflow-x-auto">{embedSnippet}</pre>
-        <button className="btn-ghost mt-3" onClick={() => { navigator.clipboard.writeText(embedSnippet); flash("Snippet copiado"); }}>📋 Copiar snippet</button>
-        <a className="btn-ghost mt-3 ml-2" href={`${WIDGET_URL}/?slug=${business?.slug}`} target="_blank" rel="noreferrer">Previsualizar widget ↗</a>
-      </section>
+      {/* Embed (no aplica a autónomo: sin reserva online) */}
+      {!isAutonomo && (
+        <section className="card p-6">
+          <h2 className="font-semibold mb-1">Insertar el widget en tu web</h2>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mb-3">Pega este código donde quieras que aparezca el formulario de reservas.</p>
+          <pre className="bg-slate-900 text-slate-100 text-xs rounded-lg p-4 overflow-x-auto">{embedSnippet}</pre>
+          <button className="btn-ghost mt-3" onClick={() => { navigator.clipboard.writeText(embedSnippet); flash("Snippet copiado"); }}>📋 Copiar snippet</button>
+          <a className="btn-ghost mt-3 ml-2" href={`${WIDGET_URL}/?slug=${business?.slug}`} target="_blank" rel="noreferrer">Previsualizar widget ↗</a>
+        </section>
+      )}
     </div>
   );
 }

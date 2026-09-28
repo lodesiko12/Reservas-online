@@ -9,6 +9,9 @@ import { HistorialTab } from "./ficha/HistorialTab";
 import { EditarTab } from "./ficha/EditarTab";
 import { InformeTab } from "./ficha/InformeTab";
 import { ReciboTab } from "./ficha/ReciboTab";
+import { PresupuestosTab } from "./ficha/PresupuestosTab";
+import { FacturasTab } from "./ficha/FacturasTab";
+import { CitasTab } from "./ficha/CitasTab";
 
 /** Parser CSV mínimo: soporta comillas, comas y saltos de línea dentro de campos. */
 function parseCsv(text: string): string[][] {
@@ -264,6 +267,7 @@ function ImportCsvModal({ bid, onClose }: { bid: string; onClose: () => void }) 
 function CustomerModal({ customer, onClose, onDeleted }: { customer: Customer; onClose: () => void; onDeleted: () => void }) {
   const { business } = useAuth();
   const isPsicologo = business?.type === "psicologo";
+  const isAutonomo = business?.type === "autonomo";
   const tz = business?.timezone ?? "Europe/Madrid";
   const qc = useQueryClient();
   const bid = useBusinessId();
@@ -282,7 +286,7 @@ function CustomerModal({ customer, onClose, onDeleted }: { customer: Customer; o
   const [savingNotes, setSavingNotes] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
-  const [tab, setTab] = useState<"historial" | "editar" | "informe" | "recibo">("historial");
+  const [tab, setTab] = useState<"historial" | "editar" | "informe" | "recibo" | "presupuestos" | "facturas" | "citas">("historial");
 
   useEffect(() => { setNotes(customer.notes ?? ""); }, [customer]);
 
@@ -326,6 +330,31 @@ function CustomerModal({ customer, onClose, onDeleted }: { customer: Customer; o
           {tab === "editar" && <EditarTab customer={customer} onSaved={() => qc.invalidateQueries({ queryKey: ["customers", bid] })} />}
           {tab === "informe" && <InformeTab customer={customer} />}
           {tab === "recibo" && <ReciboTab customer={customer} />}
+        </>
+      ) : isAutonomo ? (
+        <>
+          <div className="flex gap-1 border-b border-slate-200 dark:border-slate-800 mb-4 overflow-x-auto">
+            {([
+              ["historial", "Historial"], ["editar", "Editar"],
+              ["presupuestos", "Presupuestos"], ["facturas", "Facturas"], ["citas", "Citas"],
+            ] as const).map(([k, l]) => (
+              <button key={k} type="button"
+                className={`px-3 py-2 text-sm font-medium whitespace-nowrap ${tab === k ? "border-b-2 border-brand-500 text-brand-600" : "text-slate-500 dark:text-slate-400"}`}
+                onClick={() => setTab(k)}>{l}</button>
+            ))}
+          </div>
+          {tab === "historial" && (
+            <>
+              <label className="label">Notas privadas</label>
+              <textarea className="input mb-1" rows={2} value={notes} onChange={(e) => setNotes(e.target.value)}
+                placeholder="Notas sobre el cliente…" />
+              <button className="btn-ghost text-xs mb-4" onClick={saveNotes} disabled={savingNotes}>{savingNotes ? "Guardando…" : "Guardar notas"}</button>
+            </>
+          )}
+          {tab === "editar" && <EditarTab customer={customer} onSaved={() => qc.invalidateQueries({ queryKey: ["customers", bid] })} />}
+          {tab === "presupuestos" && <PresupuestosTab customer={customer} />}
+          {tab === "facturas" && <FacturasTab customer={customer} />}
+          {tab === "citas" && <CitasTab customer={customer} />}
         </>
       ) : (
         <>

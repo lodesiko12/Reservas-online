@@ -553,6 +553,562 @@ export type Database = {
           },
         ]
       }
+      crm_budget_concepts: {
+        Row: {
+          business_id: string
+          created_at: string
+          default_unit_price: number
+          default_vat_rate: number
+          id: string
+          name: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          default_unit_price?: number
+          default_vat_rate?: number
+          id?: string
+          name: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          default_unit_price?: number
+          default_vat_rate?: number
+          id?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_budget_concepts_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_budget_lines: {
+        Row: {
+          budget_id: string
+          concept: string
+          discount_pct: number
+          id: string
+          position: number
+          quantity: number
+          unit_price: number
+          vat_rate: number
+        }
+        Insert: {
+          budget_id: string
+          concept: string
+          discount_pct?: number
+          id?: string
+          position?: number
+          quantity?: number
+          unit_price?: number
+          vat_rate?: number
+        }
+        Update: {
+          budget_id?: string
+          concept?: string
+          discount_pct?: number
+          id?: string
+          position?: number
+          quantity?: number
+          unit_price?: number
+          vat_rate?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_budget_lines_budget_id_fkey"
+            columns: ["budget_id"]
+            isOneToOne: false
+            referencedRelation: "crm_budgets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_budgets: {
+        Row: {
+          business_id: string
+          card_id: string | null
+          created_at: string
+          customer_id: string
+          id: string
+          issued_at: string
+          notes: string | null
+          number: string
+          status: Database["public"]["Enums"]["crm_budget_status"]
+          updated_at: string
+          valid_until_days: number
+        }
+        Insert: {
+          business_id: string
+          card_id?: string | null
+          created_at?: string
+          customer_id: string
+          id?: string
+          issued_at?: string
+          notes?: string | null
+          number: string
+          status?: Database["public"]["Enums"]["crm_budget_status"]
+          updated_at?: string
+          valid_until_days?: number
+        }
+        Update: {
+          business_id?: string
+          card_id?: string | null
+          created_at?: string
+          customer_id?: string
+          id?: string
+          issued_at?: string
+          notes?: string | null
+          number?: string
+          status?: Database["public"]["Enums"]["crm_budget_status"]
+          updated_at?: string
+          valid_until_days?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_budgets_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_budgets_card_id_fkey"
+            columns: ["card_id"]
+            isOneToOne: false
+            referencedRelation: "crm_cards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_budgets_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_card_notes: {
+        Row: {
+          body: string
+          card_id: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          body: string
+          card_id: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          body?: string
+          card_id?: string
+          created_at?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_card_notes_card_id_fkey"
+            columns: ["card_id"]
+            isOneToOne: false
+            referencedRelation: "crm_cards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_cards: {
+        Row: {
+          business_id: string
+          created_at: string
+          customer_id: string | null
+          description: string | null
+          estimated_amount: number | null
+          id: string
+          last_moved_at: string
+          position: number
+          stage_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          customer_id?: string | null
+          description?: string | null
+          estimated_amount?: number | null
+          id?: string
+          last_moved_at?: string
+          position?: number
+          stage_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          customer_id?: string | null
+          description?: string | null
+          estimated_amount?: number | null
+          id?: string
+          last_moved_at?: string
+          position?: number
+          stage_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_cards_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_cards_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_cards_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "crm_pipeline_stages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_document_counters: {
+        Row: {
+          business_id: string
+          doc_type: Database["public"]["Enums"]["crm_document_type"]
+          last_number: number
+          year: number
+        }
+        Insert: {
+          business_id: string
+          doc_type: Database["public"]["Enums"]["crm_document_type"]
+          last_number?: number
+          year: number
+        }
+        Update: {
+          business_id?: string
+          doc_type?: Database["public"]["Enums"]["crm_document_type"]
+          last_number?: number
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_document_counters_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_events: {
+        Row: {
+          address: string | null
+          business_id: string
+          card_id: string | null
+          created_at: string
+          customer_id: string | null
+          ends_at: string
+          id: string
+          notes: string | null
+          starts_at: string
+          title: string
+          type: Database["public"]["Enums"]["crm_event_type"]
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          business_id: string
+          card_id?: string | null
+          created_at?: string
+          customer_id?: string | null
+          ends_at: string
+          id?: string
+          notes?: string | null
+          starts_at: string
+          title: string
+          type?: Database["public"]["Enums"]["crm_event_type"]
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          business_id?: string
+          card_id?: string | null
+          created_at?: string
+          customer_id?: string | null
+          ends_at?: string
+          id?: string
+          notes?: string | null
+          starts_at?: string
+          title?: string
+          type?: Database["public"]["Enums"]["crm_event_type"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_events_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_events_card_id_fkey"
+            columns: ["card_id"]
+            isOneToOne: false
+            referencedRelation: "crm_cards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_events_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_fiscal_profile: {
+        Row: {
+          address: string | null
+          business_id: string
+          default_irpf_rate: number
+          default_vat_rate: number
+          iban_note: string | null
+          legal_name: string | null
+          nif: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          business_id: string
+          default_irpf_rate?: number
+          default_vat_rate?: number
+          iban_note?: string | null
+          legal_name?: string | null
+          nif?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          business_id?: string
+          default_irpf_rate?: number
+          default_vat_rate?: number
+          iban_note?: string | null
+          legal_name?: string | null
+          nif?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_fiscal_profile_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: true
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_invoice_lines: {
+        Row: {
+          concept: string
+          discount_pct: number
+          id: string
+          invoice_id: string
+          position: number
+          quantity: number
+          unit_price: number
+          vat_rate: number
+        }
+        Insert: {
+          concept: string
+          discount_pct?: number
+          id?: string
+          invoice_id: string
+          position?: number
+          quantity?: number
+          unit_price?: number
+          vat_rate?: number
+        }
+        Update: {
+          concept?: string
+          discount_pct?: number
+          id?: string
+          invoice_id?: string
+          position?: number
+          quantity?: number
+          unit_price?: number
+          vat_rate?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_invoice_lines_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "crm_invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_invoices: {
+        Row: {
+          budget_id: string | null
+          business_id: string
+          card_id: string | null
+          created_at: string
+          customer_id: string
+          id: string
+          irpf_rate: number
+          issued_at: string
+          notes: string | null
+          number: string
+          status: Database["public"]["Enums"]["crm_invoice_status"]
+          updated_at: string
+          year: number
+        }
+        Insert: {
+          budget_id?: string | null
+          business_id: string
+          card_id?: string | null
+          created_at?: string
+          customer_id: string
+          id?: string
+          irpf_rate?: number
+          issued_at?: string
+          notes?: string | null
+          number: string
+          status?: Database["public"]["Enums"]["crm_invoice_status"]
+          updated_at?: string
+          year: number
+        }
+        Update: {
+          budget_id?: string | null
+          business_id?: string
+          card_id?: string | null
+          created_at?: string
+          customer_id?: string
+          id?: string
+          irpf_rate?: number
+          issued_at?: string
+          notes?: string | null
+          number?: string
+          status?: Database["public"]["Enums"]["crm_invoice_status"]
+          updated_at?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_invoices_budget_id_fkey"
+            columns: ["budget_id"]
+            isOneToOne: false
+            referencedRelation: "crm_budgets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_invoices_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_invoices_card_id_fkey"
+            columns: ["card_id"]
+            isOneToOne: false
+            referencedRelation: "crm_cards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_invoices_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_pipeline_stages: {
+        Row: {
+          business_id: string
+          color: string
+          created_at: string
+          id: string
+          name: string
+          position: number
+        }
+        Insert: {
+          business_id: string
+          color?: string
+          created_at?: string
+          id?: string
+          name: string
+          position?: number
+        }
+        Update: {
+          business_id?: string
+          color?: string
+          created_at?: string
+          id?: string
+          name?: string
+          position?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_pipeline_stages_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_stage_events: {
+        Row: {
+          business_id: string
+          event_key: Database["public"]["Enums"]["crm_stage_event_key"]
+          stage_id: string | null
+        }
+        Insert: {
+          business_id: string
+          event_key: Database["public"]["Enums"]["crm_stage_event_key"]
+          stage_id?: string | null
+        }
+        Update: {
+          business_id?: string
+          event_key?: Database["public"]["Enums"]["crm_stage_event_key"]
+          stage_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_stage_events_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_stage_events_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "crm_pipeline_stages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customers: {
         Row: {
           address: string | null
@@ -1057,6 +1613,24 @@ export type Database = {
         }
         Relationships: []
       }
+      rate_limits: {
+        Row: {
+          count: number
+          key: string
+          window_start: string
+        }
+        Insert: {
+          count?: number
+          key: string
+          window_start: string
+        }
+        Update: {
+          count?: number
+          key?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
       review_requests_log: {
         Row: {
           booking_id: string
@@ -1458,6 +2032,256 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      crm_accept_budget: {
+        Args: { p_budget_id: string }
+        Returns: {
+          business_id: string
+          card_id: string | null
+          created_at: string
+          customer_id: string
+          id: string
+          issued_at: string
+          notes: string | null
+          number: string
+          status: Database["public"]["Enums"]["crm_budget_status"]
+          updated_at: string
+          valid_until_days: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "crm_budgets"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      crm_create_budget: {
+        Args: {
+          p_business_id: string
+          p_card_id: string
+          p_customer_id: string
+          p_lines: Json
+          p_notes: string
+          p_valid_until_days: number
+        }
+        Returns: {
+          business_id: string
+          card_id: string | null
+          created_at: string
+          customer_id: string
+          id: string
+          issued_at: string
+          notes: string | null
+          number: string
+          status: Database["public"]["Enums"]["crm_budget_status"]
+          updated_at: string
+          valid_until_days: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "crm_budgets"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      crm_create_invoice_from_budget: {
+        Args: { p_budget_id: string }
+        Returns: {
+          budget_id: string | null
+          business_id: string
+          card_id: string | null
+          created_at: string
+          customer_id: string
+          id: string
+          irpf_rate: number
+          issued_at: string
+          notes: string | null
+          number: string
+          status: Database["public"]["Enums"]["crm_invoice_status"]
+          updated_at: string
+          year: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "crm_invoices"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      crm_create_invoice_manual: {
+        Args: {
+          p_business_id: string
+          p_card_id: string
+          p_customer_id: string
+          p_irpf_rate: number
+          p_lines: Json
+          p_notes: string
+        }
+        Returns: {
+          budget_id: string | null
+          business_id: string
+          card_id: string | null
+          created_at: string
+          customer_id: string
+          id: string
+          irpf_rate: number
+          issued_at: string
+          notes: string | null
+          number: string
+          status: Database["public"]["Enums"]["crm_invoice_status"]
+          updated_at: string
+          year: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "crm_invoices"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      crm_delete_pipeline_stage: {
+        Args: { p_move_to_stage_id: string; p_stage_id: string }
+        Returns: undefined
+      }
+      crm_duplicate_budget: {
+        Args: { p_budget_id: string }
+        Returns: {
+          business_id: string
+          card_id: string | null
+          created_at: string
+          customer_id: string
+          id: string
+          issued_at: string
+          notes: string | null
+          number: string
+          status: Database["public"]["Enums"]["crm_budget_status"]
+          updated_at: string
+          valid_until_days: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "crm_budgets"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      crm_mark_invoice_paid: {
+        Args: { p_invoice_id: string }
+        Returns: {
+          budget_id: string | null
+          business_id: string
+          card_id: string | null
+          created_at: string
+          customer_id: string
+          id: string
+          irpf_rate: number
+          issued_at: string
+          notes: string | null
+          number: string
+          status: Database["public"]["Enums"]["crm_invoice_status"]
+          updated_at: string
+          year: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "crm_invoices"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      crm_move_card_for_event: {
+        Args: {
+          p_business_id: string
+          p_card_id: string
+          p_event_key: Database["public"]["Enums"]["crm_stage_event_key"]
+        }
+        Returns: undefined
+      }
+      crm_next_document_number: {
+        Args: {
+          p_business_id: string
+          p_doc_type: Database["public"]["Enums"]["crm_document_type"]
+          p_year: number
+        }
+        Returns: string
+      }
+      crm_update_budget: {
+        Args: {
+          p_budget_id: string
+          p_card_id: string
+          p_customer_id: string
+          p_lines: Json
+          p_notes: string
+          p_valid_until_days: number
+        }
+        Returns: {
+          business_id: string
+          card_id: string | null
+          created_at: string
+          customer_id: string
+          id: string
+          issued_at: string
+          notes: string | null
+          number: string
+          status: Database["public"]["Enums"]["crm_budget_status"]
+          updated_at: string
+          valid_until_days: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "crm_budgets"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      crm_update_budget_status: {
+        Args: {
+          p_budget_id: string
+          p_status: Database["public"]["Enums"]["crm_budget_status"]
+        }
+        Returns: {
+          business_id: string
+          card_id: string | null
+          created_at: string
+          customer_id: string
+          id: string
+          issued_at: string
+          notes: string | null
+          number: string
+          status: Database["public"]["Enums"]["crm_budget_status"]
+          updated_at: string
+          valid_until_days: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "crm_budgets"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      crm_void_invoice: {
+        Args: { p_invoice_id: string }
+        Returns: {
+          budget_id: string | null
+          business_id: string
+          card_id: string | null
+          created_at: string
+          customer_id: string
+          id: string
+          irpf_rate: number
+          issued_at: string
+          notes: string | null
+          number: string
+          status: Database["public"]["Enums"]["crm_invoice_status"]
+          updated_at: string
+          year: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "crm_invoices"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       dining_assign_table: {
         Args: {
           p_allow_double_turn: boolean
@@ -1702,6 +2526,10 @@ export type Database = {
       is_business_member: { Args: { b: string }; Returns: boolean }
       is_super_admin: { Args: never; Returns: boolean }
       normalize_phone: { Args: { p: string }; Returns: string }
+      rate_limit_hit: {
+        Args: { p_key: string; p_max: number; p_window_seconds: number }
+        Returns: boolean
+      }
       recount_customer: { Args: { cid: string }; Returns: undefined }
       replace_business_hours_from_sync: {
         Args: { p_business_id: string; p_rows: Json }
@@ -1750,8 +2578,16 @@ export type Database = {
         | "no_show"
         | "pendiente"
         | "sentada"
-      business_type: "citas" | "restaurante" | "psicologo"
+      business_type: "citas" | "restaurante" | "psicologo" | "autonomo"
       business_user_role: "owner" | "staff"
+      crm_budget_status: "borrador" | "enviado" | "aceptado" | "rechazado"
+      crm_document_type: "presupuesto" | "factura"
+      crm_event_type: "visita" | "llamada" | "trabajo" | "otro"
+      crm_invoice_status: "emitida" | "pagada" | "anulada"
+      crm_stage_event_key:
+        | "presupuesto_enviado"
+        | "presupuesto_aceptado"
+        | "factura_pagada"
       waitlist_status: "esperando" | "avisado" | "sentado" | "cancelado"
     }
     CompositeTypes: {
@@ -1890,8 +2726,17 @@ export const Constants = {
         "pendiente",
         "sentada",
       ],
-      business_type: ["citas", "restaurante", "psicologo"],
+      business_type: ["citas", "restaurante", "psicologo", "autonomo"],
       business_user_role: ["owner", "staff"],
+      crm_budget_status: ["borrador", "enviado", "aceptado", "rechazado"],
+      crm_document_type: ["presupuesto", "factura"],
+      crm_event_type: ["visita", "llamada", "trabajo", "otro"],
+      crm_invoice_status: ["emitida", "pagada", "anulada"],
+      crm_stage_event_key: [
+        "presupuesto_enviado",
+        "presupuesto_aceptado",
+        "factura_pagada",
+      ],
       waitlist_status: ["esperando", "avisado", "sentado", "cancelado"],
     },
   },

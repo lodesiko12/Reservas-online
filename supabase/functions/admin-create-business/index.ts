@@ -7,7 +7,7 @@ import { rateLimitHit, tooManyRequests } from "../_shared/rateLimit.ts";
 type Body = {
   name?: string;
   slug?: string;
-  type?: "citas" | "restaurante" | "psicologo";
+  type?: "citas" | "restaurante" | "psicologo" | "autonomo";
   timezone?: string;
   primary_color?: string;
   staff_email?: string;
@@ -90,6 +90,35 @@ Deno.serve(async (req) => {
       business_id: biz.id, weekday: wd, open_time: "09:00", close_time: "18:00",
     }));
     await admin.from("business_hours").insert(rows);
+  }
+
+  // 6) Etapas por defecto del pipeline + mapeo del flujo conectado, solo para autónomos.
+  if (type === "autonomo") {
+    const stageDefs = [
+      { name: "Sin contactar", color: "#94a3b8" },
+      { name: "Contactado", color: "#38bdf8" },
+      { name: "Presupuestado", color: "#a78bfa" },
+      { name: "Confirmado", color: "#fbbf24" },
+      { name: "En curso", color: "#fb923c" },
+      { name: "Pagado", color: "#34d399" },
+    ];
+    const { data: stages } = await admin
+      .from("crm_pipeline_stages")
+      .insert(stageDefs.map((s, i) => ({ business_id: biz.id, name: s.name, color: s.color, position: i })))
+      .select("id, name");
+
+    const byName = (n: string) => stages?.find((s) => s.name === n)?.id;
+    const eventMap: { event_key: string; stage_name: string }[] = [
+      { event_key: "presupuesto_enviado", stage_name: "Presupuestado" },
+      { event_key: "presupuesto_aceptado", stage_name: "Confirmado" },
+      { event_key: "factura_pagada", stage_name: "Pagado" },
+    ];
+    const eventRows = eventMap
+      .map((e) => ({ business_id: biz.id, event_key: e.event_key, stage_id: byName(e.stage_name) }))
+      .filter((e) => e.stage_id);
+    if (eventRows.length) await admin.from("crm_stage_events").insert(eventRows);
+
+    await admin.from("crm_fiscal_profile").insert({ business_id: biz.id, legal_name: name });
   }
 
   return json({ business: biz, staff_id: staffId });

@@ -300,6 +300,7 @@ function EditBusiness({ business, onSaved }: { business: Business; onSaved: () =
             <option value="citas">Citas / turnos</option>
             <option value="psicologo">Psicólogo</option>
             <option value="restaurante">Restaurante</option>
+            <option value="autonomo">Autónomo</option>
           </select>
           <p className="text-xs text-amber-600 mt-1">⚠ Cambiar el tipo cambia qué secciones ve el negocio en su panel. Solo el super-admin puede hacerlo.</p>
         </div>
