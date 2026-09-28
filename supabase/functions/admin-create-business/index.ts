@@ -2,6 +2,7 @@
 // Solo super-admin (verify_jwt = true; además se comprueba is_super_admin).
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { json, handleOptions } from "../_shared/cors.ts";
+import { rateLimitHit, tooManyRequests } from "../_shared/rateLimit.ts";
 
 type Body = {
   name?: string;
@@ -33,6 +34,9 @@ Deno.serve(async (req) => {
   if (!uid) return json({ error: "No autenticado" }, 401);
   const { data: prof } = await admin.from("profiles").select("is_super_admin").eq("id", uid).single();
   if (!prof?.is_super_admin) return json({ error: "Solo el super-admin puede crear negocios" }, 403);
+  if (!(await rateLimitHit(admin, `admin-create-business:user:${uid}`, 10, 3600))) {
+    return tooManyRequests(3600);
+  }
 
   // 2) Validar entrada.
   const b: Body = await req.json().catch(() => ({}));

@@ -8,6 +8,7 @@
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { json, handleOptions } from "../_shared/cors.ts";
 import { signBusinessState } from "../_shared/google.ts";
+import { rateLimitHit, tooManyRequests } from "../_shared/rateLimit.ts";
 
 const SCOPE = "https://www.googleapis.com/auth/business.manage";
 
@@ -26,6 +27,9 @@ Deno.serve(async (req) => {
   const { data: userData } = await admin.auth.getUser(jwt);
   const uid = userData.user?.id;
   if (!uid) return json({ error: "No autenticado" }, 401);
+  if (!(await rateLimitHit(admin, `google-business-oauth-start:user:${uid}`, 10, 3600))) {
+    return tooManyRequests(3600);
+  }
 
   const { business_id } = await req.json().catch(() => ({}));
   if (!business_id) return json({ error: "Falta business_id" }, 400);

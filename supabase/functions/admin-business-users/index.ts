@@ -4,6 +4,7 @@
 // además se comprueba is_super_admin explícitamente).
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { json, handleOptions } from "../_shared/cors.ts";
+import { rateLimitHit, tooManyRequests } from "../_shared/rateLimit.ts";
 
 type Body = {
   action?: "list" | "add" | "remove" | "update_role";
@@ -32,6 +33,9 @@ Deno.serve(async (req) => {
   if (!uid) return json({ error: "No autenticado" }, 401);
   const { data: prof } = await admin.from("profiles").select("is_super_admin").eq("id", uid).single();
   if (!prof?.is_super_admin) return json({ error: "Solo el super-admin puede gestionar usuarios de un negocio" }, 403);
+  if (!(await rateLimitHit(admin, `admin-business-users:user:${uid}`, 30, 3600))) {
+    return tooManyRequests(3600);
+  }
 
   const body: Body = await req.json().catch(() => ({}));
   const businessId = body.business_id;

@@ -4,6 +4,7 @@
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { json, handleOptions } from "../_shared/cors.ts";
 import { sendWhatsApp } from "../_shared/whatsapp.ts";
+import { rateLimitHit, tooManyRequests } from "../_shared/rateLimit.ts";
 
 Deno.serve(async (req) => {
   const pre = handleOptions(req);
@@ -23,6 +24,21 @@ Deno.serve(async (req) => {
     Deno.env.get("SUPABASE_ANON_KEY")!,
     { global: { headers: { Authorization: authHeader } }, auth: { persistSession: false } }
   );
+
+  const { data: authData } = await asUser.auth.getUser();
+  const uid = authData.user?.id;
+  if (!uid) return json({ error: "No autenticado" }, 401);
+
+  const service = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    { auth: { persistSession: false } }
+  );
+
+  if (!(await rateLimitHit(service, `notify-waitlist:user:${uid}`, 30, 3600))) {
+    return tooManyRequests(3600);
+  }
+
   const { data: entry, error: entryErr } = await asUser
     .from("waitlist")
     .select("id, business_id, name, phone, status")
@@ -31,12 +47,6 @@ Deno.serve(async (req) => {
   if (entryErr || !entry) return json({ error: "Entrada no encontrada." }, 404);
   if (!entry.phone) return json({ error: "Esta entrada no tiene teléfono." }, 400);
   if (entry.status !== "esperando") return json({ error: "Esta entrada ya no está esperando." }, 409);
-
-  const service = createClient(
-    Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-    { auth: { persistSession: false } }
-  );
 
   const [{ data: biz }, { data: integ }] = await Promise.all([
     service.from("businesses").select("name, waitlist_template_name, reminder_lang").eq("id", entry.business_id).single(),

@@ -204,6 +204,18 @@ Lista única. Si retomas el proyecto, empieza por aquí.
 ### Decisión pendiente del usuario
 - **Pasar Supabase a plan Pro** ($25/mes): el plan Free pausa el proyecto tras 7 días sin actividad; los crons probablemente lo evitan pero sin garantía, y ya hay negocios reales dependiendo de la plataforma.
 
+### Auditoría de seguridad (2026-09-26) — falta terminar
+Detalle completo en `memory/project-reservas-saas.md`. Ya hecho: 2 fallos de autorización reales
+corregidos, validación (zod) en `create-booking` + widget + la mayoría del panel, rate limiting en
+las 8 Edge Functions con datos de usuario (`create-booking`, `send-confirmation-email`,
+`generate-client-ai-report`, `notify-waitlist`, `google-oauth-start`, `google-business-oauth-start`,
+`admin-business-users`, `admin-create-business`), dependencias vulnerables actualizadas
+(`react-router-dom`, `jspdf`). Queda:
+- Validación en `Servicios.tsx`, `Mesas.tsx`, `Franjas.tsx`, `Bloqueos.tsx` (sobre todo campos
+  numéricos, prioridad baja) y en `admin/Businesses.tsx`/`admin/BusinessDetail.tsx` (slug, timezone).
+- Vite 5→8 (aviso `esbuild` dev-only): pospuesto a propósito, decisión del usuario — solo expone el
+  servidor de desarrollo local, no la producción que sirve Cloudflare.
+
 ### Sin priorizar (el usuario dijo que no hace falta todavía)
 - API pública / webhooks por negocio.
 - Dashboard agregado multi-local (el selector de negocio de `Layout.tsx` ya cubre varios negocios por usuario).
