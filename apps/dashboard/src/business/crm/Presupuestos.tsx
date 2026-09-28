@@ -49,6 +49,8 @@ export function PresupuestosList({ customerId, cardId }: { customerId?: string; 
   const { data: budgets, isLoading } = useBudgets(customerId);
   const [editing, setEditing] = useState<BudgetRow | "new" | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [offerInvoiceFor, setOfferInvoiceFor] = useState<string | null>(null);
+  const [generatingInvoice, setGeneratingInvoice] = useState(false);
 
   function invalidate() {
     qc.invalidateQueries({ queryKey: ["crm_budgets", bid] });
@@ -77,11 +79,17 @@ export function PresupuestosList({ customerId, cardId }: { customerId?: string; 
     const { error } = await supabase.rpc("crm_accept_budget", { p_budget_id: id });
     if (error) { setError(error.message); return; }
     invalidate();
-    if (confirm("Presupuesto aceptado. ¿Generar la factura ahora?")) {
-      const { error: invErr } = await supabase.rpc("crm_create_invoice_from_budget", { p_budget_id: id });
-      if (invErr) setError(invErr.message);
-      invalidate();
-    }
+    setOfferInvoiceFor(id);
+  }
+
+  async function generateInvoiceNow() {
+    if (!offerInvoiceFor) return;
+    setGeneratingInvoice(true);
+    const { error: invErr } = await supabase.rpc("crm_create_invoice_from_budget", { p_budget_id: offerInvoiceFor });
+    setGeneratingInvoice(false);
+    if (invErr) { setError(invErr.message); return; }
+    invalidate();
+    setOfferInvoiceFor(null);
   }
 
   return (
@@ -150,6 +158,18 @@ export function PresupuestosList({ customerId, cardId }: { customerId?: string; 
           onClose={() => setEditing(null)}
           onSaved={() => { invalidate(); setEditing(null); }}
         />
+      )}
+
+      {offerInvoiceFor && (
+        <Modal open onClose={() => setOfferInvoiceFor(null)} title="Presupuesto aceptado" width="max-w-sm">
+          <p className="text-sm text-slate-600 dark:text-slate-300 mb-5">¿Generar la factura ahora a partir de este presupuesto?</p>
+          <div className="flex justify-end gap-2">
+            <button className="btn-ghost" onClick={() => setOfferInvoiceFor(null)}>Ahora no</button>
+            <button className="btn-primary" disabled={generatingInvoice} onClick={generateInvoiceNow}>
+              {generatingInvoice ? "Generando…" : "Generar factura"}
+            </button>
+          </div>
+        </Modal>
       )}
     </div>
   );
