@@ -167,6 +167,30 @@ Todo gateado por `business.type === 'psicologo'` en panel y Edge Function.
 - **Plano de sala** en tiempo real (Supabase Realtime sobre `bookings`): estado por mesa, sentar / no-show / liberar, **walk-ins** (`create_walkin_booking`, mismo motor de asignación), **lista de espera** con aviso por WhatsApp (`notify-waitlist`) y "Sentar".
 - Estados de reserva: confirmada / pendiente / sentada / completada / ausente / cancelada.
 
+### Autónomo (2026-09-28)
+Sin reserva online ni widget; mini-CRM propio, un único usuario por negocio
+(`apps/dashboard/src/business/crm/`).
+- **Pipeline** (`crm_pipeline_stages`/`crm_cards`): kanban con etapas editables (crear,
+  renombrar, color, reordenar, eliminar con reasignación obligatoria de tarjetas —
+  `crm_delete_pipeline_stage`), drag & drop táctil (`@dnd-kit`) siempre permitido, sin pasar
+  por RPC. Tarjeta rápida (cliente + teléfono + trabajo).
+- **Agenda interna** (`crm_events`, independiente de `bookings`): día/semana/mes, ligada
+  opcionalmente a cliente/tarjeta.
+- **Presupuestos** (`crm_budgets`/`crm_budget_lines`): líneas libres con catálogo de conceptos
+  reutilizables, cálculo de base/IVA/total, numeración `P-2026-001` correlativa sin huecos
+  (`crm_next_document_number`), estados borrador/enviado/aceptado/rechazado, duplicar.
+- **Facturas** (`crm_invoices`/`crm_invoice_lines`, documento informativo): desde presupuesto
+  aceptado o manual, numeración `F-2026-001`, estados emitida/pagada/anulada (no editable, solo
+  anular), vista imprimible con `window.print()`.
+- **Flujo conectado**: `crm_stage_events` mapea (opcional, editable en Configuración) cada
+  evento del flujo — presupuesto enviado/aceptado, factura pagada — a una etapa del pipeline de
+  ESE negocio; si no hay mapeo, no mueve nada.
+- Todas las escrituras con numeración o efecto en el pipeline pasan por RPC `security definer`
+  (`crm_create_budget`, `crm_accept_budget`, `crm_mark_invoice_paid`...); el resto (etapas,
+  tarjetas, notas, agenda, catálogo, perfil fiscal) es CRUD directo protegido por RLS.
+- Alta desde el panel super-admin siembra las 6 etapas por defecto + mapeo inicial
+  (`admin-create-business`).
+
 ---
 
 ## Seguridad y RLS
