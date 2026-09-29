@@ -254,23 +254,59 @@ export function BudgetEditorModal({ budget, defaultCustomerId, defaultCardId, on
 
         <div>
           <label className="label">Líneas</label>
-          <div className="space-y-2">
+
+          {/* Encabezados de columna, solo en pantallas anchas (en móvil cada línea se apila con su propia etiqueta). */}
+          <div className="hidden sm:grid grid-cols-12 gap-1.5 px-1 mb-1 text-xs font-medium text-slate-500 dark:text-slate-400">
+            <div className="col-span-4">Concepto</div>
+            <div className="col-span-2">Cantidad</div>
+            <div className="col-span-2">Precio (€)</div>
+            <div className="col-span-1">Dto. %</div>
+            <div className="col-span-1">IVA %</div>
+            <div className="col-span-1 text-right">Total</div>
+            <div className="col-span-1" />
+          </div>
+
+          <div className="space-y-3 sm:space-y-2">
             {lines.map((l, i) => {
               const t = lineTotals(l);
               return (
-                <div key={i} className="grid grid-cols-12 gap-1.5 items-center">
-                  <input className="input col-span-4" list="crm-concepts" placeholder="Concepto" value={l.concept}
-                    onChange={(e) => applyConcept(i, e.target.value)} />
-                  <input type="number" min={0} step="0.01" className="input col-span-2" placeholder="Cant." value={l.quantity}
-                    onChange={(e) => updateLine(i, { quantity: +e.target.value })} />
-                  <input type="number" min={0} step="0.01" className="input col-span-2" placeholder="Precio" value={l.unit_price}
-                    onChange={(e) => updateLine(i, { unit_price: +e.target.value })} />
-                  <input type="number" min={0} max={100} step="1" className="input col-span-1" title="Descuento %" value={l.discount_pct}
-                    onChange={(e) => updateLine(i, { discount_pct: +e.target.value })} />
-                  <input type="number" min={0} max={100} step="1" className="input col-span-1" title="IVA %" value={l.vat_rate}
-                    onChange={(e) => updateLine(i, { vat_rate: +e.target.value })} />
-                  <div className="col-span-1 text-xs text-right font-medium">{formatCurrency(t.total)}</div>
-                  <button className="col-span-1 text-slate-400 hover:text-red-600 text-sm" onClick={() => removeLine(i)}>✕</button>
+                <div key={i} className="rounded-lg border border-slate-200 dark:border-slate-700 p-2 sm:border-0 sm:p-0 sm:rounded-none">
+                  <div className="grid grid-cols-2 sm:grid-cols-12 gap-1.5 sm:items-center">
+                    <div className="col-span-2 sm:col-span-4">
+                      <span className="label sm:hidden">Concepto</span>
+                      <input className="input" list="crm-concepts" placeholder="Ej. Mano de obra" value={l.concept}
+                        onChange={(e) => applyConcept(i, e.target.value)} />
+                    </div>
+                    <div className="sm:col-span-2">
+                      <span className="label sm:hidden">Cantidad</span>
+                      <input type="number" min={0} step="0.01" className="input" value={l.quantity}
+                        onChange={(e) => updateLine(i, { quantity: +e.target.value })} />
+                    </div>
+                    <div className="sm:col-span-2">
+                      <span className="label sm:hidden">Precio (€)</span>
+                      <input type="number" min={0} step="0.01" className="input" value={l.unit_price}
+                        onChange={(e) => updateLine(i, { unit_price: +e.target.value })} />
+                    </div>
+                    <div className="sm:col-span-1">
+                      <span className="label sm:hidden">Descuento (%)</span>
+                      <input type="number" min={0} max={100} step="1" className="input" title="Descuento %" value={l.discount_pct}
+                        onChange={(e) => updateLine(i, { discount_pct: +e.target.value })} />
+                    </div>
+                    <div className="sm:col-span-1">
+                      <span className="label sm:hidden">IVA (%)</span>
+                      <input type="number" min={0} max={100} step="1" className="input" title="IVA %" value={l.vat_rate}
+                        onChange={(e) => updateLine(i, { vat_rate: +e.target.value })} />
+                    </div>
+                    <div className="col-span-2 sm:col-span-1 flex items-center justify-between sm:block sm:text-right">
+                      <span className="label sm:hidden">Total línea</span>
+                      <span className="text-sm sm:text-xs font-semibold sm:font-medium">{formatCurrency(t.total)}</span>
+                    </div>
+                    <div className="sm:col-span-1 flex sm:block justify-end">
+                      <button type="button" className="btn-ghost text-xs text-red-600 sm:text-slate-400 sm:hover:text-red-600 sm:text-sm" onClick={() => removeLine(i)}>
+                        <span className="sm:hidden">Quitar línea</span><span className="hidden sm:inline">✕</span>
+                      </button>
+                    </div>
+                  </div>
                 </div>
               );
             })}
