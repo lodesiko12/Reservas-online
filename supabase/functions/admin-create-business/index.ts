@@ -73,12 +73,21 @@ Deno.serve(async (req) => {
 
   let staffId = created?.user?.id;
   if (userErr || !staffId) {
-    // Si el email ya existe, intentamos localizarlo para vincularlo igualmente.
+    // Si el email ya existe, lo localizamos y le fijamos la contraseña indicada
+    // (antes se vinculaba sin actualizarla, dejando activa la contraseña anterior).
     const { data: list } = await admin.auth.admin.listUsers();
     staffId = list?.users.find((u) => u.email === b.staff_email!.trim())?.id;
     if (!staffId) {
       await admin.from("businesses").delete().eq("id", biz.id); // rollback
       return json({ error: `No se pudo crear el usuario: ${userErr?.message}` }, 400);
+    }
+    const { error: updErr } = await admin.auth.admin.updateUserById(staffId, {
+      password: b.staff_password,
+      email_confirm: true,
+    });
+    if (updErr) {
+      await admin.from("businesses").delete().eq("id", biz.id); // rollback
+      return json({ error: `El email ya existía y no se pudo actualizar su contraseña: ${updErr.message}` }, 400);
     }
   }
 

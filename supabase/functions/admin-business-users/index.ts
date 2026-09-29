@@ -64,13 +64,16 @@ Deno.serve(async (req) => {
     if (!email) return json({ error: "Falta el email." }, 400);
 
     let userId: string | undefined;
+    let existedAlready = false;
     if (body.staff_password) {
       if (body.staff_password.length < 8) return json({ error: "La contraseña debe tener al menos 8 caracteres." }, 400);
       const { data: created, error: createErr } = await admin.auth.admin.createUser({
         email, password: body.staff_password, email_confirm: true,
       });
       if (created?.user) userId = created.user.id;
-      else if (createErr && !/already registered|already exists/i.test(createErr.message)) {
+      else if (createErr && /already registered|already exists/i.test(createErr.message)) {
+        existedAlready = true;
+      } else if (createErr) {
         return json({ error: `No se pudo crear el usuario: ${createErr.message}` }, 400);
       }
     }
@@ -80,6 +83,14 @@ Deno.serve(async (req) => {
       userId = list?.users.find((u) => u.email === email)?.id;
       if (!userId) {
         return json({ error: "Ese email no tiene cuenta todavía; indica una contraseña para crearla." }, 400);
+      }
+      // Si el email ya existía y se dio contraseña, la fijamos (antes se ignoraba
+      // silenciosamente y quedaba activa la contraseña anterior de la cuenta).
+      if (existedAlready && body.staff_password) {
+        const { error: updErr } = await admin.auth.admin.updateUserById(userId, {
+          password: body.staff_password, email_confirm: true,
+        });
+        if (updErr) return json({ error: `El email ya existía y no se pudo actualizar su contraseña: ${updErr.message}` }, 400);
       }
     }
 
