@@ -262,7 +262,7 @@ export function Configuracion() {
       <section className="card p-6">
         <h2 className="font-semibold mb-1">Integraciones (email y WhatsApp)</h2>
         <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">Envía desde tu propio remitente y número. Tus claves se guardan del lado del servidor y no se muestran aquí.</p>
-        <IntegrationsForm businessId={bid} onToast={flash} />
+        <IntegrationsForm businessId={bid} onToast={flash} isAutonomo={isAutonomo} />
       </section>
 
       {/* Gemini (informes de IA en la ficha de cliente, solo negocios psicólogo) */}

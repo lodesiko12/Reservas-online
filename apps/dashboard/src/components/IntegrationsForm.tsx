@@ -8,7 +8,7 @@ import { Spinner } from "./ui";
  * Los secretos nunca se leen desde el navegador: se muestran como "configurada ✓"
  * y se guardan vía la RPC set_business_integration (SECURITY DEFINER).
  */
-export function IntegrationsForm({ businessId, onToast }: { businessId: string; onToast?: (m: string) => void }) {
+export function IntegrationsForm({ businessId, onToast, isAutonomo }: { businessId: string; onToast?: (m: string) => void; isAutonomo?: boolean }) {
   const [loaded, setLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
   const [emailFrom, setEmailFrom] = useState("");
@@ -112,8 +112,10 @@ export function IntegrationsForm({ businessId, onToast }: { businessId: string; 
         sincronizar el horario desde tu ficha de Google, también "Business Information" y "Account
         Management" — requieren aprobación manual de Google, ver "Horario en Google Business Profile" más
         arriba) y una credencial OAuth "Aplicación web" (con las dos URIs de redirección de abajo
-        autorizadas). Pega aquí su Client ID y Client Secret: se usan para ambas integraciones. Cada
-        profesional podrá luego conectar su propia cuenta de Calendar desde su ficha en "Servicios".
+        autorizadas). Pega aquí su Client ID y Client Secret: se usan para ambas integraciones.{" "}
+        {isAutonomo
+          ? "Luego conecta tu cuenta de Calendar en la sección de arriba."
+          : 'Cada profesional podrá luego conectar su propia cuenta de Calendar desde su ficha en "Servicios".'}
       </p>
       <div className="grid sm:grid-cols-2 gap-4">
         <div><label className="label">Client ID</label><input className="input" value={googleClientId} onChange={(e) => setGoogleClientId(e.target.value)} placeholder="xxxx.apps.googleusercontent.com" /></div>
