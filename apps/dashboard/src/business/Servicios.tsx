@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../lib/auth";
 import { useServices, useProfessionals, useServiceProfessionals, useBusinessId, type Service, type Professional } from "./hooks";
-import { formatDuration, formatCurrency, shortTime } from "@reservas/shared";
+import { formatDuration, formatCurrency, shortTime, professionalSchema, serviceSchema, firstIssue } from "@reservas/shared";
 import { PageHeader, Spinner, Modal, EmptyState, ConfirmDialog } from "../components/ui";
 import { WindowsEditor, type Win } from "../components/WindowsEditor";
 
@@ -108,6 +108,7 @@ function ProfessionalModal({ bid, professional, nextColor, onClose, onSaved }: {
   const [serviceIds, setServiceIds] = useState<string[]>([]);
   const [loaded, setLoaded] = useState(!professional);
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { data: services } = useServices(true);
 
   useQuery({
@@ -130,13 +131,16 @@ function ProfessionalModal({ bid, professional, nextColor, onClose, onSaved }: {
   }
 
   async function save() {
+    const parsed = professionalSchema.safeParse({ name, color });
+    if (!parsed.success) { setError(firstIssue(parsed.error)); return; }
+    setError(null);
     setBusy(true);
     let pid = professional?.id;
     if (!pid) {
-      const { data } = await supabase.from("professionals").insert({ business_id: bid, name: name.trim(), color }).select().single();
+      const { data } = await supabase.from("professionals").insert({ business_id: bid, name: parsed.data.name, color }).select().single();
       pid = data!.id;
     } else {
-      await supabase.from("professionals").update({ name: name.trim(), color }).eq("id", pid);
+      await supabase.from("professionals").update({ name: parsed.data.name, color }).eq("id", pid);
       await supabase.from("professional_hours").delete().eq("professional_id", pid);
       await supabase.from("service_professionals").delete().eq("professional_id", pid);
     }
@@ -175,6 +179,7 @@ function ProfessionalModal({ bid, professional, nextColor, onClose, onSaved }: {
           {loaded ? <WindowsEditor wins={wins} onChange={setWins} /> : <Spinner />}
         </div>
         {professional && <GoogleCalendarSection professionalId={professional.id} />}
+        {error && <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</div>}
         <div className="flex justify-end gap-2"><button className="btn-ghost" onClick={onClose}>Cancelar</button><button className="btn-primary" disabled={!name.trim() || busy} onClick={save}>Guardar</button></div>
       </div>
     </Modal>
@@ -346,6 +351,7 @@ function ServiceModal({ bid, service, pros, onClose, onSaved }: {
   const [wins, setWins] = useState<Win[]>([]);
   const [loaded, setLoaded] = useState(!service);
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useQuery({
     queryKey: ["svc-avail-and-pros", service?.id],
@@ -367,12 +373,11 @@ function ServiceModal({ bid, service, pros, onClose, onSaved }: {
   }
 
   async function save() {
+    const parsed = serviceSchema.safeParse(form);
+    if (!parsed.success) { setError(firstIssue(parsed.error)); return; }
+    setError(null);
     setBusy(true);
-    const payload = {
-      business_id: bid, name: form.name.trim(), duration_min: Number(form.duration_min),
-      buffer_min: Number(form.buffer_min), price: form.price ? Number(form.price) : null,
-      is_active: form.is_active,
-    };
+    const payload = { business_id: bid, ...parsed.data, is_active: form.is_active };
     let sid = service?.id;
     if (!sid) {
       const { data } = await supabase.from("services").insert(payload).select().single();
@@ -419,6 +424,7 @@ function ServiceModal({ bid, service, pros, onClose, onSaved }: {
           {loaded ? <WindowsEditor wins={wins} onChange={setWins} /> : <Spinner />}
         </div>
         <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.is_active} onChange={(e) => setForm({ ...form, is_active: e.target.checked })} /> Activo</label>
+        {error && <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</div>}
         <div className="flex justify-end gap-2"><button className="btn-ghost" onClick={onClose}>Cancelar</button><button className="btn-primary" disabled={!form.name.trim() || busy} onClick={save}>Guardar</button></div>
       </div>
     </Modal>

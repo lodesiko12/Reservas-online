@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "../lib/supabase";
 import { useBusinessId, useDiningZones, useDiningTables, useDiningTableCombos, type DiningZone, type DiningTable, type DiningTableCombo } from "./hooks";
+import { diningZoneSchema, diningTableSchema, diningComboSchema, firstIssue } from "@reservas/shared";
 import { PageHeader, Spinner, Modal, EmptyState, ConfirmDialog } from "../components/ui";
 
 export function Mesas() {
@@ -197,10 +198,14 @@ function ZoneModal({ bid, zone, onClose, onSaved }: { bid: string; zone: DiningZ
     is_active: zone?.is_active ?? true,
   });
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function save() {
+    const parsed = diningZoneSchema.safeParse(form);
+    if (!parsed.success) { setError(firstIssue(parsed.error)); return; }
+    setError(null);
     setBusy(true);
-    const payload = { business_id: bid, name: form.name.trim(), reservable_online: form.reservable_online, is_active: form.is_active };
+    const payload = { business_id: bid, name: parsed.data.name, reservable_online: form.reservable_online, is_active: form.is_active };
     if (zone) await supabase.from("dining_zones").update(payload).eq("id", zone.id);
     else await supabase.from("dining_zones").insert(payload);
     setBusy(false); onSaved();
@@ -212,6 +217,7 @@ function ZoneModal({ bid, zone, onClose, onSaved }: { bid: string; zone: DiningZ
         <div><label className="label">Nombre</label><input className="input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Interior, Terraza…" /></div>
         <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.reservable_online} onChange={(e) => setForm({ ...form, reservable_online: e.target.checked })} /> Reservable online (si no, solo se asigna manualmente)</label>
         <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.is_active} onChange={(e) => setForm({ ...form, is_active: e.target.checked })} /> Activa</label>
+        {error && <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</div>}
         <div className="flex justify-end gap-2"><button className="btn-ghost" onClick={onClose}>Cancelar</button><button className="btn-primary" disabled={!form.name.trim() || busy} onClick={save}>Guardar</button></div>
       </div>
     </Modal>
@@ -230,18 +236,14 @@ function TableModal({ bid, zones, table, onClose, onSaved }: {
     is_active: table?.is_active ?? true,
   });
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function save() {
+    const parsed = diningTableSchema.safeParse(form);
+    if (!parsed.success) { setError(firstIssue(parsed.error)); return; }
+    setError(null);
     setBusy(true);
-    const payload = {
-      business_id: bid,
-      zone_id: form.zone_id || null,
-      name: form.name.trim(),
-      cap_min: Number(form.cap_min),
-      cap_max: Number(form.cap_max),
-      priority: Number(form.priority),
-      is_active: form.is_active,
-    };
+    const payload = { business_id: bid, zone_id: form.zone_id || null, ...parsed.data, is_active: form.is_active };
     if (table) await supabase.from("dining_tables").update(payload).eq("id", table.id);
     else await supabase.from("dining_tables").insert(payload);
     setBusy(false); onSaved();
@@ -267,6 +269,7 @@ function TableModal({ bid, zones, table, onClose, onSaved }: {
         </div>
         <p className="text-xs text-slate-400 dark:text-slate-500">La prioridad decide qué mesa se prefiere cuando varias encajan igual de bien (mayor = se asigna antes).</p>
         <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.is_active} onChange={(e) => setForm({ ...form, is_active: e.target.checked })} /> Activa</label>
+        {error && <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</div>}
         <div className="flex justify-end gap-2"><button className="btn-ghost" onClick={onClose}>Cancelar</button><button className="btn-primary" disabled={!valid || busy} onClick={save}>Guardar</button></div>
       </div>
     </Modal>
@@ -285,22 +288,18 @@ function ComboModal({ bid, tables, combo, onClose, onSaved }: {
     is_active: combo?.is_active ?? true,
   });
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   function toggleTableId(id: string) {
     setForm((f) => ({ ...f, table_ids: f.table_ids.includes(id) ? f.table_ids.filter((x) => x !== id) : [...f.table_ids, id] }));
   }
 
   async function save() {
+    const parsed = diningComboSchema.safeParse(form);
+    if (!parsed.success) { setError(firstIssue(parsed.error)); return; }
+    setError(null);
     setBusy(true);
-    const payload = {
-      business_id: bid,
-      name: form.name.trim() || null,
-      table_ids: form.table_ids,
-      cap_min: Number(form.cap_min),
-      cap_max: Number(form.cap_max),
-      priority: Number(form.priority),
-      is_active: form.is_active,
-    };
+    const payload = { business_id: bid, ...parsed.data, name: parsed.data.name ?? null, is_active: form.is_active };
     if (combo) await supabase.from("dining_table_combos").update(payload).eq("id", combo.id);
     else await supabase.from("dining_table_combos").insert(payload);
     setBusy(false); onSaved();
@@ -330,6 +329,7 @@ function ComboModal({ bid, tables, combo, onClose, onSaved }: {
         </div>
         <p className="text-xs text-slate-400 dark:text-slate-500">Solo se usa cuando ninguna mesa individual encaja para ese nº de comensales.</p>
         <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.is_active} onChange={(e) => setForm({ ...form, is_active: e.target.checked })} /> Activa</label>
+        {error && <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</div>}
         <div className="flex justify-end gap-2"><button className="btn-ghost" onClick={onClose}>Cancelar</button><button className="btn-primary" disabled={!valid || busy} onClick={save}>Guardar</button></div>
       </div>
     </Modal>

@@ -235,8 +235,7 @@ las 8 Edge Functions con datos de usuario (`create-booking`, `send-confirmation-
 `generate-client-ai-report`, `notify-waitlist`, `google-oauth-start`, `google-business-oauth-start`,
 `admin-business-users`, `admin-create-business`), dependencias vulnerables actualizadas
 (`react-router-dom`, `jspdf`). Queda:
-- Validación en `Servicios.tsx`, `Mesas.tsx`, `Franjas.tsx`, `Bloqueos.tsx` (sobre todo campos
-  numéricos, prioridad baja) y en `admin/Businesses.tsx`/`admin/BusinessDetail.tsx` (slug, timezone).
+- ~~Validación en Servicios/Mesas/Franjas/Bloqueos y admin/Businesses+BusinessDetail~~ hecha (schemas zod en `packages/shared/src/validation.ts`, pendiente de verificar en Cloudflare).
 - Vite 5→8 (aviso `esbuild` dev-only): pospuesto a propósito, decisión del usuario — solo expone el
   servidor de desarrollo local, no la producción que sirve Cloudflare.
 

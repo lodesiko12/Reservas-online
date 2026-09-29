@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "../lib/supabase";
 import type { Tables } from "@reservas/shared";
-import { ymdInTz, addDaysYmd, zonedDayRange } from "@reservas/shared";
+import { ymdInTz, addDaysYmd, zonedDayRange, adminNewBusinessSchema, firstIssue } from "@reservas/shared";
 import { PageHeader, StatCard, Spinner, Modal, EmptyState } from "../components/ui";
 
 type Business = Tables<"businesses">;
@@ -213,8 +213,11 @@ function NewBusinessModal({ open, onClose, onCreated }: { open: boolean; onClose
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    setError(null); setSaving(true);
-    const { data, error } = await supabase.functions.invoke("admin-create-business", { body: form });
+    setError(null);
+    const parsed = adminNewBusinessSchema.safeParse(form);
+    if (!parsed.success) { setError(firstIssue(parsed.error)); return; }
+    setSaving(true);
+    const { data, error } = await supabase.functions.invoke("admin-create-business", { body: { ...form, ...parsed.data, staff_name: parsed.data.staff_name ?? "" } });
     setSaving(false);
     if (error) {
       let msg = error.message;

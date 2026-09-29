@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { supabase } from "../lib/supabase";
 import type { Tables } from "@reservas/shared";
-import { ymdInTz, addDaysYmd, zonedDayRange, formatDateTime } from "@reservas/shared";
+import { ymdInTz, addDaysYmd, zonedDayRange, formatDateTime, adminEditBusinessSchema, adminAddMemberSchema, firstIssue } from "@reservas/shared";
 import { PageHeader, StatCard, Spinner, StatusBadge, ConfirmDialog } from "../components/ui";
 import { IntegrationsForm } from "../components/IntegrationsForm";
 import { DeleteBusinessModal, BUSINESS_TYPE_LABELS } from "./Businesses";
@@ -86,9 +86,12 @@ function BusinessUsersSection({ businessId }: { businessId: string }) {
 
   async function addMember(e: React.FormEvent) {
     e.preventDefault();
-    setSaving(true); setError(null);
+    setError(null);
+    const parsed = adminAddMemberSchema.safeParse(form);
+    if (!parsed.success) { setError(firstIssue(parsed.error)); return; }
+    setSaving(true);
     const { data, error } = await supabase.functions.invoke("admin-business-users", {
-      body: { action: "add", business_id: businessId, staff_email: form.email.trim(), staff_password: form.password || undefined, role: form.role },
+      body: { action: "add", business_id: businessId, staff_email: parsed.data.email, staff_password: parsed.data.password, role: parsed.data.role },
     });
     setSaving(false);
     if (error || (data as any)?.error) { setError((data as any)?.error ?? error!.message); return; }
@@ -273,12 +276,11 @@ function EditBusiness({ business, onSaved }: { business: Business; onSaved: () =
   const [err, setErr] = useState<string | null>(null);
 
   async function save() {
-    setSaving(true); setErr(null); setMsg(null);
-    const { error } = await supabase.from("businesses").update({
-      name: form.name.trim(), slug: form.slug.trim().toLowerCase(), primary_color: form.primary_color,
-      timezone: form.timezone.trim(), is_active: form.is_active, type: form.type,
-      default_capacity: Number(form.default_capacity), slot_interval_min: Number(form.slot_interval_min),
-    }).eq("id", business.id);
+    setErr(null); setMsg(null);
+    const parsed = adminEditBusinessSchema.safeParse(form);
+    if (!parsed.success) { setErr(firstIssue(parsed.error)); return; }
+    setSaving(true);
+    const { error } = await supabase.from("businesses").update({ ...parsed.data, is_active: form.is_active }).eq("id", business.id);
     setSaving(false);
     if (error) { setErr(error.code === "23505" ? "Ese slug ya está en uso." : error.message); return; }
     qc.invalidateQueries(); onSaved();

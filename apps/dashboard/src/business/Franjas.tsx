@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "../lib/supabase";
 import { useBusinessId } from "./hooks";
 import type { Tables } from "@reservas/shared";
-import { WEEKDAYS_SHORT_ES, shortTime } from "@reservas/shared";
+import { WEEKDAYS_SHORT_ES, shortTime, diningShiftSchema, diningDurationRuleSchema, firstIssue } from "@reservas/shared";
 import { PageHeader, Spinner, Modal, EmptyState, ConfirmDialog } from "../components/ui";
 
 type Shift = Tables<"dining_shifts">;
@@ -104,14 +104,15 @@ function DurationRules({ shiftId }: { shiftId: string }) {
     },
   });
   const [form, setForm] = useState({ pax_min: 2, pax_max: 2, duration_min: 90 });
+  const [error, setError] = useState<string | null>(null);
 
   function invalidate() { qc.invalidateQueries({ queryKey: ["dining_duration_rules", shiftId] }); }
 
   async function add() {
-    if (form.pax_max < form.pax_min) return;
-    await supabase.from("dining_duration_rules").insert({
-      dining_shift_id: shiftId, pax_min: form.pax_min, pax_max: form.pax_max, duration_min: form.duration_min,
-    });
+    const parsed = diningDurationRuleSchema.safeParse(form);
+    if (!parsed.success) { setError(firstIssue(parsed.error)); return; }
+    setError(null);
+    await supabase.from("dining_duration_rules").insert({ dining_shift_id: shiftId, ...parsed.data });
     invalidate();
   }
   async function remove(id: string) {
@@ -139,6 +140,7 @@ function DurationRules({ shiftId }: { shiftId: string }) {
         <div><label className="label">Minutos</label><input type="number" min={15} step={15} className="input w-24" value={form.duration_min} onChange={(e) => setForm({ ...form, duration_min: +e.target.value })} /></div>
         <button type="button" className="btn-ghost" onClick={add}>+ Añadir</button>
       </div>
+      {error && <p className="text-xs text-red-600 mt-2">{error}</p>}
     </div>
   );
 }
@@ -162,6 +164,7 @@ function ShiftModal({ bid, shift, onClose, onSaved }: { bid: string; shift: Shif
     cleanup_min: shift?.cleanup_min ?? 0,
   });
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   function toggleDay(wd: number) {
     setForm((f) => ({
@@ -171,20 +174,16 @@ function ShiftModal({ bid, shift, onClose, onSaved }: { bid: string; shift: Shif
   }
 
   async function save() {
+    const parsed = diningShiftSchema.safeParse(form);
+    if (!parsed.success) { setError(firstIssue(parsed.error)); return; }
+    if (parsed.data.end_time <= parsed.data.start_time) { setError("El fin debe ser posterior al inicio."); return; }
+    setError(null);
     setBusy(true);
     const payload = {
-      business_id: bid, name: form.name.trim(),
-      start_time: form.start_time, end_time: form.end_time,
-      max_covers: Number(form.max_covers), slot_interval_min: Number(form.slot_interval_min),
-      booking_duration_min: Number(form.booking_duration_min),
-      active_weekdays: form.active_weekdays.sort(), is_active: form.is_active,
-      last_call_time: form.last_call_time || null,
+      business_id: bid, ...parsed.data,
+      active_weekdays: [...parsed.data.active_weekdays].sort(), is_active: form.is_active,
       pacing_enabled: form.pacing_enabled,
-      max_covers_per_slot: form.max_covers_per_slot === "" ? null : Number(form.max_covers_per_slot),
-      max_bookings_per_slot: form.max_bookings_per_slot === "" ? null : Number(form.max_bookings_per_slot),
-      online_max_covers: form.online_max_covers === "" ? null : Number(form.online_max_covers),
       allow_double_turn: form.allow_double_turn,
-      cleanup_min: Number(form.cleanup_min),
     };
     if (shift) await supabase.from("dining_shifts").update(payload).eq("id", shift.id);
     else await supabase.from("dining_shifts").insert(payload);
@@ -250,6 +249,7 @@ function ShiftModal({ bid, shift, onClose, onSaved }: { bid: string; shift: Shif
         {shift && <DurationRules shiftId={shift.id} />}
         {!shift && <p className="text-xs text-slate-400 dark:text-slate-500 border-t pt-4">Guarda la franja para poder configurar duraciones por nº de comensales.</p>}
 
+        {error && <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</div>}
         <div className="flex justify-end gap-2"><button className="btn-ghost" onClick={onClose}>Cancelar</button><button className="btn-primary" disabled={!form.name.trim() || busy} onClick={save}>Guardar</button></div>
       </div>
     </Modal>

@@ -4,7 +4,7 @@ import { supabase } from "../lib/supabase";
 import { useAuth } from "../lib/auth";
 import { useProfessionals, useBusinessId } from "./hooks";
 import { fromLocalInput } from "../lib/datetime";
-import { formatDateTime } from "@reservas/shared";
+import { formatDateTime, blockReasonSchema, firstIssue } from "@reservas/shared";
 import { PageHeader, Spinner, Modal, EmptyState, ConfirmDialog } from "../components/ui";
 
 export function Bloqueos() {
@@ -88,10 +88,13 @@ function BlockModal({ bid, tz, onClose, onSaved }: { bid: string; tz: string; on
     if (endsAt <= startsAt) { setError("El fin debe ser posterior al inicio."); return; }
     if (scope === "professional" && !professionalId) { setError("Selecciona un profesional."); return; }
 
+    const reasonParsed = blockReasonSchema.safeParse(reason);
+    if (!reasonParsed.success) { setError(firstIssue(reasonParsed.error)); return; }
+
     setBusy(true);
     const { error: insErr } = await supabase.from("blocks").insert({
       business_id: bid, scope, professional_id: scope === "professional" ? professionalId : null,
-      starts_at: startsAt, ends_at: endsAt, reason: reason.trim() || null, cancels_affected: cancelAffected,
+      starts_at: startsAt, ends_at: endsAt, reason: reasonParsed.data ?? null, cancels_affected: cancelAffected,
     });
     if (insErr) { setBusy(false); setError(insErr.message); return; }
 
