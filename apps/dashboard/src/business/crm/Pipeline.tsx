@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   DndContext, PointerSensor, TouchSensor, useSensor, useSensors,
@@ -35,6 +35,34 @@ export function Pipeline() {
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 8 } })
   );
+
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const topScrollRef = useRef<HTMLDivElement>(null);
+  const [scrollWidth, setScrollWidth] = useState(0);
+  const syncingRef = useRef<"top" | "bottom" | null>(null);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const update = () => setScrollWidth(el.scrollWidth);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [stages, cards]);
+
+  function onBottomScroll() {
+    if (syncingRef.current === "top") { syncingRef.current = null; return; }
+    if (!scrollRef.current || !topScrollRef.current) return;
+    syncingRef.current = "bottom";
+    topScrollRef.current.scrollLeft = scrollRef.current.scrollLeft;
+  }
+  function onTopScroll() {
+    if (syncingRef.current === "bottom") { syncingRef.current = null; return; }
+    if (!scrollRef.current || !topScrollRef.current) return;
+    syncingRef.current = "top";
+    scrollRef.current.scrollLeft = topScrollRef.current.scrollLeft;
+  }
 
   const cardsByStage = useMemo(() => {
     const map: Record<string, CardWithCustomer[]> = {};
@@ -137,7 +165,15 @@ export function Pipeline() {
         />
       ) : (
         <DndContext sensors={sensors} collisionDetection={closestCorners} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-          <div className="flex gap-3 overflow-x-auto pb-3 snap-x snap-mandatory -mx-4 px-4 sm:mx-0 sm:px-0">
+          <div
+            ref={topScrollRef}
+            onScroll={onTopScroll}
+            className="overflow-x-auto overflow-y-hidden -mx-4 px-4 sm:mx-0 sm:px-0 mb-1"
+            style={{ height: 14 }}
+          >
+            <div style={{ width: scrollWidth, height: 1 }} />
+          </div>
+          <div ref={scrollRef} onScroll={onBottomScroll} className="flex gap-3 overflow-x-auto pb-3 snap-x snap-mandatory -mx-4 px-4 sm:mx-0 sm:px-0">
             {sortedStages.map((stage, i) => (
               <StageColumn
                 key={stage.id}
@@ -311,14 +347,20 @@ function StageEditModal({ stage, stages, onClose }: { stage: PipelineStage | nul
 
   async function move(dir: -1 | 1) {
     if (!stage) return;
+    // Usamos la posición actual de `stages` (prop siempre fresca tras invalidate),
+    // nunca `stage.position`: ese prop queda congelado en el valor de cuando se
+    // abrió el modal, así que tras el primer movimiento el segundo intercambiaba
+    // con una posición ya obsoleta y rompía el orden hacia delante/atrás.
     const sorted = stages.slice().sort((a, b) => a.position - b.position);
     const idx = sorted.findIndex((s) => s.id === stage.id);
+    if (idx === -1) return;
     const swapIdx = idx + dir;
     if (swapIdx < 0 || swapIdx >= sorted.length) return;
+    const current = sorted[idx];
     const other = sorted[swapIdx];
     await Promise.all([
-      supabase.from("crm_pipeline_stages").update({ position: other.position }).eq("id", stage.id).eq("business_id", bid),
-      supabase.from("crm_pipeline_stages").update({ position: stage.position }).eq("id", other.id).eq("business_id", bid),
+      supabase.from("crm_pipeline_stages").update({ position: other.position }).eq("id", current.id).eq("business_id", bid),
+      supabase.from("crm_pipeline_stages").update({ position: current.position }).eq("id", other.id).eq("business_id", bid),
     ]);
     invalidate();
   }
