@@ -823,6 +823,7 @@ export type Database = {
           created_at: string
           customer_id: string | null
           ends_at: string
+          google_event_id: string | null
           id: string
           notes: string | null
           starts_at: string
@@ -837,6 +838,7 @@ export type Database = {
           created_at?: string
           customer_id?: string | null
           ends_at: string
+          google_event_id?: string | null
           id?: string
           notes?: string | null
           starts_at: string
@@ -851,6 +853,7 @@ export type Database = {
           created_at?: string
           customer_id?: string | null
           ends_at?: string
+          google_event_id?: string | null
           id?: string
           notes?: string | null
           starts_at?: string
@@ -1481,10 +1484,12 @@ export type Database = {
       professional_google_accounts: {
         Row: {
           access_token: string | null
+          business_id: string | null
           calendar_id: string
           created_at: string
           google_email: string | null
-          professional_id: string
+          id: string
+          professional_id: string | null
           refresh_token: string | null
           sync_enabled: boolean
           token_expires_at: string | null
@@ -1492,10 +1497,12 @@ export type Database = {
         }
         Insert: {
           access_token?: string | null
+          business_id?: string | null
           calendar_id?: string
           created_at?: string
           google_email?: string | null
-          professional_id: string
+          id?: string
+          professional_id?: string | null
           refresh_token?: string | null
           sync_enabled?: boolean
           token_expires_at?: string | null
@@ -1503,10 +1510,12 @@ export type Database = {
         }
         Update: {
           access_token?: string | null
+          business_id?: string | null
           calendar_id?: string
           created_at?: string
           google_email?: string | null
-          professional_id?: string
+          id?: string
+          professional_id?: string | null
           refresh_token?: string | null
           sync_enabled?: boolean
           token_expires_at?: string | null
@@ -1514,9 +1523,16 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "professional_google_accounts_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "professional_google_accounts_professional_id_fkey"
             columns: ["professional_id"]
-            isOneToOne: true
+            isOneToOne: false
             referencedRelation: "professionals"
             referencedColumns: ["id"]
           },
@@ -2319,6 +2335,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      disconnect_business_google: {
+        Args: { p_business_id: string }
+        Returns: undefined
+      }
       disconnect_business_google_profile: {
         Args: { p_business_id: string }
         Returns: undefined
@@ -2404,6 +2424,14 @@ export type Database = {
           last_sync_status: string
           last_synced_at: string
           location_title: string
+          sync_enabled: boolean
+        }[]
+      }
+      get_business_google_status: {
+        Args: { p_business_id: string }
+        Returns: {
+          connected: boolean
+          google_email: string
           sync_enabled: boolean
         }[]
       }
@@ -2536,6 +2564,10 @@ export type Database = {
         Returns: undefined
       }
       set_business_google_profile_sync: {
+        Args: { p_business_id: string; p_enabled: boolean }
+        Returns: undefined
+      }
+      set_business_google_sync: {
         Args: { p_business_id: string; p_enabled: boolean }
         Returns: undefined
       }

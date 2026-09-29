@@ -7,6 +7,7 @@ import { shortTime, businessBrandingSchema, businessReviewSchema, optionalText, 
 import { PageHeader, Spinner } from "../components/ui";
 import { IntegrationsForm } from "../components/IntegrationsForm";
 import { GoogleBusinessProfileSection } from "../components/GoogleBusinessProfileSection";
+import { GoogleCalendarBusinessSection } from "../components/GoogleCalendarBusinessSection";
 import { GeminiConfigForm } from "../components/GeminiConfigForm";
 import { WindowsEditor, type Win } from "../components/WindowsEditor";
 import { ConfiguracionFiscalSection } from "./crm/ConfiguracionFiscal";
@@ -49,7 +50,9 @@ export function Configuracion() {
     const params = new URLSearchParams(window.location.search);
     if (params.get("google_business") === "connected") setToast("Google Business Profile conectado ✅");
     else if (params.get("google_business_error")) setToast("No se pudo conectar: " + params.get("google_business_error"));
-    if (params.has("google_business") || params.has("google_business_error")) {
+    else if (params.get("google") === "connected") setToast("Google Calendar conectado ✅");
+    else if (params.get("google_error")) setToast("No se pudo conectar Google Calendar: " + params.get("google_error"));
+    if (params.has("google_business") || params.has("google_business_error") || params.has("google") || params.has("google_error")) {
       window.history.replaceState({}, "", window.location.pathname);
     }
   }, []);
@@ -195,6 +198,20 @@ export function Configuracion() {
         </p>
         <GoogleBusinessProfileSection businessId={bid} />
       </section>
+
+      {/* Google Calendar del negocio (solo autónomo: sin profesionales, la
+          conexión por profesional vive en Servicios → Profesionales). */}
+      {isAutonomo && (
+        <section className="card p-6">
+          <h2 className="font-semibold mb-1">Google Calendar</h2>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
+            Conecta tu cuenta de Google y cada evento que crees en la Agenda se exporta también a tu Google
+            Calendar (se actualiza o borra si editas o eliminas el evento). Usa las mismas credenciales que
+            Google Business Profile, en "Integraciones" más abajo.
+          </p>
+          <GoogleCalendarBusinessSection businessId={bid} />
+        </section>
+      )}
 
       {/* Reservas */}
       {!isRestaurant && !isAutonomo && (

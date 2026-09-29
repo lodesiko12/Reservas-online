@@ -1,11 +1,12 @@
 // google-oauth-start — Endpoint AUTENTICADO (verify_jwt = true).
 // El panel llama aquí para obtener la URL de consentimiento de Google para
-// un profesional concreto. Verifica que quien llama es miembro del negocio
-// del profesional antes de firmar el `state` (evita que cualquiera pueda
-// iniciar el flujo para un profesional ajeno).
+// un profesional concreto (citas/psicologo/restaurante) O para el negocio
+// entero (autonomo, que no tiene profesionales). Verifica que quien llama
+// es miembro del negocio antes de firmar el `state` (evita que cualquiera
+// pueda iniciar el flujo para un profesional/negocio ajeno).
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { json, handleOptions } from "../_shared/cors.ts";
-import { signOAuthState } from "../_shared/google.ts";
+import { signOAuthState, signBusinessState } from "../_shared/google.ts";
 import { rateLimitHit, tooManyRequests } from "../_shared/rateLimit.ts";
 
 const SCOPE = "https://www.googleapis.com/auth/calendar";
@@ -29,19 +30,25 @@ Deno.serve(async (req) => {
     return tooManyRequests(3600);
   }
 
-  const { professional_id } = await req.json().catch(() => ({}));
-  if (!professional_id) return json({ error: "Falta professional_id" }, 400);
+  const { professional_id, business_id } = await req.json().catch(() => ({}));
+  if (!professional_id && !business_id) return json({ error: "Falta professional_id o business_id" }, 400);
 
-  const { data: pro } = await admin.from("professionals").select("id, business_id").eq("id", professional_id).maybeSingle();
-  if (!pro) return json({ error: "Profesional no encontrado" }, 404);
+  let bizId: string;
+  if (professional_id) {
+    const { data: pro } = await admin.from("professionals").select("id, business_id").eq("id", professional_id).maybeSingle();
+    if (!pro) return json({ error: "Profesional no encontrado" }, 404);
+    bizId = pro.business_id;
+  } else {
+    bizId = business_id;
+  }
 
   const [{ data: profile }, { data: membership }] = await Promise.all([
     admin.from("profiles").select("is_super_admin").eq("id", uid).maybeSingle(),
-    admin.from("business_users").select("id").eq("business_id", pro.business_id).eq("user_id", uid).maybeSingle(),
+    admin.from("business_users").select("id").eq("business_id", bizId).eq("user_id", uid).maybeSingle(),
   ]);
   if (!profile?.is_super_admin && !membership) return json({ error: "No autorizado" }, 403);
 
-  const { data: integ } = await admin.from("business_integrations").select("google_client_id").eq("business_id", pro.business_id).maybeSingle();
+  const { data: integ } = await admin.from("business_integrations").select("google_client_id").eq("business_id", bizId).maybeSingle();
   if (!integ?.google_client_id) {
     return json({ error: "Este negocio no tiene configuradas credenciales de Google (Configuración → Integraciones)." }, 400);
   }
@@ -49,7 +56,9 @@ Deno.serve(async (req) => {
   const stateSecret = Deno.env.get("GOOGLE_STATE_SECRET");
   if (!stateSecret) return json({ error: "GOOGLE_STATE_SECRET no configurado en el servidor." }, 500);
 
-  const state = await signOAuthState(pro.business_id, professional_id, stateSecret);
+  const state = professional_id
+    ? await signOAuthState(bizId, professional_id, stateSecret)
+    : await signBusinessState(bizId, stateSecret);
   const redirectUri = `${Deno.env.get("SUPABASE_URL")}/functions/v1/google-oauth-callback`;
 
   const url = new URL("https://accounts.google.com/o/oauth2/v2/auth");

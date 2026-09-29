@@ -246,6 +246,10 @@ export function EventModal({ event, customerId, cardId, defaultDate, onClose, on
     qc.invalidateQueries({ queryKey: ["crm_events", bid] });
   }
 
+  function syncGoogle(eventId: string, action: "upsert" | "delete") {
+    supabase.functions.invoke("sync-google-event", { body: { event_id: eventId, action } }).catch(() => {});
+  }
+
   async function save() {
     if (!form.title.trim()) return;
     setError(null);
@@ -260,14 +264,16 @@ export function EventModal({ event, customerId, cardId, defaultDate, onClose, on
       }).eq("id", event.id).eq("business_id", bid);
       setSaving(false);
       if (error) { setError(error.message); return; }
+      syncGoogle(event.id, "upsert");
     } else {
-      const { error } = await supabase.from("crm_events").insert({
+      const { data, error } = await supabase.from("crm_events").insert({
         business_id: bid, customer_id: customerId ?? event?.customer_id ?? null, card_id: cardId ?? event?.card_id ?? null,
         title: form.title.trim(), type: form.type as any, starts_at, ends_at,
         address: form.address.trim() || null, notes: form.notes.trim() || null,
-      });
+      }).select("id").single();
       setSaving(false);
       if (error) { setError(error.message); return; }
+      if (data) syncGoogle(data.id, "upsert");
     }
     invalidate();
     onChanged();
@@ -276,6 +282,7 @@ export function EventModal({ event, customerId, cardId, defaultDate, onClose, on
   async function remove() {
     setConfirmingDelete(false);
     await supabase.from("crm_events").delete().eq("id", event.id).eq("business_id", bid);
+    syncGoogle(event.id, "delete");
     invalidate();
     onChanged();
   }
