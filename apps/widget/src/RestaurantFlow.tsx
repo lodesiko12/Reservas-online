@@ -5,11 +5,11 @@ import {
 } from "./api";
 import {
   formatDate, formatTime, WEEKDAYS_SHORT_ES, ymdInTz, weekdayInTz,
-  validateBookingContact, NAME_MAX, PHONE_MAX, NOTES_MAX,
+  validateBookingContact, NAME_MAX, PHONE_MAX, NOTES_MAX, PARTY_SIZE_OPTIONS,
 } from "@reservas/shared";
 
 type Step = "party" | "when" | "form" | "done";
-const ALL_PARTY_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8, 10, 12];
+const ALL_PARTY_OPTIONS = PARTY_SIZE_OPTIONS;
 
 export function RestaurantFlow({ business, onLookup }: { business: PublicBusiness; onLookup: () => void }) {
   const tz = business.timezone;

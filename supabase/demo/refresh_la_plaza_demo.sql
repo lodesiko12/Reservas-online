@@ -139,8 +139,9 @@ begin
   update customers set tags = array_append(tags, 'No-show reincidente') where business_id = bid and no_show_count >= 2 and not ('No-show reincidente' = any(tags));
 
   -- Lista de espera de hoy
-  insert into waitlist(business_id, name, phone, party_size, notes, status, created_at) values
-    (bid, 'Familia Herrero', '600000901', 4, 'Esperan mesa en terraza', 'esperando', now() - interval '18 minutes'),
-    (bid, 'Beatriz Cano',    '600000902', 2, null,                        'esperando', now() - interval '9 minutes'),
-    (bid, 'Grupo Ortega',    '600000903', 6, 'Cumpleaños',                'avisado',   now() - interval '35 minutes');
+  -- (requiere la migración 0039: waitlist.zone_id; null = "cualquiera")
+  insert into waitlist(business_id, name, phone, party_size, notes, status, zone_id, created_at) values
+    (bid, 'Familia Herrero', '600000901', 4, null,         'esperando', (select id from dining_zones where business_id = bid and name = 'Terraza'),  now() - interval '18 minutes'),
+    (bid, 'Beatriz Cano',    '600000902', 2, null,         'esperando', null,                                                                        now() - interval '9 minutes'),
+    (bid, 'Grupo Ortega',    '600000903', 6, 'Cumpleaños', 'avisado',   (select id from dining_zones where business_id = bid and name = 'Interior'), now() - interval '35 minutes');
 end $$;

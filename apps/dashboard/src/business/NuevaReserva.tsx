@@ -3,10 +3,10 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../lib/auth";
 import { useServices, useProfessionals, useServiceProfessionals } from "./hooks";
-import { ymdInTz, addDaysYmd, weekdayInTz, WEEKDAYS_SHORT_ES, formatTime, formatDuration } from "@reservas/shared";
+import { ymdInTz, addDaysYmd, weekdayInTz, WEEKDAYS_SHORT_ES, formatTime, formatDuration, PARTY_SIZE_OPTIONS } from "@reservas/shared";
 import { PageHeader, Spinner } from "../components/ui";
 
-const PARTY_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8, 10, 12];
+const PARTY_OPTIONS = PARTY_SIZE_OPTIONS;
 
 export function NuevaReserva() {
   const { business } = useAuth();

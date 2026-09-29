@@ -1816,6 +1816,7 @@ export type Database = {
           phone: string | null
           seated_booking_id: string | null
           status: Database["public"]["Enums"]["waitlist_status"]
+          zone_id: string | null
         }
         Insert: {
           business_id: string
@@ -1828,6 +1829,7 @@ export type Database = {
           phone?: string | null
           seated_booking_id?: string | null
           status?: Database["public"]["Enums"]["waitlist_status"]
+          zone_id?: string | null
         }
         Update: {
           business_id?: string
@@ -1840,6 +1842,7 @@ export type Database = {
           phone?: string | null
           seated_booking_id?: string | null
           status?: Database["public"]["Enums"]["waitlist_status"]
+          zone_id?: string | null
         }
         Relationships: [
           {
@@ -1847,6 +1850,13 @@ export type Database = {
             columns: ["business_id"]
             isOneToOne: false
             referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "waitlist_zone_id_fkey"
+            columns: ["zone_id"]
+            isOneToOne: false
+            referencedRelation: "dining_zones"
             referencedColumns: ["id"]
           },
           {

@@ -1,17 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../lib/auth";
 import {
   useBusinessId, useDiningZones, useDiningTables, useDiningTableCombos, useDiningShifts,
   useBookings, useBookingsRealtime, useWaitlist, type Booking, type WaitlistEntry,
 } from "./hooks";
-import { ymdInTz, zonedDayRange, weekdayInTz, minutesOfDayInTz, formatTime, waitlistEntrySchema } from "@reservas/shared";
+import { ymdInTz, zonedDayRange, weekdayInTz, minutesOfDayInTz, formatTime, waitlistEntrySchema, PARTY_SIZE_OPTIONS } from "@reservas/shared";
 import { PageHeader, Spinner, Modal, EmptyState } from "../components/ui";
 
 type Row = Booking & { dining_tables: { name: string } | null; dining_table_combos: { name: string | null } | null };
 
-const PARTY_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8, 10, 12];
+const PARTY_OPTIONS = PARTY_SIZE_OPTIONS;
 
 type Health = "libre" | "reservada_pronto" | "reservada_ahora" | "retrasada" | "sentada" | "a_punto_terminar";
 
@@ -62,6 +62,25 @@ export function PlanoSala() {
     }) ?? null;
   }, [shifts, now, tz]);
 
+  const { data: durationRules } = useQuery({
+    queryKey: ["dining_duration_rules_all", bid],
+    enabled: !!bid,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("dining_duration_rules").select("dining_shift_id, duration_min");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Minutos mínimos que necesita cualquier grupo sentado ahora (la duración más corta
+  // del turno + limpieza). Si la siguiente reserva de una mesa empieza antes, no cabe
+  // ningún walk-in y esa reserva ya se muestra para poder sentarla.
+  const minSeatMinutes = useMemo(() => {
+    if (!currentShift) return 30;
+    const durations = [currentShift.booking_duration_min, ...(durationRules ?? []).filter((r) => r.dining_shift_id === currentShift.id).map((r) => r.duration_min)];
+    return Math.min(...durations) + (currentShift.cleanup_min ?? 0);
+  }, [currentShift, durationRules]);
+
   // Reservas activas (no canceladas/no-show) por mesa, incluidas las de combinaciones.
   const byTable = useMemo(() => {
     const map = new Map<string, Row[]>();
@@ -80,7 +99,7 @@ export function PlanoSala() {
     return map;
   }, [bookings, combos]);
 
-  function tableHealth(tableId: string): { health: Health; booking: Row | null } {
+  function tableHealth(tableId: string): { health: Health; booking: Row | null; next?: Row | null } {
     const list = byTable.get(tableId) ?? [];
     const nowMs = now.getTime();
     const current = list.find((b) => new Date(b.starts_at).getTime() <= nowMs && nowMs < new Date(b.ends_at).getTime());
@@ -92,11 +111,11 @@ export function PlanoSala() {
       const minsLate = (nowMs - new Date(current.starts_at).getTime()) / 60000;
       return { health: minsLate > 15 ? "retrasada" : "reservada_ahora", booking: current };
     }
-    const next = list.find((b) => new Date(b.starts_at).getTime() > nowMs);
-    if (next && (new Date(next.starts_at).getTime() - nowMs) / 60000 <= 30) {
-      return { health: "reservada_pronto", booking: next };
+    const next = list.find((b) => new Date(b.starts_at).getTime() > nowMs) ?? null;
+    if (next && (new Date(next.starts_at).getTime() - nowMs) / 60000 < minSeatMinutes) {
+      return { health: "reservada_pronto", booking: next, next };
     }
-    return { health: "libre", booking: null };
+    return { health: "libre", booking: null, next };
   }
 
   async function setStatus(booking: Row, status: Booking["status"]) {
@@ -133,7 +152,7 @@ export function PlanoSala() {
                 <h3 className="font-semibold text-sm text-slate-500 dark:text-slate-400 mb-2">{zoneName}</h3>
                 <div className="grid sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
                   {list.map((t) => {
-                    const { health, booking } = tableHealth(t.id);
+                    const { health, booking, next } = tableHealth(t.id);
                     const st = HEALTH_STYLE[health];
                     return (
                       <div key={t.id} className={`rounded-xl border-2 p-3 ${st.bg} ${st.border}`}>
@@ -149,7 +168,7 @@ export function PlanoSala() {
                             <div className="text-slate-500 dark:text-slate-400">{formatTime(booking.starts_at, tz)} – {formatTime(booking.ends_at, tz)}</div>
                           </div>
                         ) : (
-                          <div className="mt-2 text-xs text-slate-400 dark:text-slate-500">Sin reservas próximas</div>
+                          <div className="mt-2 text-xs text-slate-400 dark:text-slate-500">{next ? `Próxima reserva a las ${formatTime(next.starts_at, tz)}` : "Sin reservas próximas"}</div>
                         )}
 
                         <div className="mt-3 flex flex-wrap gap-1.5">
@@ -196,6 +215,7 @@ export function PlanoSala() {
 function WaitlistSection({ bid, currentShiftId }: { bid: string; currentShiftId: string | null }) {
   const qc = useQueryClient();
   const { data: waitlist, isLoading } = useWaitlist();
+  const { data: zones } = useDiningZones();
   const [adding, setAdding] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -253,7 +273,7 @@ function WaitlistSection({ bid, currentShiftId }: { bid: string; currentShiftId:
             <div key={w.id} className="flex items-center gap-4 px-5 py-3">
               <div className="flex-1 min-w-0">
                 <div className="font-medium truncate">{w.name} · {w.party_size} pers.</div>
-                <div className="text-xs text-slate-500 dark:text-slate-400">{w.phone ?? "sin teléfono"}{w.notes ? ` · ${w.notes}` : ""}</div>
+                <div className="text-xs text-slate-500 dark:text-slate-400">Zona: {(w.zone_id && zones?.find((z) => z.id === w.zone_id)?.name) || "cualquiera"} · {w.phone ?? "sin teléfono"}{w.notes ? ` · ${w.notes}` : ""}</div>
               </div>
               <span className={`badge text-[11px] ${w.status === "avisado" ? "bg-amber-100 text-amber-700" : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400"}`}>
                 {w.status === "avisado" ? "Avisado" : "Esperando"}
@@ -269,13 +289,14 @@ function WaitlistSection({ bid, currentShiftId }: { bid: string; currentShiftId:
           ))}
         </div>
       )}
-      {adding && <AddWaitlistModal bid={bid} onClose={() => setAdding(false)} onDone={() => { invalidate(); setAdding(false); }} />}
+      {adding && <AddWaitlistModal bid={bid} zones={(zones ?? []).filter((z) => z.is_active)} onClose={() => setAdding(false)} onDone={() => { invalidate(); setAdding(false); }} />}
     </div>
   );
 }
 
-function AddWaitlistModal({ bid, onClose, onDone }: { bid: string; onClose: () => void; onDone: () => void }) {
+function AddWaitlistModal({ bid, zones, onClose, onDone }: { bid: string; zones: { id: string; name: string }[]; onClose: () => void; onDone: () => void }) {
   const [name, setName] = useState("");
+  const [zoneId, setZoneId] = useState("");
   const [phone, setPhone] = useState("");
   const [party, setParty] = useState(2);
   const [notes, setNotes] = useState("");
@@ -290,7 +311,7 @@ function AddWaitlistModal({ bid, onClose, onDone }: { bid: string; onClose: () =
     const v = result.data;
     await supabase.from("waitlist").insert({
       business_id: bid, name: v.name ?? "Cliente", phone: v.phone ?? null,
-      party_size: party, notes: v.notes ?? null,
+      party_size: party, notes: v.notes ?? null, zone_id: zoneId || null,
     });
     setBusy(false); onDone();
   }
@@ -307,6 +328,15 @@ function AddWaitlistModal({ bid, onClose, onDone }: { bid: string; onClose: () =
             ))}
           </div>
         </div>
+        {zones.length > 0 && (
+          <div>
+            <label className="label">Zona preferida</label>
+            <select className="input" value={zoneId} onChange={(e) => setZoneId(e.target.value)}>
+              <option value="">Cualquiera</option>
+              {zones.map((z) => <option key={z.id} value={z.id}>{z.name}</option>)}
+            </select>
+          </div>
+        )}
         <div><label className="label">Nombre</label><input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Nombre del cliente" /></div>
         <div><label className="label">Teléfono (para avisar por WhatsApp)</label><input className="input" value={phone} onChange={(e) => setPhone(e.target.value)} /></div>
         <div><label className="label">Notas (opcional)</label><input className="input" value={notes} onChange={(e) => setNotes(e.target.value)} /></div>

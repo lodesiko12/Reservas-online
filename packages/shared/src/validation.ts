@@ -4,6 +4,9 @@
 // barrera (feedback inmediato en el formulario); el servidor revalida.
 import { z } from "zod";
 
+/** Nº de comensales seleccionables en widget y panel (1–12, todos). */
+export const PARTY_SIZE_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+
 export const NAME_MAX = 100;
 export const PHONE_MAX = 30;
 export const EMAIL_MAX = 254;
