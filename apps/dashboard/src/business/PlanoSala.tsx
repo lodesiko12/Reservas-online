@@ -143,6 +143,11 @@ export function PlanoSala() {
         <EmptyState title="Sin mesas configuradas" hint="Da de alta tus mesas en “Mesas y zonas” para ver el plano en vivo." />
       ) : (
         <div className="space-y-6">
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            {currentShift
+              ? "Toca una mesa libre para sentar a clientes sin reserva."
+              : "No hay ningún turno de servicio activo ahora mismo, así que no se puede sentar a clientes sin reserva. Revisa tus horarios en “Franjas”."}
+          </p>
           {[...(zones ?? []).map((z) => z.id), null].map((zoneId) => {
             const list = tablesByZone.get(zoneId) ?? [];
             if (!list.length) return null;
@@ -154,8 +159,10 @@ export function PlanoSala() {
                   {list.map((t) => {
                     const { health, booking, next } = tableHealth(t.id);
                     const st = HEALTH_STYLE[health];
+                    const canSeatNow = health === "libre" && !!currentShift;
                     return (
-                      <div key={t.id} className={`rounded-xl border-2 p-3 ${st.bg} ${st.border}`}>
+                      <div key={t.id} className={`rounded-xl border-2 p-3 ${st.bg} ${st.border} ${canSeatNow ? "cursor-pointer hover:border-emerald-400" : ""}`}
+                        onClick={canSeatNow ? () => setWalkinTable({ id: t.id, name: t.name }) : undefined}>
                         <div className="flex items-start justify-between">
                           <div className="font-semibold">{t.name}</div>
                           <span className={`text-[11px] font-semibold ${st.text}`}>{st.label}</span>
@@ -171,7 +178,7 @@ export function PlanoSala() {
                           <div className="mt-2 text-xs text-slate-400 dark:text-slate-500">{next ? `Próxima reserva a las ${formatTime(next.starts_at, tz)}` : "Sin reservas próximas"}</div>
                         )}
 
-                        <div className="mt-3 flex flex-wrap gap-1.5">
+                        <div className="mt-3 flex flex-wrap gap-1.5" onClick={(e) => e.stopPropagation()}>
                           {booking && (booking.status === "confirmada" || booking.status === "pendiente") && (
                             <button className="btn-ghost text-xs" onClick={() => setStatus(booking, "sentada")}>Sentar</button>
                           )}
@@ -181,8 +188,10 @@ export function PlanoSala() {
                           {booking && booking.status === "sentada" && (
                             <button className="btn-ghost text-xs" onClick={() => setStatus(booking, "completada")}>Liberar mesa</button>
                           )}
-                          {health === "libre" && currentShift && (
-                            <button className="btn-primary text-xs" onClick={() => setWalkinTable({ id: t.id, name: t.name })}>+ Walk-in</button>
+                          {health === "libre" && (
+                            <button className="btn-primary text-xs" disabled={!currentShift}
+                              title={currentShift ? undefined : "No hay ningún turno de servicio activo ahora mismo"}
+                              onClick={() => setWalkinTable({ id: t.id, name: t.name })}>Sentar clientes</button>
                           )}
                         </div>
                       </div>
@@ -193,10 +202,6 @@ export function PlanoSala() {
             );
           })}
         </div>
-      )}
-
-      {!currentShift && !isLoading && (
-        <p className="text-xs text-slate-400 dark:text-slate-500 mt-4">No hay ningún turno de servicio activo ahora mismo, así que no se pueden registrar walk-ins.</p>
       )}
 
       {walkinTable && currentShift && (
@@ -350,16 +355,18 @@ function AddWaitlistModal({ bid, zones, onClose, onDone }: { bid: string; zones:
 function WalkinModal({ bid, shiftId, table, onClose, onDone }: {
   bid: string; shiftId: string; table: { id: string; name: string }; onClose: () => void; onDone: () => void;
 }) {
-  const [party, setParty] = useState(2);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [details, setDetails] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function save() {
+  // Un toque en el número de comensales sienta al grupo en la mesa. Nombre y
+  // teléfono son opcionales y quedan plegados para no frenar al camarero.
+  async function seat(party: number) {
     setError(null);
     const result = waitlistEntrySchema.safeParse({ name, phone, notes: "" });
-    if (!result.success) { setError(result.error.issues[0]?.message ?? "Revisa los datos."); return; }
+    if (!result.success) { setError(result.error.issues[0]?.message ?? "Revisa los datos."); setDetails(true); return; }
     setBusy(true);
     const v = result.data;
     const { error } = await supabase.rpc("create_walkin_booking", {
@@ -372,21 +379,27 @@ function WalkinModal({ bid, shiftId, table, onClose, onDone }: {
   }
 
   return (
-    <Modal open onClose={onClose} title={`Walk-in · ${table.name}`}>
+    <Modal open onClose={onClose} title={`Sentar clientes · ${table.name}`}>
       <div className="space-y-4">
         <div>
-          <label className="label">Comensales</label>
+          <label className="label">¿Cuántos son? Toca un número para sentarlos</label>
           <div className="flex flex-wrap gap-2">
             {PARTY_OPTIONS.map((n) => (
-              <button type="button" key={n} onClick={() => setParty(n)}
-                className={`w-10 h-10 rounded-lg border font-semibold ${party === n ? "bg-brand-500 text-white border-brand-500" : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700"}`}>{n}</button>
+              <button type="button" key={n} disabled={busy} onClick={() => seat(n)}
+                className="w-12 h-12 rounded-lg border font-semibold text-lg bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:bg-emerald-50 hover:border-emerald-400 disabled:opacity-50">{n}</button>
             ))}
           </div>
         </div>
-        <div><label className="label">Nombre (opcional)</label><input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Nombre del cliente" /></div>
-        <div><label className="label">Teléfono (opcional)</label><input className="input" value={phone} onChange={(e) => setPhone(e.target.value)} /></div>
+        {details ? (
+          <>
+            <div><label className="label">Nombre (opcional)</label><input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Nombre del cliente" /></div>
+            <div><label className="label">Teléfono (opcional)</label><input className="input" value={phone} onChange={(e) => setPhone(e.target.value)} /></div>
+          </>
+        ) : (
+          <button type="button" className="text-xs text-brand-600 underline" onClick={() => setDetails(true)}>Añadir nombre o teléfono (opcional)</button>
+        )}
         {error && <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</div>}
-        <div className="flex justify-end gap-2"><button className="btn-ghost" onClick={onClose}>Cancelar</button><button className="btn-primary" disabled={busy} onClick={save}>Sentar ahora</button></div>
+        <div className="flex justify-end"><button className="btn-ghost" onClick={onClose}>Cancelar</button></div>
       </div>
     </Modal>
   );
