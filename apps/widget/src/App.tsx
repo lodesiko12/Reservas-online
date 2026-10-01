@@ -56,7 +56,7 @@ export default function App({ slug, initialView, initialLocator }: Props) {
         <BookingFlow business={business} onLookup={() => setView("lookup")} />
       )}
 
-      <p className="powered">Reservas · powered by tu SaaS</p>
+      <p className="powered">Reservas · Turnigo</p>
     </div>
   );
 }
