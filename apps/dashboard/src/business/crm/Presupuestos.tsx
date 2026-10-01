@@ -2,7 +2,8 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "../../lib/supabase";
 import { useBusinessId } from "../hooks";
-import { useBudgetConcepts, customerLabel } from "./hooks";
+import { useAuth } from "../../lib/auth";
+import { useBudgetConcepts, useFiscalProfile, customerLabel } from "./hooks";
 import { documentTotals, lineTotals, type BudgetLineInput, type CrmBudget } from "./types";
 import { formatCurrency, formatDate } from "@reservas/shared";
 import { PageHeader, Spinner, Modal, EmptyState } from "../../components/ui";
@@ -14,7 +15,10 @@ const STATUS_STYLE: Record<string, string> = {
 };
 
 type BudgetRow = CrmBudget & {
-  customers: { full_name: string; last_name: string | null } | null;
+  customers: {
+    full_name: string; last_name: string | null; nif: string | null; address: string | null;
+    city: string | null; province: string | null; postal_code: string | null;
+  } | null;
   crm_budget_lines: BudgetLineInput[];
 };
 
@@ -25,7 +29,7 @@ function useBudgets(customerId?: string) {
     enabled: !!bid,
     queryFn: async () => {
       let q = supabase.from("crm_budgets")
-        .select("*, customers(full_name, last_name), crm_budget_lines(concept, quantity, unit_price, discount_pct, vat_rate)")
+        .select("*, customers(full_name, last_name, nif, address, city, province, postal_code), crm_budget_lines(concept, quantity, unit_price, discount_pct, vat_rate)")
         .eq("business_id", bid)
         .order("issued_at", { ascending: false });
       if (customerId) q = q.eq("customer_id", customerId);
@@ -47,6 +51,8 @@ export function PresupuestosList({ customerId, cardId }: { customerId?: string; 
   const qc = useQueryClient();
   const [status, setStatus] = useState<string>("todos");
   const { data: budgets, isLoading } = useBudgets(customerId);
+  const { business } = useAuth();
+  const { data: fiscal } = useFiscalProfile();
   const [editing, setEditing] = useState<BudgetRow | "new" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [offerInvoiceFor, setOfferInvoiceFor] = useState<string | null>(null);
@@ -59,6 +65,20 @@ export function PresupuestosList({ customerId, cardId }: { customerId?: string; 
   }
 
   const filtered = (budgets ?? []).filter((b) => status === "todos" || b.status === status);
+
+  async function downloadPdf(b: BudgetRow) {
+    setError(null);
+    try {
+      // Se carga bajo demanda: jspdf pesa y solo hace falta al descargar.
+      const { generateBudgetPdf } = await import("./PresupuestoPdf");
+      generateBudgetPdf(
+        { name: business?.name ?? "" }, fiscal, b, b.customers,
+        (b.crm_budget_lines ?? []), business?.timezone ?? "Europe/Madrid",
+      );
+    } catch {
+      setError("No se pudo generar el PDF. Inténtalo de nuevo.");
+    }
+  }
 
   async function duplicate(id: string) {
     setError(null);
@@ -134,6 +154,7 @@ export function PresupuestosList({ customerId, cardId }: { customerId?: string; 
                   <div className="font-bold">{formatCurrency(total)}</div>
                   <div className="flex gap-1.5 flex-wrap">
                     {b.status === "borrador" && <button className="btn-ghost text-xs" onClick={() => setEditing(b)}>Editar</button>}
+                    <button className="btn-ghost text-xs" onClick={() => downloadPdf(b)}>Descargar PDF</button>
                     <button className="btn-ghost text-xs" onClick={() => duplicate(b.id)}>Duplicar</button>
                     {b.status === "borrador" && <button className="btn-ghost text-xs" onClick={() => setDocStatus(b.id, "enviado")}>Marcar enviado</button>}
                     {b.status === "enviado" && (
