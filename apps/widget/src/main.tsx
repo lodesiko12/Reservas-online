@@ -26,11 +26,14 @@ root.render(
 );
 
 // Comunica la altura al documento anfitrión para que embed.js redimensione el iframe.
+// Se mide el alto del contenido (body), no documentElement.scrollHeight: este último nunca baja del
+// alto del propio iframe, así que el iframe no podía encogerse y dejaba un hueco bajo el contenido.
 function postHeight() {
-  const h = document.documentElement.scrollHeight;
+  const h = Math.ceil(document.body.getBoundingClientRect().height);
   window.parent?.postMessage({ type: "reservas-widget:height", height: h }, "*");
 }
 const ro = new ResizeObserver(postHeight);
-ro.observe(document.documentElement);
+ro.observe(document.body);
+ro.observe(document.documentElement); // cambios de ancho (re-maquetación) también reportan
 window.addEventListener("load", postHeight);
 setTimeout(postHeight, 300);
