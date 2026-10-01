@@ -14,6 +14,8 @@ import { RestaurantFlow } from "./RestaurantFlow";
 type Props = { slug: string; initialView: "booking" | "lookup"; initialLocator: string };
 
 function applyBranding(color: string) {
+  // Si la web anfitriona fijó un acento (?accent=), tiene prioridad sobre el del negocio.
+  if (document.documentElement.dataset.accent) return;
   document.documentElement.style.setProperty("--primary", color);
 }
 

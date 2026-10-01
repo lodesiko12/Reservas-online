@@ -112,3 +112,114 @@ body {
 .spinner { display: inline-block; width: 22px; height: 22px; border: 3px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin .7s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .powered { text-align: center; color: #cbd5e1; font-size: 11px; margin-top: 18px; }
+
+/* ==========================================================================
+   Tema oscuro (opcional): se activa con ?theme=dark (embed.js: data-theme="dark").
+   Sin ese parámetro nada de lo siguiente se aplica. El acento sale de ?accent=
+   o, si no se indica, del color del negocio (--primary).
+   Las fuentes solo se descargan si el tema las usa (font-display: swap).
+   ========================================================================== */
+@font-face {
+  font-family: "Jost"; font-style: normal; font-weight: 300 500; font-display: swap;
+  src: url("/fonts/jost-400-normal-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Cormorant Garamond"; font-style: normal; font-weight: 500; font-display: swap;
+  src: url("/fonts/cormorant-garamond-500-normal-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+html[data-theme="dark"] {
+  --bg: transparent;                    /* deja ver el fondo de la web anfitriona */
+  --surface: rgba(236, 230, 219, .035);
+  --border: rgba(236, 230, 219, .17);
+  --text: #ece6db;
+  --muted: #a69d8d;
+  --primary-ink: #100e0c;
+  --radius: 2px;
+  --danger: #e69a86;
+  --ok: #a3c093;
+}
+html[data-theme="dark"] body {
+  font-family: "Jost", system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-weight: 400;
+}
+html[data-theme="dark"] ::selection { background: var(--primary); color: var(--primary-ink); }
+
+/* Cabecera y títulos: serif editorial + etiqueta en acento */
+html[data-theme="dark"] .brand h1 {
+  font-family: "Cormorant Garamond", Georgia, serif; font-weight: 500; font-size: 28px; letter-spacing: .01em; line-height: 1.1;
+}
+html[data-theme="dark"] .brand .sub {
+  font-size: 11px; letter-spacing: .26em; text-transform: uppercase; color: var(--primary); margin-top: 6px;
+}
+html[data-theme="dark"] .brand img { border-radius: 0; }
+html[data-theme="dark"] .section-title {
+  font-family: "Cormorant Garamond", Georgia, serif; font-weight: 500; font-size: 21px; letter-spacing: .01em; margin-bottom: 12px;
+}
+html[data-theme="dark"] .hint, html[data-theme="dark"] .empty { color: var(--muted); }
+
+/* Pasos: filete fino en vez de píldora */
+html[data-theme="dark"] .steps .dot { height: 2px; border-radius: 0; }
+
+/* Los <button> no heredan el color del texto por defecto: sin esto saldrían negros sobre fondo oscuro */
+html[data-theme="dark"] .card-btn,
+html[data-theme="dark"] .date-pill,
+html[data-theme="dark"] .slot { color: var(--text); }
+
+/* Controles: esquinas casi rectas, líneas finas */
+html[data-theme="dark"] .card-btn,
+html[data-theme="dark"] .summary { border-radius: var(--radius); }
+html[data-theme="dark"] .date-pill,
+html[data-theme="dark"] .slot,
+html[data-theme="dark"] .field input,
+html[data-theme="dark"] .field textarea,
+html[data-theme="dark"] .error { border-radius: var(--radius); }
+html[data-theme="dark"] .slot { font-weight: 500; transition: border-color .2s, background .2s; }
+html[data-theme="dark"] .slot:hover,
+html[data-theme="dark"] .card-btn:hover,
+html[data-theme="dark"] .date-pill:hover { border-color: var(--primary); }
+html[data-theme="dark"] .date-pill.selected,
+html[data-theme="dark"] .slot.selected { background: var(--primary); color: var(--primary-ink); border-color: var(--primary); }
+
+/* Formulario */
+html[data-theme="dark"] .field label {
+  font-size: 11px; letter-spacing: .2em; text-transform: uppercase; font-weight: 500; color: var(--muted);
+}
+html[data-theme="dark"] .field input,
+html[data-theme="dark"] .field textarea {
+  background: rgba(236, 230, 219, .045); color: var(--text); border-color: var(--border);
+}
+html[data-theme="dark"] .field input::placeholder,
+html[data-theme="dark"] .field textarea::placeholder { color: rgba(166, 157, 141, .6); }
+html[data-theme="dark"] .field input:focus,
+html[data-theme="dark"] .field textarea:focus { outline: 1px solid var(--primary); outline-offset: 0; border-color: var(--primary); }
+/* Autorrelleno de Chrome: evita el fondo azul claro sobre el tema oscuro */
+html[data-theme="dark"] input:-webkit-autofill,
+html[data-theme="dark"] textarea:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0 1000px #1d1914 inset; -webkit-text-fill-color: var(--text); caret-color: var(--text);
+}
+
+/* Botones: mayúsculas espaciadas, como los de la web */
+html[data-theme="dark"] .btn {
+  border-radius: var(--radius); font-weight: 500; font-size: 12.5px; letter-spacing: .2em; text-transform: uppercase;
+  padding: 15px 18px; transition: filter .2s, border-color .2s, color .2s;
+}
+html[data-theme="dark"] .btn:hover:not(:disabled) { filter: brightness(1.1); }
+html[data-theme="dark"] .btn.secondary { color: var(--text); border-color: var(--border); }
+html[data-theme="dark"] .btn.secondary:hover:not(:disabled) { border-color: var(--primary); color: var(--primary); filter: none; }
+html[data-theme="dark"] .btn.danger { background: transparent; color: var(--danger); border: 1px solid var(--danger); }
+
+/* Mensajes y detalles */
+html[data-theme="dark"] .error {
+  background: rgba(230, 154, 134, .09); border-color: rgba(230, 154, 134, .38); color: var(--danger);
+}
+html[data-theme="dark"] .summary { background: var(--surface); }
+html[data-theme="dark"] .locator { font-family: "Cormorant Garamond", Georgia, serif; font-weight: 500; font-size: 36px; letter-spacing: .08em; }
+html[data-theme="dark"] .footer-link button,
+html[data-theme="dark"] .back { color: var(--muted); }
+html[data-theme="dark"] .footer-link button:hover,
+html[data-theme="dark"] .back:hover { color: var(--text); }
+html[data-theme="dark"] .powered { color: var(--muted); opacity: .45; }
+html[data-theme="dark"] .dates { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }

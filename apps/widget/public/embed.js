@@ -8,6 +8,8 @@
  * Opcionales en el <div>:
  *   data-view="mi-reserva"   -> abre directamente la consulta de reserva
  *   data-widget-url="..."    -> fuerza la URL del widget (por defecto, la de este script)
+ *   data-theme="dark"        -> tema oscuro (para webs con fondo oscuro)
+ *   data-accent="#b08d57"    -> color de acento; si se indica, manda sobre el color del negocio
  *
  * El widget se carga en un <iframe> aislado para no heredar ni romper el CSS
  * del sitio anfitrión, y se autoajusta en altura de forma responsive.
@@ -31,6 +33,10 @@
 
     var url = base + "/?slug=" + encodeURIComponent(slug);
     if (view) url += "&view=" + encodeURIComponent(view);
+    var theme = el.getAttribute("data-theme");
+    if (theme) url += "&theme=" + encodeURIComponent(theme);
+    var accent = el.getAttribute("data-accent");
+    if (accent) url += "&accent=" + encodeURIComponent(accent);
 
     var iframe = document.createElement("iframe");
     iframe.src = url;
