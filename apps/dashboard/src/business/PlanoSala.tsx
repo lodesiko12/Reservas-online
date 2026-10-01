@@ -62,6 +62,20 @@ export function PlanoSala() {
     }) ?? null;
   }, [shifts, now, tz]);
 
+  // Turno al que se asocia un walk-in. Si no hay ninguno en curso (p.ej. la comida
+  // aún no ha empezado) se usa el siguiente del día, o el último ya terminado, y como
+  // último recurso cualquier turno activo: sentar a mano debe ser posible siempre.
+  const seatShift = useMemo(() => {
+    if (currentShift) return currentShift;
+    const active = (shifts ?? []).filter((s) => s.is_active);
+    if (!active.length) return null;
+    const dow = weekdayInTz(now, tz);
+    const nowMin = minutesOfDayInTz(now.toISOString(), tz);
+    const startMin = (s: (typeof active)[number]) => { const [h, m] = s.start_time.split(":").map(Number); return h * 60 + m; };
+    const today = active.filter((s) => s.active_weekdays.includes(dow)).sort((a, b) => startMin(a) - startMin(b));
+    return today.find((s) => startMin(s) > nowMin) ?? today[today.length - 1] ?? active[0];
+  }, [shifts, currentShift, now, tz]);
+
   const { data: durationRules } = useQuery({
     queryKey: ["dining_duration_rules_all", bid],
     enabled: !!bid,
@@ -76,10 +90,10 @@ export function PlanoSala() {
   // del turno + limpieza). Si la siguiente reserva de una mesa empieza antes, no cabe
   // ningún walk-in y esa reserva ya se muestra para poder sentarla.
   const minSeatMinutes = useMemo(() => {
-    if (!currentShift) return 30;
-    const durations = [currentShift.booking_duration_min, ...(durationRules ?? []).filter((r) => r.dining_shift_id === currentShift.id).map((r) => r.duration_min)];
-    return Math.min(...durations) + (currentShift.cleanup_min ?? 0);
-  }, [currentShift, durationRules]);
+    if (!seatShift) return 30;
+    const durations = [seatShift.booking_duration_min, ...(durationRules ?? []).filter((r) => r.dining_shift_id === seatShift.id).map((r) => r.duration_min)];
+    return Math.min(...durations) + (seatShift.cleanup_min ?? 0);
+  }, [seatShift, durationRules]);
 
   // Reservas activas (no canceladas/no-show) por mesa, incluidas las de combinaciones.
   const byTable = useMemo(() => {
@@ -144,9 +158,9 @@ export function PlanoSala() {
       ) : (
         <div className="space-y-6">
           <p className="text-sm text-slate-500 dark:text-slate-400">
-            {currentShift
+            {seatShift
               ? "Toca una mesa libre para sentar a clientes sin reserva."
-              : "No hay ningún turno de servicio activo ahora mismo, así que no se puede sentar a clientes sin reserva. Revisa tus horarios en “Franjas”."}
+              : "El negocio no tiene ninguna franja de servicio activa, así que no se puede sentar a clientes sin reserva. Configúrala en “Franjas”."}
           </p>
           {[...(zones ?? []).map((z) => z.id), null].map((zoneId) => {
             const list = tablesByZone.get(zoneId) ?? [];
@@ -159,7 +173,7 @@ export function PlanoSala() {
                   {list.map((t) => {
                     const { health, booking, next } = tableHealth(t.id);
                     const st = HEALTH_STYLE[health];
-                    const canSeatNow = health === "libre" && !!currentShift;
+                    const canSeatNow = health === "libre" && !!seatShift;
                     return (
                       <div key={t.id} className={`rounded-xl border-2 p-3 ${st.bg} ${st.border} ${canSeatNow ? "cursor-pointer hover:border-emerald-400" : ""}`}
                         onClick={canSeatNow ? () => setWalkinTable({ id: t.id, name: t.name }) : undefined}>
@@ -189,8 +203,8 @@ export function PlanoSala() {
                             <button className="btn-ghost text-xs" onClick={() => setStatus(booking, "completada")}>Liberar mesa</button>
                           )}
                           {health === "libre" && (
-                            <button className="btn-primary text-xs" disabled={!currentShift}
-                              title={currentShift ? undefined : "No hay ningún turno de servicio activo ahora mismo"}
+                            <button className="btn-primary text-xs" disabled={!seatShift}
+                              title={seatShift ? undefined : "El negocio no tiene ninguna franja de servicio activa"}
                               onClick={() => setWalkinTable({ id: t.id, name: t.name })}>Sentar clientes</button>
                           )}
                         </div>
@@ -204,15 +218,15 @@ export function PlanoSala() {
         </div>
       )}
 
-      {walkinTable && currentShift && (
+      {walkinTable && seatShift && (
         <WalkinModal
-          bid={bid} shiftId={currentShift.id} table={walkinTable}
+          bid={bid} shiftId={seatShift.id} table={walkinTable}
           onClose={() => setWalkinTable(null)}
           onDone={() => { qc.invalidateQueries({ queryKey: ["bookings", bid] }); setWalkinTable(null); }}
         />
       )}
 
-      <WaitlistSection bid={bid} currentShiftId={currentShift?.id ?? null} />
+      <WaitlistSection bid={bid} currentShiftId={seatShift?.id ?? null} />
     </div>
   );
 }
