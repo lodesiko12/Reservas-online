@@ -14,6 +14,272 @@ export type Database = {
   }
   public: {
     Tables: {
+      adv_audit_log: {
+        Row: {
+          action: string
+          business_id: string
+          client_id: string | null
+          created_at: string
+          detail: Json
+          document_id: string | null
+          id: number
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          business_id: string
+          client_id?: string | null
+          created_at?: string
+          detail?: Json
+          document_id?: string | null
+          id?: number
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          business_id?: string
+          client_id?: string | null
+          created_at?: string
+          detail?: Json
+          document_id?: string | null
+          id?: number
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "adv_audit_log_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      adv_client_contacts: {
+        Row: {
+          business_id: string
+          client_id: string
+          created_at: string
+          id: string
+          kind: string
+          label: string | null
+          value: string
+        }
+        Insert: {
+          business_id: string
+          client_id: string
+          created_at?: string
+          id?: string
+          kind: string
+          label?: string | null
+          value: string
+        }
+        Update: {
+          business_id?: string
+          client_id?: string
+          created_at?: string
+          id?: string
+          kind?: string
+          label?: string | null
+          value?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "adv_client_contacts_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "adv_client_contacts_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "adv_clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      adv_clients: {
+        Row: {
+          business_id: string
+          client_kind: string
+          created_at: string
+          id: string
+          manager_id: string | null
+          name: string
+          nif: string | null
+          notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          business_id: string
+          client_kind?: string
+          created_at?: string
+          id?: string
+          manager_id?: string | null
+          name: string
+          nif?: string | null
+          notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          business_id?: string
+          client_kind?: string
+          created_at?: string
+          id?: string
+          manager_id?: string | null
+          name?: string
+          nif?: string | null
+          notes?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "adv_clients_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      adv_doc_types: {
+        Row: {
+          business_id: string
+          code: string | null
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          position: number
+        }
+        Insert: {
+          business_id: string
+          code?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          position?: number
+        }
+        Update: {
+          business_id?: string
+          code?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          position?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "adv_doc_types_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      adv_documents: {
+        Row: {
+          assignment_reason: Json
+          business_id: string
+          client_id: string | null
+          created_at: string
+          doc_type_id: string | null
+          duplicate_of: string | null
+          file_hash: string
+          id: string
+          mime_type: string
+          original_filename: string
+          period_month: number | null
+          period_year: number | null
+          sender: string | null
+          sender_meta: Json
+          size_bytes: number
+          source: string
+          status: string
+          storage_path: string
+          updated_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          assignment_reason?: Json
+          business_id: string
+          client_id?: string | null
+          created_at?: string
+          doc_type_id?: string | null
+          duplicate_of?: string | null
+          file_hash: string
+          id?: string
+          mime_type: string
+          original_filename: string
+          period_month?: number | null
+          period_year?: number | null
+          sender?: string | null
+          sender_meta?: Json
+          size_bytes: number
+          source: string
+          status?: string
+          storage_path: string
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          assignment_reason?: Json
+          business_id?: string
+          client_id?: string | null
+          created_at?: string
+          doc_type_id?: string | null
+          duplicate_of?: string | null
+          file_hash?: string
+          id?: string
+          mime_type?: string
+          original_filename?: string
+          period_month?: number | null
+          period_year?: number | null
+          sender?: string | null
+          sender_meta?: Json
+          size_bytes?: number
+          source?: string
+          status?: string
+          storage_path?: string
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "adv_documents_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "adv_documents_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "adv_clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "adv_documents_doc_type_id_fkey"
+            columns: ["doc_type_id"]
+            isOneToOne: false
+            referencedRelation: "adv_doc_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "adv_documents_duplicate_of_fkey"
+            columns: ["duplicate_of"]
+            isOneToOne: false
+            referencedRelation: "adv_documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       blocks: {
         Row: {
           business_id: string
@@ -2562,6 +2828,12 @@ export type Database = {
         }
       }
       is_business_member: { Args: { b: string }; Returns: boolean }
+      is_business_owner: { Args: { b: string }; Returns: boolean }
+      adv_list_team: {
+        Args: { p_business_id: string }
+        Returns: { user_id: string; role: Database["public"]["Enums"]["business_user_role"]; full_name: string | null; email: string | null }[]
+      }
+      adv_can_access_client: { Args: { b: string; c: string }; Returns: boolean }
       is_super_admin: { Args: never; Returns: boolean }
       normalize_phone: { Args: { p: string }; Returns: string }
       rate_limit_hit: {
@@ -2620,7 +2892,7 @@ export type Database = {
         | "no_show"
         | "pendiente"
         | "sentada"
-      business_type: "citas" | "restaurante" | "psicologo" | "autonomo"
+      business_type: "citas" | "restaurante" | "psicologo" | "autonomo" | "asesoria"
       business_user_role: "owner" | "staff"
       crm_budget_status: "borrador" | "enviado" | "aceptado" | "rechazado"
       crm_document_type: "presupuesto" | "factura"
@@ -2768,7 +3040,7 @@ export const Constants = {
         "pendiente",
         "sentada",
       ],
-      business_type: ["citas", "restaurante", "psicologo", "autonomo"],
+      business_type: ["citas", "restaurante", "psicologo", "autonomo", "asesoria"],
       business_user_role: ["owner", "staff"],
       crm_budget_status: ["borrador", "enviado", "aceptado", "rechazado"],
       crm_document_type: ["presupuesto", "factura"],

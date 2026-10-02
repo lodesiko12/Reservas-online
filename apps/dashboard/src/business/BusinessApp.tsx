@@ -18,14 +18,27 @@ import { Pipeline } from "./crm/Pipeline";
 import { AgendaInterna } from "./crm/AgendaInterna";
 import { Presupuestos } from "./crm/Presupuestos";
 import { Facturas } from "./crm/Facturas";
+import { ResumenAsesoria } from "./asesoria/ResumenAsesoria";
+import { Clientes as ClientesAsesoria } from "./asesoria/Clientes";
+import { FichaCliente } from "./asesoria/FichaCliente";
+import { SinClasificar } from "./asesoria/SinClasificar";
+import { ConfiguracionAsesoria } from "./asesoria/ConfiguracionAsesoria";
 
 export function BusinessApp() {
   const { business } = useAuth();
   const isRestaurant = business?.type === "restaurante";
   const isPsicologo = business?.type === "psicologo";
   const isAutonomo = business?.type === "autonomo";
+  const isAsesoria = business?.type === "asesoria";
 
-  const nav: NavItem[] = isAutonomo
+  const nav: NavItem[] = isAsesoria
+    ? [
+        { to: "/app", label: "Resumen", icon: "📊", end: true },
+        { to: "/app/clientes", label: "Clientes", icon: "👤" },
+        { to: "/app/sin-clasificar", label: "Sin clasificar", icon: "📥" },
+        { to: "/app/config", label: "Configuración", icon: "⚙️" },
+      ]
+    : isAutonomo
     ? [
         { to: "/app", label: "Resumen", icon: "📊", end: true },
         { to: "/app/pipeline", label: "Pipeline", icon: "🗂️" },
@@ -54,7 +67,16 @@ export function BusinessApp() {
   return (
     <Routes>
       <Route element={<Layout nav={nav} brandLabel={business?.name ?? "Panel"} />}>
-        {isAutonomo ? (
+        {isAsesoria ? (
+          <>
+            <Route index element={<ResumenAsesoria />} />
+            <Route path="clientes" element={<ClientesAsesoria />} />
+            <Route path="clientes/:id" element={<FichaCliente />} />
+            <Route path="sin-clasificar" element={<SinClasificar />} />
+            <Route path="config" element={<ConfiguracionAsesoria />} />
+            <Route path="*" element={<Navigate to="/app" replace />} />
+          </>
+        ) : isAutonomo ? (
           <>
             <Route index element={<ResumenAutonomo />} />
             <Route path="pipeline" element={<Pipeline />} />

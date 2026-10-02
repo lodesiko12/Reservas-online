@@ -7,7 +7,7 @@ import { rateLimitHit, tooManyRequests } from "../_shared/rateLimit.ts";
 type Body = {
   name?: string;
   slug?: string;
-  type?: "citas" | "restaurante" | "psicologo" | "autonomo";
+  type?: "citas" | "restaurante" | "psicologo" | "autonomo" | "asesoria";
   timezone?: string;
   primary_color?: string;
   staff_email?: string;
@@ -128,6 +128,11 @@ Deno.serve(async (req) => {
     if (eventRows.length) await admin.from("crm_stage_events").insert(eventRows);
 
     await admin.from("crm_fiscal_profile").insert({ business_id: biz.id, legal_name: name });
+  }
+
+  // 7) Tipos de documento base (factura recibida, nómina...) solo para asesorías.
+  if (type === "asesoria") {
+    await admin.rpc("adv_seed_doc_types", { p_business_id: biz.id });
   }
 
   return json({ business: biz, staff_id: staffId });

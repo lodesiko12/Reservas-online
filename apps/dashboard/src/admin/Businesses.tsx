@@ -11,7 +11,7 @@ type Business = Tables<"businesses">;
 const WIDGET_URL = ((import.meta.env.VITE_WIDGET_URL as string) || "").replace(/\/+$/, "");
 
 export const BUSINESS_TYPE_LABELS: Record<string, string> = {
-  citas: "Citas", restaurante: "Restaurante", psicologo: "Psicólogo", autonomo: "Autónomo",
+  citas: "Citas", restaurante: "Restaurante", psicologo: "Psicólogo", autonomo: "Autónomo", asesoria: "Asesoría",
 };
 
 export function Businesses() {
@@ -268,6 +268,7 @@ function NewBusinessModal({ open, onClose, onCreated }: { open: boolean; onClose
                 <option value="psicologo">Psicólogo</option>
                 <option value="restaurante">Restaurante</option>
                 <option value="autonomo">Autónomo</option>
+                <option value="asesoria">Asesoría</option>
               </select>
             </div>
             <div>

@@ -206,7 +206,7 @@ const timezoneField = z.string().trim().min(1, "La zona horaria es obligatoria")
 const slugField = z.string().trim().toLowerCase().min(2, "El slug es obligatorio (mín. 2 caracteres)").max(60, "Slug: máximo 60 caracteres")
   .regex(SLUG_RE, "Slug: solo minúsculas, números y guiones");
 
-const BUSINESS_TYPES = ["citas", "restaurante", "psicologo", "autonomo"] as const;
+const BUSINESS_TYPES = ["citas", "restaurante", "psicologo", "autonomo", "asesoria"] as const;
 
 export const adminEditBusinessSchema = z.object({
   name: requiredName(BUSINESS_NAME_MAX),
@@ -242,3 +242,22 @@ export const adminAddMemberSchema = z.object({
 export function firstIssue(error: z.ZodError, fallback = "Revisa los datos del formulario."): string {
   return error.issues[0]?.message ?? fallback;
 }
+
+// ---------------------------------------------------------------------------
+// Asesorías (organizador de documentos). El servidor revalida (triggers de 0041).
+// ---------------------------------------------------------------------------
+export const ADV_CLIENT_KINDS = ["autonomo", "sociedad", "particular", "otro"] as const;
+
+export const advClientSchema = z.object({
+  name: z.string().trim().min(1, "El nombre o razón social es obligatorio").max(150, "Máximo 150 caracteres"),
+  nif: optionalPattern(/^[0-9A-Za-z .-]+$/, 20, "NIF/CIF no válido"),
+  client_kind: z.enum(ADV_CLIENT_KINDS),
+  notes: optionalText(NOTES_MAX),
+});
+
+export const advContactSchema = z.discriminatedUnion("kind", [
+  z.object({ kind: z.literal("phone"), value: z.string().trim().regex(PHONE_RE, "Teléfono no válido").max(PHONE_MAX, `Máximo ${PHONE_MAX} caracteres`).min(6, "Teléfono demasiado corto") }),
+  z.object({ kind: z.literal("email"), value: z.string().trim().max(EMAIL_MAX).email("Email no válido") }),
+]);
+
+export const advDocTypeSchema = z.object({ name: z.string().trim().min(1, "El nombre es obligatorio").max(80, "Máximo 80 caracteres") });

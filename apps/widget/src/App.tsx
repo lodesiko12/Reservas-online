@@ -48,7 +48,9 @@ export default function App({ slug, initialView, initialLocator }: Props) {
         </div>
       </div>
 
-      {view === "lookup" ? (
+      {business.type === "asesoria" ? (
+        <p className="sub">Este negocio no admite reservas online.</p>
+      ) : view === "lookup" ? (
         <Lookup initialLocator={initialLocator} onBack={() => setView("booking")} />
       ) : business.type === "restaurante" ? (
         <RestaurantFlow business={business} onLookup={() => setView("lookup")} />
