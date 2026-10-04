@@ -32,7 +32,7 @@ export type Database = {
           created_at?: string
           detail?: Json
           document_id?: string | null
-          id?: number
+          id?: never
           user_id?: string | null
         }
         Update: {
@@ -42,7 +42,7 @@ export type Database = {
           created_at?: string
           detail?: Json
           document_id?: string | null
-          id?: number
+          id?: never
           user_id?: string | null
         }
         Relationships: [
@@ -276,6 +276,504 @@ export type Database = {
             columns: ["duplicate_of"]
             isOneToOne: false
             referencedRelation: "adv_documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agency_documents: {
+        Row: {
+          business_id: string
+          created_at: string
+          id: string
+          mime_type: string
+          name: string
+          size_bytes: number
+          storage_path: string
+          team_id: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          id?: string
+          mime_type: string
+          name: string
+          size_bytes: number
+          storage_path: string
+          team_id: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          id?: string
+          mime_type?: string
+          name?: string
+          size_bytes?: number
+          storage_path?: string
+          team_id?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agency_documents_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agency_documents_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "agency_teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agency_events: {
+        Row: {
+          all_day: boolean
+          business_id: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          ends_at: string | null
+          id: string
+          starts_at: string
+          team_id: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          all_day?: boolean
+          business_id: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          ends_at?: string | null
+          id?: string
+          starts_at: string
+          team_id?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          all_day?: boolean
+          business_id?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          ends_at?: string | null
+          id?: string
+          starts_at?: string
+          team_id?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agency_events_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agency_events_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "agency_teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agency_members: {
+        Row: {
+          access_level: string
+          business_id: string
+          cargo: string | null
+          created_at: string
+          directiva_role: string | null
+          full_name: string
+          is_active: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_level?: string
+          business_id: string
+          cargo?: string | null
+          created_at?: string
+          directiva_role?: string | null
+          full_name: string
+          is_active?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_level?: string
+          business_id?: string
+          cargo?: string | null
+          created_at?: string
+          directiva_role?: string | null
+          full_name?: string
+          is_active?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agency_members_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agency_notifications: {
+        Row: {
+          body: string | null
+          business_id: string
+          created_at: string
+          dedupe_key: string | null
+          id: string
+          kind: string
+          push_sent_at: string | null
+          read_at: string | null
+          task_id: string | null
+          team_id: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          body?: string | null
+          business_id: string
+          created_at?: string
+          dedupe_key?: string | null
+          id?: string
+          kind: string
+          push_sent_at?: string | null
+          read_at?: string | null
+          task_id?: string | null
+          team_id?: string | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          body?: string | null
+          business_id?: string
+          created_at?: string
+          dedupe_key?: string | null
+          id?: string
+          kind?: string
+          push_sent_at?: string | null
+          read_at?: string | null
+          task_id?: string | null
+          team_id?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agency_notifications_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agency_notifications_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "agency_tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agency_notifications_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "agency_teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agency_push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          endpoint: string
+          id: string
+          p256dh: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          p256dh: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          auth?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          p256dh?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      agency_task_assignees: {
+        Row: {
+          business_id: string
+          created_at: string
+          task_id: string
+          team_id: string
+          user_id: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          task_id: string
+          team_id: string
+          user_id: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          task_id?: string
+          team_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agency_task_assignees_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agency_task_assignees_business_id_user_id_fkey"
+            columns: ["business_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "agency_members"
+            referencedColumns: ["business_id", "user_id"]
+          },
+          {
+            foreignKeyName: "agency_task_assignees_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "agency_tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agency_task_assignees_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "agency_teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agency_task_comments: {
+        Row: {
+          author_id: string | null
+          body: string
+          business_id: string
+          created_at: string
+          id: string
+          mentions: string[]
+          task_id: string
+          team_id: string
+        }
+        Insert: {
+          author_id?: string | null
+          body: string
+          business_id: string
+          created_at?: string
+          id?: string
+          mentions?: string[]
+          task_id: string
+          team_id: string
+        }
+        Update: {
+          author_id?: string | null
+          body?: string
+          business_id?: string
+          created_at?: string
+          id?: string
+          mentions?: string[]
+          task_id?: string
+          team_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agency_task_comments_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agency_task_comments_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "agency_tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agency_task_comments_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "agency_teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agency_tasks: {
+        Row: {
+          business_id: string
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          due_date: string | null
+          id: string
+          sort_order: number
+          status: string
+          team_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          business_id: string
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          sort_order?: number
+          status?: string
+          team_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          business_id?: string
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          sort_order?: number
+          status?: string
+          team_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agency_tasks_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agency_tasks_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "agency_teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agency_team_members: {
+        Row: {
+          business_id: string
+          created_at: string
+          team_id: string
+          user_id: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          team_id: string
+          user_id: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          team_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agency_team_members_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agency_team_members_business_id_user_id_fkey"
+            columns: ["business_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "agency_members"
+            referencedColumns: ["business_id", "user_id"]
+          },
+          {
+            foreignKeyName: "agency_team_members_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "agency_teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agency_teams: {
+        Row: {
+          business_id: string
+          created_at: string
+          id: string
+          is_archived: boolean
+          name: string
+          position: number
+          updated_at: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          id?: string
+          is_archived?: boolean
+          name: string
+          position?: number
+          updated_at?: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          id?: string
+          is_archived?: boolean
+          name?: string
+          position?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agency_teams_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
             referencedColumns: ["id"]
           },
         ]
@@ -2119,17 +2617,17 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "waitlist_zone_id_fkey"
-            columns: ["zone_id"]
-            isOneToOne: false
-            referencedRelation: "dining_zones"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "waitlist_seated_booking_id_fkey"
             columns: ["seated_booking_id"]
             isOneToOne: false
             referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "waitlist_zone_id_fkey"
+            columns: ["zone_id"]
+            isOneToOne: false
+            referencedRelation: "dining_zones"
             referencedColumns: ["id"]
           },
         ]
@@ -2187,6 +2685,49 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      adv_can_access_client: {
+        Args: { b: string; c: string }
+        Returns: boolean
+      }
+      adv_list_team: {
+        Args: { p_business_id: string }
+        Returns: {
+          email: string
+          full_name: string
+          role: Database["public"]["Enums"]["business_user_role"]
+          user_id: string
+        }[]
+      }
+      adv_normalize_nif: { Args: { t: string }; Returns: string }
+      adv_normalize_phone: { Args: { t: string }; Returns: string }
+      adv_seed_doc_types: {
+        Args: { p_business_id: string }
+        Returns: undefined
+      }
+      agency_can_manage_members: { Args: { b: string }; Returns: boolean }
+      agency_generate_deadline_notifications: { Args: never; Returns: number }
+      agency_in_team: { Args: { b: string; t: string }; Returns: boolean }
+      agency_is_directiva: { Args: { b: string }; Returns: boolean }
+      agency_is_member: { Args: { b: string }; Returns: boolean }
+      agency_list_members_admin: {
+        Args: { p_business_id: string }
+        Returns: {
+          email: string
+          last_sign_in_at: string
+          user_id: string
+        }[]
+      }
+      agency_save_push_subscription: {
+        Args: {
+          p_auth: string
+          p_endpoint: string
+          p_p256dh: string
+          p_user_agent: string
+        }
+        Returns: undefined
+      }
+      agency_seed_teams: { Args: { p_business_id: string }; Returns: undefined }
+      agency_storage_access: { Args: { p_name: string }; Returns: boolean }
       cancel_booking_by_locator: {
         Args: { p_locator: string }
         Returns: boolean
@@ -2430,10 +2971,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
-      crm_delete_budget: {
-        Args: { p_budget_id: string }
-        Returns: undefined
-      }
+      crm_delete_budget: { Args: { p_budget_id: string }; Returns: undefined }
       crm_delete_pipeline_stage: {
         Args: { p_move_to_stage_id: string; p_stage_id: string }
         Returns: undefined
@@ -2833,11 +3371,6 @@ export type Database = {
       }
       is_business_member: { Args: { b: string }; Returns: boolean }
       is_business_owner: { Args: { b: string }; Returns: boolean }
-      adv_list_team: {
-        Args: { p_business_id: string }
-        Returns: { user_id: string; role: Database["public"]["Enums"]["business_user_role"]; full_name: string | null; email: string | null }[]
-      }
-      adv_can_access_client: { Args: { b: string; c: string }; Returns: boolean }
       is_super_admin: { Args: never; Returns: boolean }
       normalize_phone: { Args: { p: string }; Returns: string }
       rate_limit_hit: {
@@ -2896,7 +3429,13 @@ export type Database = {
         | "no_show"
         | "pendiente"
         | "sentada"
-      business_type: "citas" | "restaurante" | "psicologo" | "autonomo" | "asesoria"
+      business_type:
+        | "citas"
+        | "restaurante"
+        | "psicologo"
+        | "autonomo"
+        | "asesoria"
+        | "agencia"
       business_user_role: "owner" | "staff"
       crm_budget_status: "borrador" | "enviado" | "aceptado" | "rechazado"
       crm_document_type: "presupuesto" | "factura"
@@ -3044,7 +3583,14 @@ export const Constants = {
         "pendiente",
         "sentada",
       ],
-      business_type: ["citas", "restaurante", "psicologo", "autonomo", "asesoria"],
+      business_type: [
+        "citas",
+        "restaurante",
+        "psicologo",
+        "autonomo",
+        "asesoria",
+        "agencia",
+      ],
       business_user_role: ["owner", "staff"],
       crm_budget_status: ["borrador", "enviado", "aceptado", "rechazado"],
       crm_document_type: ["presupuesto", "factura"],
