@@ -2,7 +2,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { Layout, type NavItem } from "../../components/Layout";
 import { Spinner } from "../../components/ui";
 import { useAuth } from "../../lib/auth";
-import { useAgencyMe } from "./hooks";
+import { useAgencyMe, useNotificationsRealtime } from "./hooks";
 import { MiPanel, PanelGlobal } from "./Paneles";
 import { Equipos, EquipoDetalle } from "./Equipos";
 import { Calendario } from "./Calendario";
@@ -14,6 +14,7 @@ export function AgenciaApp() {
   const { business, signOut } = useAuth();
   const { loading, active, isDirectiva } = useAgencyMe();
   const unread = useUnreadCount();
+  useNotificationsRealtime();
 
   if (loading) return <div className="min-h-screen grid place-items-center"><Spinner /></div>;
   if (!active) {

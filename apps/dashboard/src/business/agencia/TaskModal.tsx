@@ -142,7 +142,7 @@ export function TaskModal({ teamId, task, defaultStatus, onClose }: {
 
         {error && <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</div>}
 
-        <div className="flex items-center justify-between gap-2 pt-1">
+        <div className="flex items-center justify-between gap-2 py-3 -mx-6 px-6 sticky bottom-0 -mb-px bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800">
           {task ? <button className="btn-ghost text-red-600" onClick={() => setConfirmDelete(true)}>Eliminar</button> : <span />}
           <div className="flex gap-2">
             <button className="btn-ghost" onClick={onClose}>Cancelar</button>

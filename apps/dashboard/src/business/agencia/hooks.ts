@@ -194,8 +194,9 @@ export function useAgencyDocuments(teamId: string) {
   });
 }
 
-/** Avisos propios (campana). Se refrescan en vivo por Realtime. */
-export function useAgencyNotifications() {
+/** Suscripción Realtime a los avisos propios. Llamar UNA sola vez (en AgenciaApp): dos
+ * suscripciones con el mismo canal hacen fallar a supabase-js. */
+export function useNotificationsRealtime() {
   const bid = useBusinessId();
   const { session } = useAuth();
   const uid = session?.user.id;
@@ -210,6 +211,13 @@ export function useAgencyNotifications() {
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [bid, uid, qc]);
+}
+
+/** Avisos propios (campana). */
+export function useAgencyNotifications() {
+  const bid = useBusinessId();
+  const { session } = useAuth();
+  const uid = session?.user.id;
 
   return useQuery({
     queryKey: ["agency_notifications", bid],
