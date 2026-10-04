@@ -2430,6 +2430,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      crm_delete_budget: {
+        Args: { p_budget_id: string }
+        Returns: undefined
+      }
       crm_delete_pipeline_stage: {
         Args: { p_move_to_stage_id: string; p_stage_id: string }
         Returns: undefined

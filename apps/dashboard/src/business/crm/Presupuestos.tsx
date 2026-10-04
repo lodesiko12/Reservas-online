@@ -6,7 +6,7 @@ import { useAuth } from "../../lib/auth";
 import { useBudgetConcepts, useFiscalProfile, customerLabel } from "./hooks";
 import { documentTotals, lineTotals, type BudgetLineInput, type CrmBudget } from "./types";
 import { formatCurrency, formatDate } from "@reservas/shared";
-import { PageHeader, Spinner, Modal, EmptyState } from "../../components/ui";
+import { PageHeader, Spinner, Modal, EmptyState, ConfirmDialog } from "../../components/ui";
 
 const STATUS_LABEL: Record<string, string> = { borrador: "Borrador", enviado: "Enviado", aceptado: "Aceptado", rechazado: "Rechazado" };
 const STATUS_STYLE: Record<string, string> = {
@@ -20,6 +20,7 @@ type BudgetRow = CrmBudget & {
     city: string | null; province: string | null; postal_code: string | null;
   } | null;
   crm_budget_lines: BudgetLineInput[];
+  crm_invoices: { id: string }[];
 };
 
 function useBudgets(customerId?: string) {
@@ -29,7 +30,7 @@ function useBudgets(customerId?: string) {
     enabled: !!bid,
     queryFn: async () => {
       let q = supabase.from("crm_budgets")
-        .select("*, customers(full_name, last_name, nif, address, city, province, postal_code), crm_budget_lines(concept, quantity, unit_price, discount_pct, vat_rate)")
+        .select("*, customers(full_name, last_name, nif, address, city, province, postal_code), crm_budget_lines(concept, quantity, unit_price, discount_pct, vat_rate), crm_invoices(id)")
         .eq("business_id", bid)
         .order("issued_at", { ascending: false });
       if (customerId) q = q.eq("customer_id", customerId);
@@ -57,6 +58,7 @@ export function PresupuestosList({ customerId, cardId }: { customerId?: string; 
   const [error, setError] = useState<string | null>(null);
   const [offerInvoiceFor, setOfferInvoiceFor] = useState<string | null>(null);
   const [generatingInvoice, setGeneratingInvoice] = useState(false);
+  const [deleting, setDeleting] = useState<BudgetRow | null>(null);
 
   function invalidate() {
     qc.invalidateQueries({ queryKey: ["crm_budgets", bid] });
@@ -83,6 +85,15 @@ export function PresupuestosList({ customerId, cardId }: { customerId?: string; 
   async function duplicate(id: string) {
     setError(null);
     const { error } = await supabase.rpc("crm_duplicate_budget", { p_budget_id: id });
+    if (error) { setError(error.message); return; }
+    invalidate();
+  }
+
+  async function confirmDelete() {
+    if (!deleting) return;
+    setError(null);
+    const { error } = await supabase.rpc("crm_delete_budget", { p_budget_id: deleting.id });
+    setDeleting(null);
     if (error) { setError(error.message); return; }
     invalidate();
   }
@@ -156,6 +167,7 @@ export function PresupuestosList({ customerId, cardId }: { customerId?: string; 
                     {b.status === "borrador" && <button className="btn-ghost text-xs" onClick={() => setEditing(b)}>Editar</button>}
                     <button className="btn-ghost text-xs" onClick={() => downloadPdf(b)}>Descargar PDF</button>
                     <button className="btn-ghost text-xs" onClick={() => duplicate(b.id)}>Duplicar</button>
+                    {!b.crm_invoices?.length && <button className="btn-ghost text-xs text-red-600" onClick={() => setDeleting(b)}>Eliminar</button>}
                     {b.status === "borrador" && <button className="btn-ghost text-xs" onClick={() => setDocStatus(b.id, "enviado")}>Marcar enviado</button>}
                     {b.status === "enviado" && (
                       <>
@@ -180,6 +192,14 @@ export function PresupuestosList({ customerId, cardId }: { customerId?: string; 
           onSaved={() => { invalidate(); setEditing(null); }}
         />
       )}
+
+      <ConfirmDialog
+        open={!!deleting}
+        title="Eliminar presupuesto"
+        message={`¿Eliminar el presupuesto ${deleting?.number ?? ""}? Esta acción no se puede deshacer.`}
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleting(null)}
+      />
 
       {offerInvoiceFor && (
         <Modal open onClose={() => setOfferInvoiceFor(null)} title="Presupuesto aceptado" width="max-w-sm">
