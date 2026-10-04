@@ -26,7 +26,7 @@ export function ResumenAsesoria() {
         <StatCard label="Clientes" value={clients?.length ?? "—"} />
         <StatCard label="Documentos este mes" value={isLoading ? "—" : thisMonth} />
         <Link to="/app/sin-clasificar">
-          <StatCard label="Sin clasificar / por revisar" value={isLoading ? "—" : inbox} accent={inbox ? "#ea580c" : undefined} hint="Haz clic para abrir la bandeja" />
+          <StatCard label="Sin clasificar / por revisar" value={isLoading ? "—" : inbox} accent={inbox ? "#B7791F" : undefined} hint="Haz clic para abrir la bandeja" />
         </Link>
       </div>
       <section>

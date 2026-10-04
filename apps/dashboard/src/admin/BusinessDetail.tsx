@@ -224,7 +224,7 @@ function BusinessDashboard({ business }: { business: Business }) {
         <StatCard label="Reservas totales" value={data!.total} />
         <StatCard label="Nuevas (30 días)" value={stats.recent30} accent="#0B6E6A" />
         <StatCard label="Clientes" value={data!.customers} />
-        <StatCard label="Ausentismo (30d)" value={`${stats.absPct}%`} accent={stats.absPct > 15 ? "#dc2626" : undefined} />
+        <StatCard label="Ausentismo (30d)" value={`${stats.absPct}%`} accent={stats.absPct > 15 ? "#C0392B" : undefined} />
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
@@ -233,10 +233,10 @@ function BusinessDashboard({ business }: { business: Business }) {
           <div style={{ height: 240 }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={stats.chart} margin={{ left: -20 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eef2f7" />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E8F0EF" />
                 <XAxis dataKey="label" fontSize={11} tickLine={false} axisLine={false} interval={1} />
                 <YAxis allowDecimals={false} fontSize={11} tickLine={false} axisLine={false} />
-                <Tooltip cursor={{ fill: "#f1f5f9" }} />
+                <Tooltip cursor={{ fill: "#E8F0EF" }} />
                 <Bar dataKey="count" fill="#0B6E6A" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>

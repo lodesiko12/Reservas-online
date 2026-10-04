@@ -16,12 +16,12 @@ const STATUSES_CITAS: Booking["status"][] = ["completada", "cancelada", "no_show
 
 // Color de fondo/borde del bloque de reserva según estado.
 const BLOCK_STYLE: Record<string, { bg: string; border: string; text: string }> = {
-  pendiente: { bg: "#fffbeb", border: "#f59e0b", text: "#78350f" },
-  confirmada: { bg: "#eff6ff", border: "#3b82f6", text: "#1e3a8a" },
-  sentada: { bg: "#ecfdf5", border: "#10b981", text: "#065f46" },
-  completada: { bg: "#f0fdf4", border: "#22c55e", text: "#14532d" },
-  no_show: { bg: "#fef2f2", border: "#ef4444", text: "#7f1d1d" },
-  cancelada: { bg: "#f8fafc", border: "#94a3b8", text: "#475569" },
+  pendiente: { bg: "#FBF3E3", border: "#B7791F", text: "#4A310D" },
+  confirmada: { bg: "#E8F4F3", border: "#0B6E6A", text: "#07403E" },
+  sentada: { bg: "#EAF1F9", border: "#2563A8", text: "#0F2744" },
+  completada: { bg: "#EAF6EF", border: "#1F8A4C", text: "#0D3A20" },
+  no_show: { bg: "#FBEDEB", border: "#C0392B", text: "#4F1812" },
+  cancelada: { bg: "#F3F7F6", border: "#8CA3A1", text: "#4A6362" },
 };
 
 // Convierte "#rrggbb" a rgba con la opacidad dada (para teñir el fondo del bloque).

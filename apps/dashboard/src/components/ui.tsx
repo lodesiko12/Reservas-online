@@ -75,8 +75,8 @@ export function ConfirmDialog({ open, title, message, confirmLabel = "Eliminar",
 
 const STATUS_STYLES: Record<string, string> = {
   pendiente: "bg-amber-100 text-amber-700",
-  confirmada: "bg-sky-100 text-sky-700",
-  sentada: "bg-emerald-100 text-emerald-700",
+  confirmada: "bg-brand-100 text-brand-700",
+  sentada: "bg-sky-100 text-sky-700",
   cancelada: "bg-slate-100 text-slate-500",
   completada: "bg-green-100 text-green-700",
   no_show: "bg-red-100 text-red-700",

@@ -7,7 +7,7 @@ import { useBusinessId } from "./hooks";
 import { ymdInTz, addDaysYmd, zonedDayRange, formatDateTime } from "@reservas/shared";
 import { PageHeader, StatCard, Spinner, StatusBadge } from "../components/ui";
 
-const COLORS = { web: "#0B6E6A", manual: "#0ea5e9", walkin: "#8b5cf6", pendiente: "#f59e0b", confirmada: "#0ea5e9", sentada: "#10b981", completada: "#16a34a", no_show: "#dc2626", cancelada: "#94a3b8" };
+const COLORS = { web: "#0B6E6A", manual: "#2563A8", walkin: "#FF6B4A", pendiente: "#B7791F", confirmada: "#0B6E6A", sentada: "#2563A8", completada: "#1F8A4C", no_show: "#C0392B", cancelada: "#8CA3A1" };
 
 export function Reportes() {
   const bid = useBusinessId();
@@ -117,9 +117,9 @@ export function Reportes() {
         <>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <StatCard label="Reservas totales" value={stats.total} />
-            <StatCard label="Completadas" value={stats.completed} accent="#16a34a" />
+            <StatCard label="Completadas" value={stats.completed} accent="#1F8A4C" />
             <StatCard label="% por web" value={`${stats.webPct}%`} accent="#0B6E6A" />
-            <StatCard label="Ausentismo" value={`${stats.absPct}%`} accent={stats.absPct > 15 ? "#dc2626" : undefined} />
+            <StatCard label="Ausentismo" value={`${stats.absPct}%`} accent={stats.absPct > 15 ? "#C0392B" : undefined} />
           </div>
 
           <div className="card p-5 mb-6">
@@ -127,13 +127,13 @@ export function Reportes() {
             <div style={{ height: 260 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={stats.series} margin={{ left: -20 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eef2f7" />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E8F0EF" />
                   <XAxis dataKey="day" fontSize={11} tickLine={false} axisLine={false} interval={Math.floor(stats.series.length / 12)} />
                   <YAxis allowDecimals={false} fontSize={11} tickLine={false} axisLine={false} />
                   <Tooltip />
                   <Legend />
                   <Line type="monotone" dataKey="web" name="Web" stroke="#0B6E6A" strokeWidth={2} dot={false} />
-                  <Line type="monotone" dataKey="manual" name="Manual" stroke="#0ea5e9" strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="manual" name="Manual" stroke="#2563A8" strokeWidth={2} dot={false} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -186,7 +186,7 @@ function PieCard({ title, data }: { title: string; data: { name: string; value: 
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie data={data} dataKey="value" nameKey="name" innerRadius={55} outerRadius={90} paddingAngle={2}>
-              {data.map((d) => <Cell key={d.key} fill={(COLORS as any)[d.key] ?? "#cbd5e1"} />)}
+              {data.map((d) => <Cell key={d.key} fill={(COLORS as any)[d.key] ?? "#BFD0CD"} />)}
             </Pie>
             <Tooltip /><Legend />
           </PieChart>
