@@ -4,11 +4,12 @@ import { useAuth } from "../lib/auth";
 import { useTheme } from "../lib/theme";
 import { InstallAppButton } from "./InstallAppButton";
 
-export type NavItem = { to: string; label: string; icon: string; end?: boolean };
+export type NavItem = { to: string; label: string; icon: string; end?: boolean; badge?: number };
 
 const COLLAPSE_KEY = "turnigo:sidebar-collapsed";
 
-export function Layout({ nav, brandLabel }: { nav: NavItem[]; brandLabel: string }) {
+/** `mobileTabs`: barra inferior fija en móvil (para uso con el pulgar); el resto va en el menú «Más». */
+export function Layout({ nav, brandLabel, mobileTabs }: { nav: NavItem[]; brandLabel: string; mobileTabs?: NavItem[] }) {
   const { signOut, session, business, businesses, setActiveBusiness } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const location = useLocation();
@@ -71,8 +72,12 @@ export function Layout({ nav, brandLabel }: { nav: NavItem[]; brandLabel: string
                 }`
               }
             >
-              <span className="text-base w-5 text-center shrink-0">{n.icon}</span>
+              <span className="text-base w-5 text-center shrink-0 relative">
+                {n.icon}
+                {!!n.badge && isCollapsed && <span className="absolute -top-1 -right-2 h-2.5 w-2.5 rounded-full bg-coral-500" />}
+              </span>
               {!isCollapsed && n.label}
+              {!isCollapsed && !!n.badge && <span className="ml-auto badge bg-coral-500 text-white">{n.badge > 99 ? "99+" : n.badge}</span>}
             </NavLink>
           ))}
         </nav>
@@ -153,10 +158,31 @@ export function Layout({ nav, brandLabel }: { nav: NavItem[]; brandLabel: string
           </button>
         </header>
 
-        <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 max-w-[1400px] w-full">
+        <main className={`flex-1 min-w-0 p-4 sm:p-6 lg:p-8 max-w-[1400px] w-full ${mobileTabs ? "pb-28 lg:pb-8" : ""}`}>
           <Outlet />
         </main>
       </div>
+
+      {/* Barra inferior móvil */}
+      {mobileTabs && (
+        <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-white border-t border-slate-200 dark:bg-slate-900 dark:border-slate-800 grid grid-cols-5 pb-[env(safe-area-inset-bottom)]">
+          {mobileTabs.map((n) => (
+            <NavLink
+              key={n.to} to={n.to} end={n.end}
+              className={({ isActive }) => `flex flex-col items-center justify-center gap-0.5 py-2 text-[11px] font-bold relative ${isActive ? "text-brand-600 dark:text-brand-300" : "text-slate-500 dark:text-slate-400"}`}
+            >
+              <span className="text-xl leading-none relative">
+                {n.icon}
+                {!!n.badge && <span className="absolute -top-1.5 -right-3 min-w-[16px] h-4 px-1 rounded-full bg-coral-500 text-white text-[10px] grid place-items-center">{n.badge > 99 ? "99+" : n.badge}</span>}
+              </span>
+              {n.label}
+            </NavLink>
+          ))}
+          <button className="flex flex-col items-center justify-center gap-0.5 py-2 text-[11px] font-bold text-slate-500 dark:text-slate-400" onClick={() => setMobileOpen(true)}>
+            <span className="text-xl leading-none">☰</span>Más
+          </button>
+        </nav>
+      )}
     </div>
   );
 }

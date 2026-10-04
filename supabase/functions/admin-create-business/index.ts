@@ -7,7 +7,7 @@ import { rateLimitHit, tooManyRequests } from "../_shared/rateLimit.ts";
 type Body = {
   name?: string;
   slug?: string;
-  type?: "citas" | "restaurante" | "psicologo" | "autonomo" | "asesoria";
+  type?: "citas" | "restaurante" | "psicologo" | "autonomo" | "asesoria" | "agencia";
   timezone?: string;
   primary_color?: string;
   staff_email?: string;
@@ -133,6 +133,20 @@ Deno.serve(async (req) => {
   // 7) Tipos de documento base (factura recibida, nómina...) solo para asesorías.
   if (type === "asesoria") {
     await admin.rpc("adv_seed_doc_types", { p_business_id: biz.id });
+  }
+
+  // 8) Agencia: los 8 equipos por defecto los crea el trigger de BD al insertar el negocio.
+  // El primer usuario es el presidente (directiva); el resto de la directiva y los miembros
+  // se dan de alta después con la función agency-members.
+  if (type === "agencia") {
+    const { error: memErr } = await admin.from("agency_members").insert({
+      business_id: biz.id, user_id: staffId, full_name: b.staff_name?.trim() || name,
+      access_level: "directiva", directiva_role: "presidente", cargo: "Presidente",
+    });
+    if (memErr) {
+      await admin.from("businesses").delete().eq("id", biz.id); // rollback
+      return json({ error: `No se pudo crear la directiva inicial: ${memErr.message}` }, 400);
+    }
   }
 
   return json({ business: biz, staff_id: staffId });

@@ -11,7 +11,7 @@ type Business = Tables<"businesses">;
 const WIDGET_URL = ((import.meta.env.VITE_WIDGET_URL as string) || "").replace(/\/+$/, "");
 
 export const BUSINESS_TYPE_LABELS: Record<string, string> = {
-  citas: "Citas", restaurante: "Restaurante", psicologo: "Psicólogo", autonomo: "Autónomo", asesoria: "Asesoría",
+  citas: "Citas", restaurante: "Restaurante", psicologo: "Psicólogo", autonomo: "Autónomo", asesoria: "Asesoría", agencia: "Agencia",
 };
 
 export function Businesses() {
@@ -269,6 +269,7 @@ function NewBusinessModal({ open, onClose, onCreated }: { open: boolean; onClose
                 <option value="restaurante">Restaurante</option>
                 <option value="autonomo">Autónomo</option>
                 <option value="asesoria">Asesoría</option>
+                <option value="agencia">Agencia (equipos y tareas)</option>
               </select>
             </div>
             <div>
@@ -278,7 +279,7 @@ function NewBusinessModal({ open, onClose, onCreated }: { open: boolean; onClose
           </div>
 
           <hr className="my-2" />
-          <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">Credenciales del staff</p>
+          <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">{form.type === "agencia" ? "Presidente de la agrupación (el resto de la directiva se da de alta después en Directiva y miembros)" : "Credenciales del staff"}</p>
           <div>
             <label className="label">Nombre del responsable</label>
             <input className="input" value={form.staff_name} onChange={(e) => set("staff_name", e.target.value)} />

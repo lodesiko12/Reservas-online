@@ -14,3 +14,32 @@ self.addEventListener("fetch", (event) => {
     )
   );
 });
+
+// Notificaciones push de la agencia (Web Push). El servidor (agency-push) envía
+// { title, body, tag, url }; al pulsar se abre/enfoca la app en esa ruta.
+self.addEventListener("push", (event) => {
+  let data = {};
+  try { data = event.data ? event.data.json() : {}; } catch { data = { title: "Turnigo", body: event.data ? event.data.text() : "" }; }
+  event.waitUntil(
+    self.registration.showNotification(data.title || "Turnigo", {
+      body: data.body || "",
+      tag: data.tag,
+      icon: "/icons/icon-192.png",
+      badge: "/icons/icon-192.png",
+      data: { url: data.url || "/app/avisos" },
+    })
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const url = (event.notification.data && event.notification.data.url) || "/app/avisos";
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((list) => {
+      for (const c of list) {
+        if ("focus" in c) { c.navigate(url).catch(() => {}); return c.focus(); }
+      }
+      return self.clients.openWindow(url);
+    })
+  );
+});

@@ -206,7 +206,7 @@ const timezoneField = z.string().trim().min(1, "La zona horaria es obligatoria")
 const slugField = z.string().trim().toLowerCase().min(2, "El slug es obligatorio (mín. 2 caracteres)").max(60, "Slug: máximo 60 caracteres")
   .regex(SLUG_RE, "Slug: solo minúsculas, números y guiones");
 
-const BUSINESS_TYPES = ["citas", "restaurante", "psicologo", "autonomo", "asesoria"] as const;
+const BUSINESS_TYPES = ["citas", "restaurante", "psicologo", "autonomo", "asesoria", "agencia"] as const;
 
 export const adminEditBusinessSchema = z.object({
   name: requiredName(BUSINESS_NAME_MAX),

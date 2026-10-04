@@ -23,6 +23,7 @@ import { Clientes as ClientesAsesoria } from "./asesoria/Clientes";
 import { FichaCliente } from "./asesoria/FichaCliente";
 import { SinClasificar } from "./asesoria/SinClasificar";
 import { ConfiguracionAsesoria } from "./asesoria/ConfiguracionAsesoria";
+import { AgenciaApp } from "./agencia/AgenciaApp";
 
 export function BusinessApp() {
   const { business } = useAuth();
@@ -30,6 +31,7 @@ export function BusinessApp() {
   const isPsicologo = business?.type === "psicologo";
   const isAutonomo = business?.type === "autonomo";
   const isAsesoria = business?.type === "asesoria";
+  if (business?.type === "agencia") return <AgenciaApp />;
 
   const nav: NavItem[] = isAsesoria
     ? [

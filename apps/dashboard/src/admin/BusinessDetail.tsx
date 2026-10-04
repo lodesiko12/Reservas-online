@@ -8,10 +8,11 @@ import { ymdInTz, addDaysYmd, zonedDayRange, formatDateTime, adminEditBusinessSc
 import { PageHeader, StatCard, Spinner, StatusBadge, ConfirmDialog } from "../components/ui";
 import { IntegrationsForm } from "../components/IntegrationsForm";
 import { DeleteBusinessModal, BUSINESS_TYPE_LABELS } from "./Businesses";
+import { MembersManager } from "../business/agencia/Miembros";
 
 type Business = Tables<"businesses">;
 const WIDGET_URL = ((import.meta.env.VITE_WIDGET_URL as string) || "").replace(/\/+$/, "");
-type Tab = "dashboard" | "editar" | "integraciones" | "usuarios";
+type Tab = "dashboard" | "editar" | "integraciones" | "usuarios" | "miembros";
 
 export function BusinessDetail() {
   const { id = "" } = useParams();
@@ -29,36 +30,44 @@ export function BusinessDetail() {
 
   if (isLoading || !business) return <div className="grid place-items-center py-20"><Spinner /></div>;
 
+  // Una agencia no tiene reservas ni widget: sus pestañas son Miembros y Editar negocio.
+  const isAgencia = business.type === "agencia";
+  const activeTab: Tab = isAgencia && (tab === "dashboard" || tab === "usuarios" || tab === "integraciones") ? "miembros" : tab;
+  const tabs: [Tab, string][] = isAgencia
+    ? [["miembros", "Directiva y miembros"], ["editar", "Editar negocio"]]
+    : [["dashboard", "Dashboard"], ["editar", "Editar negocio"], ["integraciones", "Integraciones"], ["usuarios", "Usuarios"]];
+
   return (
     <div>
       <Link to="/admin" className="text-sm text-brand-600 hover:underline">← Todos los negocios</Link>
       <PageHeader
         title={business.name}
         subtitle={`/${business.slug} · ${BUSINESS_TYPE_LABELS[business.type] ?? business.type}`}
-        actions={
+        actions={isAgencia ? undefined : (
           <a className="btn-ghost" href={`${WIDGET_URL}/?slug=${business.slug}`} target="_blank" rel="noreferrer">Abrir widget ↗</a>
-        }
+        )}
       />
 
       <div className="flex gap-1 mb-6 border-b border-slate-200 dark:border-slate-700">
-        {([["dashboard", "Dashboard"], ["editar", "Editar negocio"], ["integraciones", "Integraciones"], ["usuarios", "Usuarios"]] as [Tab, string][]).map(([k, label]) => (
+        {tabs.map(([k, label]) => (
           <button key={k} onClick={() => setTab(k)}
-            className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px ${tab === k ? "border-brand-500 text-brand-700" : "border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"}`}>
+            className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px ${activeTab === k ? "border-brand-500 text-brand-700" : "border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"}`}>
             {label}
           </button>
         ))}
       </div>
 
-      {tab === "dashboard" && <BusinessDashboard business={business} />}
-      {tab === "editar" && <EditBusiness business={business} onSaved={refetch} />}
-      {tab === "integraciones" && (
+      {activeTab === "dashboard" && <BusinessDashboard business={business} />}
+      {activeTab === "miembros" && <MembersManager businessId={business.id} canAdd canEdit />}
+      {activeTab === "editar" && <EditBusiness business={business} onSaved={refetch} />}
+      {activeTab === "integraciones" && (
         <div className="card p-6 max-w-3xl">
           <h2 className="font-semibold mb-1">Integraciones (email y WhatsApp)</h2>
           <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">Configura las credenciales de este negocio. Los secretos se guardan del lado del servidor.</p>
           <IntegrationsForm businessId={business.id} />
         </div>
       )}
-      {tab === "usuarios" && <BusinessUsersSection businessId={business.id} />}
+      {activeTab === "usuarios" && <BusinessUsersSection businessId={business.id} />}
     </div>
   );
 }
@@ -304,6 +313,7 @@ function EditBusiness({ business, onSaved }: { business: Business; onSaved: () =
             <option value="restaurante">Restaurante</option>
             <option value="autonomo">Autónomo</option>
             <option value="asesoria">Asesoría</option>
+            <option value="agencia">Agencia (equipos y tareas)</option>
           </select>
           <p className="text-xs text-amber-600 mt-1">⚠ Cambiar el tipo cambia qué secciones ve el negocio en su panel. Solo el super-admin puede hacerlo.</p>
         </div>

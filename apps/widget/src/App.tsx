@@ -48,7 +48,7 @@ export default function App({ slug, initialView, initialLocator }: Props) {
         </div>
       </div>
 
-      {business.type === "asesoria" ? (
+      {business.type === "asesoria" || business.type === "agencia" ? (
         <p className="sub">Este negocio no admite reservas online.</p>
       ) : view === "lookup" ? (
         <Lookup initialLocator={initialLocator} onBack={() => setView("booking")} />
