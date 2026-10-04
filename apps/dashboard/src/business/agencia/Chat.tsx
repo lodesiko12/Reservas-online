@@ -22,7 +22,8 @@ function dayLabel(iso: string, tz: string): string {
   const yest = new Date(today.getTime() - 86400000);
   if (ymd(d) === ymd(today)) return "Hoy";
   if (ymd(d) === ymd(yest)) return "Ayer";
-  return new Intl.DateTimeFormat("es-ES", { weekday: "long", day: "numeric", month: "long", timeZone: tz }).format(d);
+  const s = new Intl.DateTimeFormat("es-ES", { weekday: "long", day: "numeric", month: "long", timeZone: tz }).format(d);
+  return s.charAt(0).toUpperCase() + s.slice(1);
 }
 const hhmm = (iso: string, tz: string) =>
   new Intl.DateTimeFormat("es-ES", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: tz }).format(new Date(iso));
@@ -175,7 +176,7 @@ function Conversation({ group }: { group: Group }) {
               const name = memberName(members, m.author_id);
               return (
                 <div key={m.id}>
-                  {newDay && <div className="text-center my-3"><span className="badge bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-300 capitalize">{dayLabel(m.created_at, tz)}</span></div>}
+                  {newDay && <div className="text-center my-3"><span className="badge bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-300">{dayLabel(m.created_at, tz)}</span></div>}
                   <div className={`flex gap-2 ${mine ? "justify-end" : "justify-start"} ${grouped ? "mt-0.5" : "mt-2"}`}>
                     {!mine && (grouped ? <span className="w-7 shrink-0" /> : <Avatar name={name} size={28} />)}
                     <div className={`group max-w-[82%] sm:max-w-[70%] rounded-2xl px-3 py-2 text-sm ${mine ? "bg-brand-500 text-white rounded-br-md" : "bg-white text-slate-800 border border-slate-200 rounded-bl-md dark:bg-slate-800 dark:text-slate-100 dark:border-slate-700"}`}>
