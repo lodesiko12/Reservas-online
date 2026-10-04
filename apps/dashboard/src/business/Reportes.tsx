@@ -7,7 +7,7 @@ import { useBusinessId } from "./hooks";
 import { ymdInTz, addDaysYmd, zonedDayRange, formatDateTime } from "@reservas/shared";
 import { PageHeader, StatCard, Spinner, StatusBadge } from "../components/ui";
 
-const COLORS = { web: "#0B6E6A", manual: "#2563A8", walkin: "#FF6B4A", pendiente: "#B7791F", confirmada: "#0B6E6A", sentada: "#2563A8", completada: "#1F8A4C", no_show: "#C0392B", cancelada: "#8CA3A1" };
+const COLORS = { web: "var(--chart-1)", manual: "var(--chart-2)", walkin: "#2563A8", pendiente: "#B7791F", confirmada: "var(--chart-1)", sentada: "#2563A8", completada: "#1F8A4C", no_show: "#C0392B", cancelada: "#8CA3A1" };
 
 export function Reportes() {
   const bid = useBusinessId();
@@ -118,7 +118,7 @@ export function Reportes() {
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <StatCard label="Reservas totales" value={stats.total} />
             <StatCard label="Completadas" value={stats.completed} accent="#1F8A4C" />
-            <StatCard label="% por web" value={`${stats.webPct}%`} accent="#0B6E6A" />
+            <StatCard label="% por web" value={`${stats.webPct}%`} accent="var(--chart-1)" />
             <StatCard label="Ausentismo" value={`${stats.absPct}%`} accent={stats.absPct > 15 ? "#C0392B" : undefined} />
           </div>
 
@@ -132,8 +132,8 @@ export function Reportes() {
                   <YAxis allowDecimals={false} fontSize={11} tickLine={false} axisLine={false} />
                   <Tooltip />
                   <Legend />
-                  <Line type="monotone" dataKey="web" name="Web" stroke="#0B6E6A" strokeWidth={2} dot={false} />
-                  <Line type="monotone" dataKey="manual" name="Manual" stroke="#2563A8" strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="web" name="Web" stroke="var(--chart-1)" strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="manual" name="Manual" stroke="var(--chart-2)" strokeWidth={2} dot={false} />
                 </LineChart>
               </ResponsiveContainer>
             </div>

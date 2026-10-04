@@ -103,8 +103,8 @@ export function Dashboard() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <StatCard label="Reservas hoy" value={kpis.count} />
         {business?.type === "restaurante"
-          ? <StatCard label="Comensales hoy" value={kpis.coversToday} accent="#0B6E6A" />
-          : <StatCard label="Ocupación del día" value={`${kpis.occupancy}%`} accent="#0B6E6A" />}
+          ? <StatCard label="Comensales hoy" value={kpis.coversToday} accent="var(--chart-1)" />
+          : <StatCard label="Ocupación del día" value={`${kpis.occupancy}%`} accent="var(--chart-1)" />}
         <StatCard label="Reservas por web (30d)" value={`${kpis.webPct}%`} />
         <StatCard label="Ausentismo (30d)" value={`${kpis.absPct}%`} accent={kpis.absPct > 15 ? "#C0392B" : undefined} />
       </div>
@@ -119,7 +119,7 @@ export function Dashboard() {
                 <XAxis dataKey="label" tickLine={false} axisLine={false} fontSize={12} />
                 <YAxis allowDecimals={false} tickLine={false} axisLine={false} fontSize={12} />
                 <Tooltip cursor={{ fill: "#E8F0EF" }} />
-                <Bar dataKey="count" fill="#0B6E6A" radius={[6, 6, 0, 0]} />
+                <Bar dataKey="count" fill="var(--chart-1)" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>

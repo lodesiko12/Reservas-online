@@ -21,3 +21,9 @@
   .label { @apply block text-sm font-medium text-slate-700 mb-1 dark:text-slate-300; }
   .badge { @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold; }
 }
+
+/* Gráficos (recharts): serie principal teal y secundaria coral; en oscuro se aclaran y se atenúan ejes/rejilla. */
+:root { --chart-1: #0B6E6A; --chart-2: #FF6B4A; }
+.dark { --chart-1: #3F9A93; --chart-2: #FF8A6F; }
+.dark .recharts-cartesian-axis-tick-value, .dark .recharts-legend-item-text { fill: #8CA3A1 !important; color: #8CA3A1 !important; }
+.dark .recharts-cartesian-grid line { stroke: #1A3535; }
