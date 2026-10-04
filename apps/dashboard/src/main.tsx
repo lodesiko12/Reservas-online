@@ -24,3 +24,12 @@ createRoot(document.getElementById("root")!).render(
     </ThemeProvider>
   </React.StrictMode>
 );
+
+// PWA: el service worker solo se registra en producción (en dev estorba al HMR).
+if ("serviceWorker" in navigator && import.meta.env.PROD) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js").catch(() => {
+      /* sin service worker la app sigue funcionando, solo no será instalable */
+    });
+  });
+}

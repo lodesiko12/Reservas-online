@@ -2,6 +2,7 @@ import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { useAuth } from "../lib/auth";
 import { useTheme } from "../lib/theme";
+import { InstallAppButton } from "./InstallAppButton";
 
 export type NavItem = { to: string; label: string; icon: string; end?: boolean };
 
@@ -85,6 +86,8 @@ export function Layout({ nav, brandLabel }: { nav: NavItem[]; brandLabel: string
             <span>{theme === "dark" ? "☀️" : "🌙"}</span>
             {!isCollapsed && (theme === "dark" ? "Modo claro" : "Modo oscuro")}
           </button>
+
+          {!isCollapsed && <InstallAppButton />}
 
           {!isCollapsed && (
             <div className="px-2 pt-1 text-xs text-slate-400 dark:text-slate-500 truncate">{session?.user.email}</div>
