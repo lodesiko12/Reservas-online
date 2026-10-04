@@ -7,7 +7,7 @@ import { useBusinessId } from "./hooks";
 import { ymdInTz, addDaysYmd, zonedDayRange, formatDateTime } from "@reservas/shared";
 import { PageHeader, StatCard, Spinner, StatusBadge } from "../components/ui";
 
-const COLORS = { web: "#4f46e5", manual: "#0ea5e9", walkin: "#8b5cf6", pendiente: "#f59e0b", confirmada: "#0ea5e9", sentada: "#10b981", completada: "#16a34a", no_show: "#dc2626", cancelada: "#94a3b8" };
+const COLORS = { web: "#0B6E6A", manual: "#0ea5e9", walkin: "#8b5cf6", pendiente: "#f59e0b", confirmada: "#0ea5e9", sentada: "#10b981", completada: "#16a34a", no_show: "#dc2626", cancelada: "#94a3b8" };
 
 export function Reportes() {
   const bid = useBusinessId();
@@ -118,7 +118,7 @@ export function Reportes() {
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <StatCard label="Reservas totales" value={stats.total} />
             <StatCard label="Completadas" value={stats.completed} accent="#16a34a" />
-            <StatCard label="% por web" value={`${stats.webPct}%`} accent="#4f46e5" />
+            <StatCard label="% por web" value={`${stats.webPct}%`} accent="#0B6E6A" />
             <StatCard label="Ausentismo" value={`${stats.absPct}%`} accent={stats.absPct > 15 ? "#dc2626" : undefined} />
           </div>
 
@@ -132,7 +132,7 @@ export function Reportes() {
                   <YAxis allowDecimals={false} fontSize={11} tickLine={false} axisLine={false} />
                   <Tooltip />
                   <Legend />
-                  <Line type="monotone" dataKey="web" name="Web" stroke="#4f46e5" strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="web" name="Web" stroke="#0B6E6A" strokeWidth={2} dot={false} />
                   <Line type="monotone" dataKey="manual" name="Manual" stroke="#0ea5e9" strokeWidth={2} dot={false} />
                 </LineChart>
               </ResponsiveContainer>

@@ -39,7 +39,7 @@ export function Layout({ nav, brandLabel }: { nav: NavItem[]; brandLabel: string
     return (
       <>
         <div className={`h-16 shrink-0 flex items-center border-b border-slate-200 dark:border-slate-800 ${isCollapsed ? "justify-center px-2" : "gap-2 px-5"}`}>
-          <div className="h-8 w-8 shrink-0 rounded-lg bg-brand-500 grid place-items-center text-white font-bold">T</div>
+          <img src="/brand/turnigo-icono.svg" alt="" className="h-8 w-8 shrink-0" />
           {!isCollapsed && <span className="font-bold text-slate-800 dark:text-slate-100 truncate">{brandLabel}</span>}
         </div>
 
@@ -142,7 +142,7 @@ export function Layout({ nav, brandLabel }: { nav: NavItem[]; brandLabel: string
           >
             ☰
           </button>
-          <div className="h-7 w-7 shrink-0 rounded-lg bg-brand-500 grid place-items-center text-white font-bold text-sm">T</div>
+          <img src="/brand/turnigo-icono.svg" alt="" className="h-7 w-7 shrink-0" />
           <span className="font-bold text-slate-800 dark:text-slate-100 truncate">{brandLabel}</span>
           <button
             className="ml-auto h-9 w-9 grid place-items-center rounded-lg border border-slate-200 text-slate-600 dark:border-slate-700 dark:text-slate-300"

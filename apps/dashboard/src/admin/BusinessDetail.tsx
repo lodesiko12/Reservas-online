@@ -222,7 +222,7 @@ function BusinessDashboard({ business }: { business: Business }) {
     <div>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <StatCard label="Reservas totales" value={data!.total} />
-        <StatCard label="Nuevas (30 días)" value={stats.recent30} accent="#4f46e5" />
+        <StatCard label="Nuevas (30 días)" value={stats.recent30} accent="#0B6E6A" />
         <StatCard label="Clientes" value={data!.customers} />
         <StatCard label="Ausentismo (30d)" value={`${stats.absPct}%`} accent={stats.absPct > 15 ? "#dc2626" : undefined} />
       </div>
@@ -237,7 +237,7 @@ function BusinessDashboard({ business }: { business: Business }) {
                 <XAxis dataKey="label" fontSize={11} tickLine={false} axisLine={false} interval={1} />
                 <YAxis allowDecimals={false} fontSize={11} tickLine={false} axisLine={false} />
                 <Tooltip cursor={{ fill: "#f1f5f9" }} />
-                <Bar dataKey="count" fill="#4f46e5" radius={[6, 6, 0, 0]} />
+                <Bar dataKey="count" fill="#0B6E6A" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>

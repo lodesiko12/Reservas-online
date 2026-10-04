@@ -65,7 +65,7 @@ export function Businesses() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <StatCard label="Negocios" value={platform?.businesses ?? "—"} />
         <StatCard label="Activos" value={platform?.active ?? "—"} accent="#16a34a" />
-        <StatCard label="Reservas totales" value={platform?.bookings ?? "—"} accent="#4f46e5" />
+        <StatCard label="Reservas totales" value={platform?.bookings ?? "—"} accent="#0B6E6A" />
         <StatCard label="Reservas (7 días)" value={platform?.week ?? "—"} />
       </div>
 
