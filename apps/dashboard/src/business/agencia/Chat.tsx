@@ -41,7 +41,9 @@ export function Chat() {
     ],
     [bid, teams]
   );
-  const current = groups.find((g) => g.scope === (scope ?? bid)) ?? groups[0];
+  // /app/chat/general = grupo General (su scope interno es el id de la agencia).
+  const wanted = scope === "general" ? bid : scope ?? bid;
+  const current = groups.find((g) => g.scope === wanted) ?? groups[0];
 
   return (
     <div className="flex gap-4 h-[calc(100dvh-11rem)] lg:h-[calc(100vh-4rem)] min-h-[320px]">
@@ -54,7 +56,7 @@ export function Chat() {
             const active = current?.scope === g.scope;
             return (
               <Link
-                key={g.scope} to={g.general ? "/app/chat" : `/app/chat/${g.scope}`}
+                key={g.scope} to={g.general ? "/app/chat/general" : `/app/chat/${g.scope}`}
                 className={`flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/60 ${active ? "lg:bg-brand-50 lg:dark:bg-brand-500/10" : ""}`}
               >
                 <span className={`h-10 w-10 shrink-0 rounded-full grid place-items-center text-lg ${g.general ? "bg-coral-500 text-white" : "bg-brand-100 text-brand-700 dark:bg-brand-500/25 dark:text-brand-200"}`}>
