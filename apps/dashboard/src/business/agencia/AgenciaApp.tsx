@@ -2,12 +2,13 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { Layout, type NavItem } from "../../components/Layout";
 import { Spinner } from "../../components/ui";
 import { useAuth } from "../../lib/auth";
-import { useAgencyMe, useNotificationsRealtime } from "./hooks";
+import { useAgencyMe, useChatRealtime, useChatUnread, useNotificationsRealtime } from "./hooks";
 import { MiPanel, PanelGlobal } from "./Paneles";
 import { Equipos, EquipoDetalle } from "./Equipos";
 import { Calendario } from "./Calendario";
 import { Avisos, useUnreadCount } from "./Avisos";
 import { Miembros } from "./Miembros";
+import { Chat } from "./Chat";
 
 /** Panel del tipo de negocio "agencia": equipos, tareas, calendario, documentos y avisos. */
 export function AgenciaApp() {
@@ -15,6 +16,9 @@ export function AgenciaApp() {
   const { loading, active, isDirectiva } = useAgencyMe();
   const unread = useUnreadCount();
   useNotificationsRealtime();
+  useChatRealtime();
+  const { data: chatUnread } = useChatUnread();
+  const chatTotal = Object.values(chatUnread ?? {}).reduce((s, n) => s + n, 0);
 
   if (loading) return <div className="min-h-screen grid place-items-center"><Spinner /></div>;
   if (!active) {
@@ -33,11 +37,12 @@ export function AgenciaApp() {
     { to: "/app", label: "Mi panel", icon: "🏠", end: true },
     ...(isDirectiva ? [{ to: "/app/panel", label: "Panel global", icon: "📊" }] : []),
     { to: "/app/equipos", label: "Equipos", icon: "👥" },
+    { to: "/app/chat", label: "Chat", icon: "💬", badge: chatTotal },
     { to: "/app/calendario", label: "Calendario", icon: "📅" },
     { to: "/app/avisos", label: "Avisos", icon: "🔔", badge: unread },
     ...(isDirectiva ? [{ to: "/app/miembros", label: "Miembros", icon: "🧑‍🤝‍🧑" }] : []),
   ];
-  const tabs: NavItem[] = [nav[0], nav.find((n) => n.to === "/app/equipos")!, nav.find((n) => n.to === "/app/calendario")!, nav.find((n) => n.to === "/app/avisos")!];
+  const tabs: NavItem[] = ["/app", "/app/equipos", "/app/chat", "/app/calendario", "/app/avisos"].map((to) => nav.find((n) => n.to === to)!);
 
   return (
     <Routes>
@@ -46,6 +51,8 @@ export function AgenciaApp() {
         <Route path="panel" element={<PanelGlobal />} />
         <Route path="equipos" element={<Equipos />} />
         <Route path="equipos/:teamId" element={<EquipoDetalle />} />
+        <Route path="chat" element={<Chat />} />
+        <Route path="chat/:scope" element={<Chat />} />
         <Route path="calendario" element={<Calendario />} />
         <Route path="avisos" element={<Avisos />} />
         <Route path="miembros" element={<Miembros />} />

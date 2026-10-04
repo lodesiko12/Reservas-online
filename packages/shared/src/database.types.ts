@@ -280,6 +280,77 @@ export type Database = {
           },
         ]
       }
+      agency_chat_messages: {
+        Row: {
+          author_id: string | null
+          body: string
+          business_id: string
+          created_at: string
+          id: string
+          team_id: string | null
+        }
+        Insert: {
+          author_id?: string | null
+          body: string
+          business_id: string
+          created_at?: string
+          id?: string
+          team_id?: string | null
+        }
+        Update: {
+          author_id?: string | null
+          body?: string
+          business_id?: string
+          created_at?: string
+          id?: string
+          team_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agency_chat_messages_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agency_chat_messages_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "agency_teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agency_chat_reads: {
+        Row: {
+          business_id: string
+          last_read_at: string
+          scope_id: string
+          user_id: string
+        }
+        Insert: {
+          business_id: string
+          last_read_at?: string
+          scope_id: string
+          user_id: string
+        }
+        Update: {
+          business_id?: string
+          last_read_at?: string
+          scope_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agency_chat_reads_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agency_documents: {
         Row: {
           business_id: string
@@ -2705,6 +2776,13 @@ export type Database = {
         Returns: undefined
       }
       agency_can_manage_members: { Args: { b: string }; Returns: boolean }
+      agency_chat_unread: {
+        Args: { p_business_id: string }
+        Returns: {
+          scope_id: string
+          unread: number
+        }[]
+      }
       agency_generate_deadline_notifications: { Args: never; Returns: number }
       agency_in_team: { Args: { b: string; t: string }; Returns: boolean }
       agency_is_directiva: { Args: { b: string }; Returns: boolean }

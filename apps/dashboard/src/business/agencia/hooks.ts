@@ -15,6 +15,7 @@ export type AgencyComment = Tables<"agency_task_comments">;
 export type AgencyEvent = Tables<"agency_events">;
 export type AgencyDocument = Tables<"agency_documents">;
 export type AgencyNotification = Tables<"agency_notifications">;
+export type AgencyChatMessage = Tables<"agency_chat_messages">;
 
 export type TaskStatus = "pendiente" | "en_curso" | "hecha";
 export const STATUSES: { key: TaskStatus; label: string; color: string }[] = [
@@ -249,4 +250,58 @@ export function formatBytes(n: number): string {
   if (n < 1024) return `${n} B`;
   if (n < 1024 * 1024) return `${(n / 1024).toFixed(0)} KB`;
   return `${(n / 1024 / 1024).toFixed(1)} MB`;
+}
+
+/** Suscripción Realtime al chat de la agencia. Llamar UNA sola vez (en AgenciaApp). La RLS ya
+ * limita los eventos a los grupos que el usuario puede ver. */
+export function useChatRealtime() {
+  const bid = useBusinessId();
+  const { session } = useAuth();
+  const uid = session?.user.id;
+  const qc = useQueryClient();
+  useEffect(() => {
+    if (!bid || !uid) return;
+    const ch = supabase
+      .channel(`agency-chat-${bid}-${uid}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "agency_chat_messages", filter: `business_id=eq.${bid}` },
+        () => {
+          qc.invalidateQueries({ queryKey: ["agency_chat_messages", bid] });
+          qc.invalidateQueries({ queryKey: ["agency_chat_unread", bid] });
+        })
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [bid, uid, qc]);
+}
+
+/** Mensajes sin leer por grupo: mapa scope_id → nº. scope_id = id del equipo, o el de la agencia para el General. */
+export function useChatUnread() {
+  const bid = useBusinessId();
+  const { session } = useAuth();
+  return useQuery({
+    queryKey: ["agency_chat_unread", bid],
+    enabled: !!bid && !!session,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("agency_chat_unread", { p_business_id: bid });
+      if (error) throw error;
+      const map: Record<string, number> = {};
+      for (const r of data ?? []) map[r.scope_id] = Number(r.unread);
+      return map;
+    },
+  });
+}
+
+/** Últimos mensajes de un grupo (orden cronológico). */
+export function useChatMessages(scopeId: string) {
+  const bid = useBusinessId();
+  return useQuery({
+    queryKey: ["agency_chat_messages", bid, scopeId],
+    enabled: !!bid && !!scopeId,
+    queryFn: async () => {
+      let q = supabase.from("agency_chat_messages").select("*").eq("business_id", bid);
+      q = scopeId === bid ? q.is("team_id", null) : q.eq("team_id", scopeId);
+      const { data, error } = await q.order("created_at", { ascending: false }).limit(300);
+      if (error) throw error;
+      return data.reverse();
+    },
+  });
 }

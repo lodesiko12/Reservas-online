@@ -165,7 +165,7 @@ export function Layout({ nav, brandLabel, mobileTabs }: { nav: NavItem[]; brandL
 
       {/* Barra inferior móvil */}
       {mobileTabs && (
-        <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-white border-t border-slate-200 dark:bg-slate-900 dark:border-slate-800 grid grid-cols-5 pb-[env(safe-area-inset-bottom)]">
+        <nav style={{ gridTemplateColumns: `repeat(${mobileTabs.length + 1}, minmax(0, 1fr))` }} className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-white border-t border-slate-200 dark:bg-slate-900 dark:border-slate-800 grid pb-[env(safe-area-inset-bottom)]">
           {mobileTabs.map((n) => (
             <NavLink
               key={n.to} to={n.to} end={n.end}
