@@ -18,6 +18,27 @@ if (/^([0-9a-f]{3}|[0-9a-f]{6})$/i.test(accentParam)) {
   document.documentElement.dataset.accent = "1";
 }
 
+// Tipografías y radio de la web anfitriona (data-font-heading / data-font-body / data-radius).
+// Solo nombres de fuente alfanuméricos (Google Fonts) y radio numérico: nada de CSS arbitrario por la URL.
+function hostFont(param: string, cssVar: string): string | null {
+  const name = (params.get(param) ?? "").trim();
+  if (!/^[A-Za-z0-9 ]{1,40}$/.test(name)) return null;
+  document.documentElement.style.setProperty(cssVar, `"${name}"`);
+  return name;
+}
+const hostFonts = [hostFont("font-heading", "--font-heading"), hostFont("font-body", "--font-body")]
+  .filter((n): n is string => !!n);
+if (hostFonts.length) {
+  const link = document.createElement("link");
+  link.rel = "stylesheet";
+  link.href = "https://fonts.googleapis.com/css2?" +
+    hostFonts.map((n) => `family=${encodeURIComponent(n).replace(/%20/g, "+")}:wght@400;500;600;700`).join("&") +
+    "&display=swap";
+  document.head.appendChild(link);
+}
+const radiusParam = params.get("radius") ?? "";
+if (/^\d{1,2}$/.test(radiusParam)) document.documentElement.style.setProperty("--radius", radiusParam + "px");
+
 const root = createRoot(document.getElementById("root")!);
 root.render(
   <React.StrictMode>

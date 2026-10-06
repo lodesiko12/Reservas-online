@@ -142,21 +142,21 @@ html[data-theme="dark"] {
   --ok: #a3c093;
 }
 html[data-theme="dark"] body {
-  font-family: "Jost", system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: var(--font-body, "Jost"), system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   font-weight: 400;
 }
 html[data-theme="dark"] ::selection { background: var(--primary); color: var(--primary-ink); }
 
 /* Cabecera y títulos: serif editorial + etiqueta en acento */
 html[data-theme="dark"] .brand h1 {
-  font-family: "Cormorant Garamond", Georgia, serif; font-weight: 500; font-size: 28px; letter-spacing: .01em; line-height: 1.1;
+  font-family: var(--font-heading, "Cormorant Garamond"), Georgia, serif; font-weight: 500; font-size: 28px; letter-spacing: .01em; line-height: 1.1;
 }
 html[data-theme="dark"] .brand .sub {
   font-size: 11px; letter-spacing: .26em; text-transform: uppercase; color: var(--primary); margin-top: 6px;
 }
 html[data-theme="dark"] .brand img { border-radius: 0; }
 html[data-theme="dark"] .section-title {
-  font-family: "Cormorant Garamond", Georgia, serif; font-weight: 500; font-size: 21px; letter-spacing: .01em; margin-bottom: 12px;
+  font-family: var(--font-heading, "Cormorant Garamond"), Georgia, serif; font-weight: 500; font-size: 21px; letter-spacing: .01em; margin-bottom: 12px;
 }
 html[data-theme="dark"] .hint, html[data-theme="dark"] .empty { color: var(--muted); }
 
@@ -216,7 +216,7 @@ html[data-theme="dark"] .error {
   background: rgba(230, 154, 134, .09); border-color: rgba(230, 154, 134, .38); color: var(--danger);
 }
 html[data-theme="dark"] .summary { background: var(--surface); }
-html[data-theme="dark"] .locator { font-family: "Cormorant Garamond", Georgia, serif; font-weight: 500; font-size: 36px; letter-spacing: .08em; }
+html[data-theme="dark"] .locator { font-family: var(--font-heading, "Cormorant Garamond"), Georgia, serif; font-weight: 500; font-size: 36px; letter-spacing: .08em; }
 html[data-theme="dark"] .footer-link button,
 html[data-theme="dark"] .back { color: var(--muted); }
 html[data-theme="dark"] .footer-link button:hover,

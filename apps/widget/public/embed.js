@@ -10,6 +10,9 @@
  *   data-widget-url="..."    -> fuerza la URL del widget (por defecto, la de este script)
  *   data-theme="dark"        -> tema oscuro (para webs con fondo oscuro)
  *   data-accent="#b08d57"    -> color de acento; si se indica, manda sobre el color del negocio
+ *   data-font-heading="Oswald" -> fuente de títulos (cualquier familia de Google Fonts)
+ *   data-font-body="Lato"      -> fuente del texto (Google Fonts)
+ *   data-radius="12"           -> radio de esquinas en px (controles y botones)
  *
  * El widget se carga en un <iframe> aislado para no heredar ni romper el CSS
  * del sitio anfitrión, y se autoajusta en altura de forma responsive.
@@ -37,6 +40,13 @@
     if (theme) url += "&theme=" + encodeURIComponent(theme);
     var accent = el.getAttribute("data-accent");
     if (accent) url += "&accent=" + encodeURIComponent(accent);
+
+    var fontHeading = el.getAttribute("data-font-heading");
+    if (fontHeading) url += "&font-heading=" + encodeURIComponent(fontHeading);
+    var fontBody = el.getAttribute("data-font-body");
+    if (fontBody) url += "&font-body=" + encodeURIComponent(fontBody);
+    var radius = el.getAttribute("data-radius");
+    if (radius) url += "&radius=" + encodeURIComponent(radius);
 
     var iframe = document.createElement("iframe");
     iframe.src = url;
