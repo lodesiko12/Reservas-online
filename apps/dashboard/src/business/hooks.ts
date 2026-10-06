@@ -74,14 +74,14 @@ export function useBookings(fromISO: string, toISO: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("bookings")
-        .select("*, services(name), professionals(name, color), dining_tables(name), dining_table_combos(name)")
+        .select("*, services(name, price), professionals(name, color), dining_tables(name), dining_table_combos(name)")
         .eq("business_id", bid)
         .gte("starts_at", fromISO)
         .lt("starts_at", toISO)
         .order("starts_at");
       if (error) throw error;
       return data as unknown as (Booking & {
-        services: { name: string } | null;
+        services: { name: string; price: number | null } | null;
         professionals: { name: string; color: string } | null;
         dining_tables: { name: string } | null;
         dining_table_combos: { name: string | null } | null;

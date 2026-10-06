@@ -65,6 +65,7 @@ export function Agenda() {
   const [view, setView] = useState<"day" | "week" | "month">("week");
   const [anchor, setAnchor] = useState(ymdInTz(new Date(), tz));
   const [selected, setSelected] = useState<any | null>(null);
+  const trackPayments = business?.type === "psicologo";
   // Filtro por profesional (clic en la leyenda). Vacío = todas.
   const [proFilter, setProFilter] = useState<Set<string>>(new Set());
 
@@ -188,7 +189,7 @@ export function Agenda() {
       {isLoading ? (
         <div className="grid place-items-center py-20"><Spinner /></div>
       ) : view === "week" ? (
-        <WeekGrid weekDays={weekDays} tz={tz} bookings={bookings ?? []} today={ymdInTz(new Date(), tz)} onSelect={setSelected} />
+        <WeekGrid weekDays={weekDays} tz={tz} bookings={bookings ?? []} today={ymdInTz(new Date(), tz)} onSelect={setSelected} trackPayments={trackPayments} />
       ) : view === "month" ? (
         <MonthGrid
           monthDays={monthDays} tz={tz} bookings={bookings ?? []} today={ymdInTz(new Date(), tz)} anchorMonth={anchor}
@@ -225,6 +226,7 @@ export function Agenda() {
                   </span>
                 )}
                 <span className={`badge ${b.channel === "web" ? "bg-brand-50 text-brand-700" : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400"}`}>{b.channel}</span>
+                {trackPayments && <PayBadge b={b} />}
                 <StatusBadge status={b.status} />
               </div>
             </button>
@@ -233,14 +235,14 @@ export function Agenda() {
         </div>
       )}
 
-      {selected && <BookingModal booking={selected} tz={tz} onClose={() => setSelected(null)} onChanged={() => { refetch(); setSelected(null); }} />}
+      {selected && <BookingModal booking={selected} tz={tz} trackPayments={trackPayments} onClose={() => setSelected(null)} onChanged={() => { refetch(); setSelected(null); }} />}
     </div>
   );
 }
 
 /* ------------------------------ Rejilla semanal ------------------------------ */
-function WeekGrid({ weekDays, tz, bookings, today, onSelect }: {
-  weekDays: string[]; tz: string; bookings: any[]; today: string; onSelect: (b: any) => void;
+function WeekGrid({ weekDays, tz, bookings, today, onSelect, trackPayments }: {
+  weekDays: string[]; tz: string; bookings: any[]; today: string; onSelect: (b: any) => void; trackPayments: boolean;
 }) {
   const HOUR = 46; // px por hora
 
@@ -323,7 +325,7 @@ function WeekGrid({ weekDays, tz, bookings, today, onSelect }: {
                     className={`absolute left-0.5 right-0.5 rounded-md px-1.5 py-1 text-left overflow-hidden hover:z-10 hover:shadow-md transition ${bs.className}`}
                     style={{ top, height, ...bs.style }}
                   >
-                    <div className="text-[11px] font-semibold leading-tight">{formatTime(b.starts_at, tz)}</div>
+                    <div className="text-[11px] font-semibold leading-tight">{formatTime(b.starts_at, tz)}{trackPayments && payState(b) && <span className={payState(b) === "paid" ? "text-emerald-700 dark:text-emerald-400" : "text-amber-700 dark:text-amber-400"}> {payState(b) === "paid" ? "€✓" : "€?"}</span>}</div>
                     <div className="text-[11px] font-medium leading-tight truncate">{b.customer_name}</div>
                     {height > 44 && <div className="text-[10px] opacity-80 leading-tight truncate">{detail(b)}</div>}
                   </button>
@@ -410,8 +412,21 @@ function MonthGrid({ monthDays, tz, bookings, today, anchorMonth, onSelect, onDa
 }
 
 /* ------------------------------ Modal de reserva ------------------------------ */
-function BookingModal({ booking, tz, onClose, onChanged }: {
-  booking: any; tz: string; onClose: () => void; onChanged: () => void;
+/** Estado de cobro de una cita (solo psicólogos): "paid", "due" (ya pasada,
+ * activa y sin cobrar) o null (futura/cancelada/ausente: no aplica). */
+function payState(b: any): "paid" | "due" | null {
+  if (b.paid_at) return "paid";
+  if (b.status === "cancelada" || b.status === "no_show") return null;
+  return new Date(b.starts_at).getTime() <= Date.now() ? "due" : null;
+}
+function PayBadge({ b }: { b: any }) {
+  const st = payState(b);
+  if (!st) return null;
+  return <span className={`badge ${st === "paid" ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>{st === "paid" ? "Pagada" : "Sin pagar"}</span>;
+}
+
+function BookingModal({ booking, tz, trackPayments, onClose, onChanged }: {
+  booking: any; tz: string; trackPayments: boolean; onClose: () => void; onChanged: () => void;
 }) {
   const qc = useQueryClient();
   const [busy, setBusy] = useState(false);
@@ -453,6 +468,13 @@ function BookingModal({ booking, tz, onClose, onChanged }: {
     syncGoogle(status === "cancelada" ? "delete" : "upsert");
     qc.invalidateQueries(); onChanged();
   }
+  async function togglePaid() {
+    setBusy(true);
+    const { error } = await supabase.from("bookings").update({ paid_at: booking.paid_at ? null : new Date().toISOString() }).eq("id", booking.id);
+    setBusy(false);
+    if (error) { alert(error.message); return; }
+    qc.invalidateQueries(); onChanged();
+  }
   async function remove() {
     setConfirmingDelete(false);
     setBusy(true);
@@ -486,6 +508,14 @@ function BookingModal({ booking, tz, onClose, onChanged }: {
         <Row k="Email" v={booking.customer_email ?? "—"} />
         <Row k="Localizador" v={booking.locator} />
         <Row k="Estado" v={<StatusBadge status={booking.status} />} />
+        {trackPayments && booking.type === "citas" && (
+          <Row k="Pago" v={
+            <span className="flex items-center gap-2">
+              {booking.paid_at ? <span className="badge bg-emerald-100 text-emerald-700">Pagada</span> : <span className="badge bg-amber-100 text-amber-700">Sin pagar</span>}
+              {booking.services?.price != null && <span className="text-slate-500 dark:text-slate-400">{booking.services.price} €</span>}
+            </span>
+          } />
+        )}
         {booking.notes && <Row k="Notas" v={booking.notes} />}
       </div>
 
@@ -531,6 +561,9 @@ function BookingModal({ booking, tz, onClose, onChanged }: {
           {(booking.type === "restaurante" ? STATUSES_RESTAURANTE : STATUSES_CITAS).filter((s) => s !== booking.status).map((s) => (
             <button key={s} className="btn-ghost" disabled={busy} onClick={() => setStatus(s)}>Marcar {label(s)}</button>
           ))}
+          {trackPayments && booking.type === "citas" && (
+            <button className="btn-primary" disabled={busy} onClick={togglePaid}>{booking.paid_at ? "Marcar sin pagar" : "Marcar pagada"}</button>
+          )}
           <button className="btn-ghost" onClick={() => setReschedule(true)}>Reprogramar</button>
           <button className="btn-danger ml-auto" disabled={busy} onClick={() => setConfirmingDelete(true)}>Eliminar</button>
         </div>

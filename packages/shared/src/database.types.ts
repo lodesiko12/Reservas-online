@@ -920,6 +920,7 @@ export type Database = {
           id: string
           locator: string
           notes: string | null
+          paid_at: string | null
           party_size: number | null
           professional_id: string | null
           service_id: string | null
@@ -945,6 +946,7 @@ export type Database = {
           id?: string
           locator: string
           notes?: string | null
+          paid_at?: string | null
           party_size?: number | null
           professional_id?: string | null
           service_id?: string | null
@@ -970,6 +972,7 @@ export type Database = {
           id?: string
           locator?: string
           notes?: string | null
+          paid_at?: string | null
           party_size?: number | null
           professional_id?: string | null
           service_id?: string | null

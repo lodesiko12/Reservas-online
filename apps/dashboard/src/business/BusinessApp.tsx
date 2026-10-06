@@ -13,6 +13,7 @@ import { Franjas } from "./Franjas";
 import { Mesas } from "./Mesas";
 import { PlanoSala } from "./PlanoSala";
 import { Seguimiento } from "./Seguimiento";
+import { Pagos } from "./Pagos";
 import { ResumenAutonomo } from "./crm/ResumenAutonomo";
 import { Pipeline } from "./crm/Pipeline";
 import { AgendaInterna } from "./crm/AgendaInterna";
@@ -56,7 +57,7 @@ export function BusinessApp() {
         { to: "/app/agenda", label: "Agenda", icon: "🗓️" },
         { to: "/app/nueva", label: "Nueva reserva", icon: "➕" },
         { to: "/app/clientes", label: "Clientes", icon: "👤" },
-        ...(isPsicologo ? [{ to: "/app/seguimiento", label: "Seguimiento", icon: "🩺" }] : []),
+        ...(isPsicologo ? [{ to: "/app/seguimiento", label: "Seguimiento", icon: "🩺" }, { to: "/app/pagos", label: "Pagos", icon: "💶" }] : []),
         isRestaurant
           ? { to: "/app/franjas", label: "Franjas y aforo", icon: "🍽️" }
           : { to: "/app/servicios", label: "Servicios", icon: "✂️" },
@@ -97,6 +98,7 @@ export function BusinessApp() {
             <Route path="nueva" element={<NuevaReserva />} />
             <Route path="clientes" element={<Clientes />} />
             <Route path="seguimiento" element={<Seguimiento />} />
+            {isPsicologo && <Route path="pagos" element={<Pagos />} />}
             <Route path="servicios" element={<Servicios />} />
             <Route path="franjas" element={<Franjas />} />
             <Route path="mesas" element={<Mesas />} />
