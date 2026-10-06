@@ -1,0 +1,335 @@
+{
+  "voice": "es-ES-AlvaroNeural",
+  "rate": "+15%",
+  "scenes": [
+    {
+      "id": "s1",
+      "file": "audio/v01-mesa-vacia/s1.mp3",
+      "durationMs": 3456,
+      "speechEndMs": 2688,
+      "words": [
+        {
+          "text": "Reservó",
+          "startMs": 97,
+          "endMs": 586
+        },
+        {
+          "text": "para",
+          "startMs": 597,
+          "endMs": 760
+        },
+        {
+          "text": "cuatro",
+          "startMs": 771,
+          "endMs": 1249
+        },
+        {
+          "text": "Y",
+          "startMs": 1992,
+          "endMs": 2123
+        },
+        {
+          "text": "no",
+          "startMs": 2134,
+          "endMs": 2264
+        },
+        {
+          "text": "vino",
+          "startMs": 2275,
+          "endMs": 2688
+        }
+      ],
+      "sourceText": "Reservó para cuatro. Y no vino."
+    },
+    {
+      "id": "s2",
+      "file": "audio/v01-mesa-vacia/s2.mp3",
+      "durationMs": 3912,
+      "speechEndMs": 3155,
+      "words": [
+        {
+          "text": "Mesa",
+          "startMs": 100,
+          "endMs": 448
+        },
+        {
+          "text": "vacía",
+          "startMs": 459,
+          "endMs": 796
+        },
+        {
+          "text": "toda",
+          "startMs": 807,
+          "endMs": 991
+        },
+        {
+          "text": "la",
+          "startMs": 1002,
+          "endMs": 1067
+        },
+        {
+          "text": "noche",
+          "startMs": 1078,
+          "endMs": 1524
+        },
+        {
+          "text": "Cena",
+          "startMs": 2264,
+          "endMs": 2623
+        },
+        {
+          "text": "perdida",
+          "startMs": 2634,
+          "endMs": 3155
+        }
+      ],
+      "sourceText": "Mesa vacía toda la noche. Cena perdida."
+    },
+    {
+      "id": "s3",
+      "file": "audio/v01-mesa-vacia/s3.mp3",
+      "durationMs": 5040,
+      "speechEndMs": 4289,
+      "words": [
+        {
+          "text": "Con",
+          "startMs": 100,
+          "endMs": 328
+        },
+        {
+          "text": "Turnigo",
+          "startMs": 339,
+          "endMs": 796
+        },
+        {
+          "text": "el",
+          "startMs": 1002,
+          "endMs": 1111
+        },
+        {
+          "text": "cliente",
+          "startMs": 1122,
+          "endMs": 1480
+        },
+        {
+          "text": "recibe",
+          "startMs": 1491,
+          "endMs": 1828
+        },
+        {
+          "text": "un",
+          "startMs": 1839,
+          "endMs": 1948
+        },
+        {
+          "text": "WhatsApp",
+          "startMs": 1959,
+          "endMs": 2263
+        },
+        {
+          "text": "el",
+          "startMs": 2274,
+          "endMs": 2361
+        },
+        {
+          "text": "día",
+          "startMs": 2372,
+          "endMs": 2535
+        },
+        {
+          "text": "antes",
+          "startMs": 2546,
+          "endMs": 3046
+        },
+        {
+          "text": "Solo",
+          "startMs": 3789,
+          "endMs": 4289
+        }
+      ],
+      "sourceText": "Con Turnigo, el cliente recibe un WhatsApp el día antes. Solo."
+    },
+    {
+      "id": "s4",
+      "file": "audio/v01-mesa-vacia/s4.mp3",
+      "durationMs": 3096,
+      "speechEndMs": 2336,
+      "words": [
+        {
+          "text": "Se",
+          "startMs": 97,
+          "endMs": 303
+        },
+        {
+          "text": "acuerda",
+          "startMs": 314,
+          "endMs": 684
+        },
+        {
+          "text": "confirma",
+          "startMs": 934,
+          "endMs": 1347
+        },
+        {
+          "text": "o",
+          "startMs": 1358,
+          "endMs": 1401
+        },
+        {
+          "text": "cancela",
+          "startMs": 1412,
+          "endMs": 1792
+        },
+        {
+          "text": "a",
+          "startMs": 1803,
+          "endMs": 1836
+        },
+        {
+          "text": "tiempo",
+          "startMs": 1847,
+          "endMs": 2336
+        }
+      ],
+      "sourceText": "Se acuerda, confirma o cancela a tiempo."
+    },
+    {
+      "id": "s5",
+      "file": "audio/v01-mesa-vacia/s5.mp3",
+      "durationMs": 3552,
+      "speechEndMs": 2796,
+      "words": [
+        {
+          "text": "Y",
+          "startMs": 100,
+          "endMs": 241
+        },
+        {
+          "text": "si",
+          "startMs": 252,
+          "endMs": 361
+        },
+        {
+          "text": "cancela",
+          "startMs": 372,
+          "endMs": 839
+        },
+        {
+          "text": "tu",
+          "startMs": 1057,
+          "endMs": 1133
+        },
+        {
+          "text": "mesa",
+          "startMs": 1143,
+          "endMs": 1393
+        },
+        {
+          "text": "vuelve",
+          "startMs": 1404,
+          "endMs": 1665
+        },
+        {
+          "text": "a",
+          "startMs": 1676,
+          "endMs": 1698
+        },
+        {
+          "text": "estar",
+          "startMs": 1709,
+          "endMs": 1959
+        },
+        {
+          "text": "libre",
+          "startMs": 1970,
+          "endMs": 2209
+        },
+        {
+          "text": "para",
+          "startMs": 2220,
+          "endMs": 2393
+        },
+        {
+          "text": "otro",
+          "startMs": 2404,
+          "endMs": 2796
+        }
+      ],
+      "sourceText": "Y si cancela, tu mesa vuelve a estar libre para otro."
+    },
+    {
+      "id": "s6",
+      "file": "audio/v01-mesa-vacia/s6.mp3",
+      "durationMs": 4944,
+      "speechEndMs": 4177,
+      "words": [
+        {
+          "text": "Menos",
+          "startMs": 97,
+          "endMs": 445
+        },
+        {
+          "text": "mesas",
+          "startMs": 455,
+          "endMs": 727
+        },
+        {
+          "text": "vacías",
+          "startMs": 738,
+          "endMs": 1086
+        },
+        {
+          "text": "sin",
+          "startMs": 1097,
+          "endMs": 1249
+        },
+        {
+          "text": "llamar",
+          "startMs": 1260,
+          "endMs": 1499
+        },
+        {
+          "text": "a",
+          "startMs": 1510,
+          "endMs": 1532
+        },
+        {
+          "text": "nadie",
+          "startMs": 1542,
+          "endMs": 1988
+        },
+        {
+          "text": "Comenta",
+          "startMs": 2732,
+          "endMs": 3155
+        },
+        {
+          "text": "DEMO",
+          "startMs": 3166,
+          "endMs": 3395
+        },
+        {
+          "text": "y",
+          "startMs": 3405,
+          "endMs": 3449
+        },
+        {
+          "text": "te",
+          "startMs": 3460,
+          "endMs": 3547
+        },
+        {
+          "text": "la",
+          "startMs": 3558,
+          "endMs": 3634
+        },
+        {
+          "text": "enseño",
+          "startMs": 3645,
+          "endMs": 4177
+        }
+      ],
+      "sourceText": "Menos mesas vacías sin llamar a nadie. Comenta DEMO y te la enseño."
+    }
+  ]
+}
