@@ -1,7 +1,9 @@
-import { loadFont } from "@remotion/google-fonts/Inter";
+import { loadFont } from "@remotion/google-fonts/Nunito";
+import { BRAND } from "./brand";
 
+/** Nunito, la tipografía de la app (900 para titulares y cifras, como el wordmark). */
 export const { fontFamily: FONT } = loadFont("normal", {
-  weights: ["500", "600", "700", "800", "900"],
+  weights: ["600", "700", "800", "900"],
   subsets: ["latin", "latin-ext"],
 });
 
@@ -24,35 +26,43 @@ export const LAYOUT = {
   captionCenterY: VIDEO.height - SAFE.bottom - 120,
 } as const;
 
+/** Colores de la app (turnigo-tokens.css + modo oscuro del panel). */
 export const COLORS = {
-  bg: "#0B0D12",
-  bgGlow: "#1A2030",
-  card: "#F5F6FA",
-  cardBorder: "#E2E5EE",
-  ink: "#11141B",
-  inkMuted: "#6B7385",
+  /** Fondo oscuro: neutros verde azulado del modo oscuro del panel. */
+  bg: "#0A1D1D",
+  bgGlow: BRAND.colorDark,
+  /** Tarjetas claras (--tg-surface / --tg-bg / --tg-border). */
+  card: "#FFFFFF",
+  cardAlt: "#F3F7F6",
+  cardBorder: "#D9E4E2",
+  ink: "#0F2A2A",
+  inkMuted: "#4A6362",
   white: "#FFFFFF",
-  textMuted: "#A3ACBD",
-  /** Resaltado de la palabra activa en los subtítulos. */
-  captionHighlight: "#FFD84D",
+  textMuted: "#8CA3A1",
+  /** Resaltado de la palabra activa en los subtítulos: coral de marca. */
+  captionHighlight: BRAND.accent,
 } as const;
 
-/** Colores de estado reutilizables en todos los vídeos. */
+/**
+ * Estados de reserva con la paleta de estados de la app (verde/ámbar/azul/rojo).
+ * `solid` = color fuerte, `tint` = fondo suave y `ink` = texto, igual que el plano de sala del panel.
+ */
 export const STATUS = {
-  confirmed: { color: "#22C55E", label: "Confirmada" },
-  pending: { color: "#F59E0B", label: "Pendiente" },
-  seated: { color: "#3B82F6", label: "Sentada" },
-  noShow: { color: "#EF4444", label: "No-show" },
-  cancelled: { color: "#EF4444", label: "Cancelada" },
-  /** Mesa libre: neutro, para que destaquen las que tienen reserva. */
-  free: { color: "#D9DDE7", label: "Libre" },
+  confirmed: { solid: "#1F8A4C", tint: "#EAF6EF", ink: "#186B3B", label: "Confirmada" },
+  pending: { solid: "#B7791F", tint: "#FBF3E3", ink: "#8F5E18", label: "Pendiente" },
+  seated: { solid: "#2563A8", tint: "#EAF1F9", ink: "#1D4F86", label: "Sentada" },
+  noShow: { solid: "#C0392B", tint: "#FBEDEB", ink: "#992E22", label: "No-show" },
+  cancelled: { solid: "#C0392B", tint: "#FBEDEB", ink: "#992E22", label: "Cancelada" },
+  free: { solid: "#BFD0CD", tint: "#FFFFFF", ink: "#8CA3A1", label: "Libre" },
 } as const;
 
 export type StatusKey = keyof typeof STATUS;
 
-/** Texto legible encima de un color de estado. */
-export const statusInk = (status: StatusKey) =>
-  status === "free" ? COLORS.inkMuted : COLORS.white;
+/** Radios de la app (el icono tiene esquinas muy redondeadas), escalados a vídeo. */
+export const RADIUS = { md: 24, lg: 40, pill: 999 } as const;
+
+/** Sombra suave teñida de verde, como `--tg-shadow-card`, más marcada para vídeo. */
+export const SHADOW_CARD = "0 2px 4px rgba(15,42,42,0.12), 0 24px 70px rgba(0,0,0,0.45)";
 
 /** Música de fondo opcional (ruta en `public/`). Sin pista, no suena nada. */
 export const MUSIC = {

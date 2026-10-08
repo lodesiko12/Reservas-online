@@ -1,0 +1,18 @@
+{
+  "name": "turnigo-referencia-app",
+  "version": "1.0.0",
+  "description": "Capturas de la app Turnigo (producción) como referencia visual para los vídeos de marketing.",
+  "private": true,
+  "license": "UNLICENSED",
+  "scripts": {
+    "widget": "tsx capture-widget.ts",
+    "panel": "tsx capture-panel.ts",
+    "indice": "tsx indice.ts"
+  },
+  "devDependencies": {
+    "puppeteer-core": "^24.0.0",
+    "tsx": "^4.23.15",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.9.3"
+  }
+}

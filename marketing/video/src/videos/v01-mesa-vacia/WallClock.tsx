@@ -1,6 +1,7 @@
 import type React from "react";
 import { interpolate, useCurrentFrame, useVideoConfig } from "remotion";
 import { EASE_OUT, clamp, pop } from "../../lib/anim";
+import { BRAND } from "../../brand";
 import { COLORS, FONT } from "../../theme";
 
 type WallClockProps = {
@@ -96,7 +97,7 @@ export const WallClock: React.FC<WallClockProps> = ({ size, fromMinutes, toMinut
           {pad(Math.floor(shown / 60) % 24)}:{pad(shown % 60)}
         </div>
         {hand(size * 0.25, size * 0.05, hourDeg, COLORS.ink)}
-        {hand(size * 0.36, size * 0.032, minuteDeg, "#EF4444")}
+        {hand(size * 0.36, size * 0.032, minuteDeg, BRAND.accent)}
         <div
           style={{
             position: "absolute",

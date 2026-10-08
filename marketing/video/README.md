@@ -9,6 +9,9 @@ npm i
 npm run dev                         # Remotion Studio (vista previa)
 npm run voice -- v01-mesa-vacia     # regenera la locución + tiempos
 npm run sfx                         # regenera los efectos de sonido
+npm run beats -- public/music       # analiza canciones: BPM, golpes y compases → src/music/*.beats.json
+npm run track                       # regenera la pista provisional sintética de 120 BPM (public/music/placeholder-120.wav)
+npx remotion render P01-ReservoYNoVino out/p01-reservo-y-no-vino.mp4   # P01 (sin voz, cortes sobre beats)
 npx remotion render V01-MesaVacia out/v01-mesa-vacia.mp4
 ```
 
@@ -49,3 +52,12 @@ scripts/
 
 Para un vídeo nuevo: copia la carpeta `videos/v01-mesa-vacia`, cambia `script.ts`, ejecuta
 `npm run voice -- <carpeta>` y registra la composición en `src/Root.tsx`.
+
+## Piezas sin voz (por beats)
+
+`src/music/track.ts` fija la pista activa (`src`, `bpm`, `startSec`). `src/lib/beats.ts` (`useBeats()`) pasa de
+"beat n" a frame; las piezas se escriben en beats (`videos/p01-reservo-y-no-vino/script.ts` + `P01.tsx`).
+Pista actual = provisional sintética (sin licencia). Para cambiarla: `npm run beats -- public/music`, apuntar
+`TRACK` a la nueva y fijar `startSec` en un primer tiempo de compás **a oído** (el analizador acierta el pulso, pero
+pierde un golpe en t=0 y adivina mal el compás; además marca ~12 ms antes). Nuevos componentes: `Sticker`, `Punch`
+(zoom + temblor en el kick), `LightLayer` (fondo claro que se abre en el giro).

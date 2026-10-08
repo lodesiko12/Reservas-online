@@ -3,7 +3,7 @@ import type React from "react";
 import { interpolate, staticFile, useVideoConfig } from "remotion";
 import { MUSIC } from "../theme";
 
-export type SfxName = "ding" | "pop" | "chime" | "tick";
+export type SfxName = "ding" | "pop" | "chime" | "tick" | "whoosh" | "thud";
 
 /** Efecto de sonido de `public/sfx` (los genera `npm run sfx`). */
 export const Sfx: React.FC<{ name: SfxName; from: number; volume?: number }> = ({ name, from, volume = 0.5 }) => {

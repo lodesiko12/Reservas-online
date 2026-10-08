@@ -70,7 +70,7 @@ export const Caption: React.FC<CaptionProps> = ({
   maxChars = 18,
   breakGapMs = 260,
   holdMs = 350,
-  fontSize = 78,
+  fontSize = 82,
   highlightColor = COLORS.captionHighlight,
   centerY = LAYOUT.captionCenterY,
   width = 940,
@@ -114,8 +114,10 @@ export const Caption: React.FC<CaptionProps> = ({
             key={i}
             style={{
               whiteSpace: "pre",
+              display: "inline-block",
               color: active ? highlightColor : COLORS.white,
-              WebkitTextStroke: "14px #000",
+              scale: active ? String(interpolate(ms - t.startMs, [0, 90], [1.18, 1.06], clamp)) : "1",
+              WebkitTextStroke: "14px #0A1D1D",
               paintOrder: "stroke fill",
               textShadow: "0 6px 18px rgba(0,0,0,0.55)",
             }}

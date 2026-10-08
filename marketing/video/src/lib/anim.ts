@@ -29,6 +29,33 @@ export const pop = (frame: number, fps: number, at = 0) =>
 export const fadeOut = (frame: number, at: number, duration = 8) =>
   interpolate(frame, [at, at + duration], [1, 0], { ...clamp, easing: EASE_IN });
 
+/**
+ * Transición "whip": entra (o sale) deslizando rápido con desenfoque de movimiento.
+ * Devuelve estilos para aplicar al elemento. `dir` = desde dónde entra / hacia dónde sale.
+ */
+export const whip = (
+  frame: number,
+  at: number,
+  mode: "in" | "out",
+  dir: "left" | "right" | "up" | "down" = "right",
+  duration = 9,
+  distance = 1300,
+) => {
+  const p =
+    mode === "in"
+      ? interpolate(frame, [at, at + duration], [1, 0], { ...clamp, easing: EASE_OUT })
+      : interpolate(frame, [at, at + duration], [0, 1], { ...clamp, easing: EASE_IN });
+  const sign = dir === "left" || dir === "up" ? -1 : 1;
+  const horizontal = dir === "left" || dir === "right";
+  const offset = sign * p * distance;
+  const blur = Math.sin(p * Math.PI) * 18;
+  return {
+    translate: horizontal ? `${offset}px 0px` : `0px ${offset}px`,
+    filter: blur > 0.5 ? `blur(${blur}px)` : undefined,
+    opacity: mode === "out" && p >= 1 ? 0 : 1,
+  } as const;
+};
+
 /** Pulso 1 → peak → 1 centrado en `at` (cambios de estado). */
 export const pulse = (frame: number, at: number, peak = 1.12, duration = 14) =>
   interpolate(frame, [at, at + duration * 0.35, at + duration], [1, peak, 1], clamp);

@@ -1,0 +1,68 @@
+/* Turnigo · tokens de diseño del panel
+   Derivados del logo (verde azulado #0B6E6A + coral #FF6B4A, Nunito).
+   Copia este archivo al proyecto y usa siempre las variables, nunca colores sueltos. */
+
+
+:root {
+  /* Marca */
+  --tg-teal-50:  #E8F4F3;
+  --tg-teal-100: #CFE6E3;
+  --tg-teal-200: #9FCFC9;
+  --tg-teal-600: #0B6E6A;   /* color principal (logo) */
+  --tg-teal-700: #095A57;   /* hover / pulsado */
+  --tg-teal-800: #07403E;
+
+  --tg-coral-500: #FF6B4A;  /* acento (logo): solo detalles, nunca texto pequeño */
+  --tg-coral-700: #C8401F;  /* coral para texto/iconos sobre blanco (contraste 5:1) */
+  --tg-coral-50:  #FFEFEA;
+
+  /* Neutros */
+  --tg-bg:        #F3F7F6;  /* fondo del panel */
+  --tg-surface:   #FFFFFF;  /* tarjetas, tablas, modales */
+  --tg-border:    #D9E4E2;
+  --tg-text:      #0F2A2A;  /* texto principal */
+  --tg-text-muted:#4A6362;  /* texto secundario */
+
+  /* Estados (distintos de la marca para no confundirse) */
+  --tg-success:   #1F8A4C;
+  --tg-warning:   #B7791F;
+  --tg-danger:    #C0392B;
+  --tg-info:      #2563A8;
+
+  /* Estados de una reserva */
+  --tg-booking-confirmed: var(--tg-teal-600);
+  --tg-booking-pending:   var(--tg-warning);
+  --tg-booking-cancelled: var(--tg-text-muted);
+  --tg-booking-noshow:    var(--tg-danger);
+
+  /* Tipografía */
+  --tg-font: "Nunito", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --tg-fw-body: 400;
+  --tg-fw-strong: 700;
+  --tg-fw-heading: 800;
+  --tg-fw-display: 900;     /* wordmark y cifras grandes */
+
+  /* Formas (el icono tiene esquinas muy redondeadas, ~23 %) */
+  --tg-radius-sm:  8px;
+  --tg-radius-md: 12px;     /* botones, inputs */
+  --tg-radius-lg: 20px;     /* tarjetas */
+  --tg-radius-pill: 999px;  /* chips, badges de estado */
+
+  /* Espaciado (múltiplos de 4) */
+  --tg-space-1: 4px;  --tg-space-2: 8px;  --tg-space-3: 12px;
+  --tg-space-4: 16px; --tg-space-6: 24px; --tg-space-8: 32px;
+
+  /* Sombras suaves, teñidas de verde */
+  --tg-shadow-card: 0 1px 2px rgba(15, 42, 42, .06), 0 4px 16px rgba(15, 42, 42, .05);
+
+  /* Foco accesible */
+  --tg-focus-ring: 0 0 0 3px #fff, 0 0 0 5px var(--tg-teal-600);
+}
+
+body {
+  font-family: var(--tg-font);
+  font-weight: var(--tg-fw-body);
+}
+h1, h2, h3 { font-weight: var(--tg-fw-heading); letter-spacing: -0.01em; }
+.tg-num { font-variant-numeric: tabular-nums; }   /* horas y cifras alineadas */
+:focus-visible { outline: none; box-shadow: var(--tg-focus-ring); }

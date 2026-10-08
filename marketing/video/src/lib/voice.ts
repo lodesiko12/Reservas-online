@@ -1,11 +1,19 @@
 import type { Caption } from "@remotion/captions";
 
+/** Servicio de voz. Gemini = voz natural con instrucciones de estilo; Edge = respaldo sin clave. */
+export type TtsConfig = {
+  provider: "gemini" | "edge";
+  /** Gemini: Puck, Fenrir, Achird… · Edge: es-ES-AlvaroNeural… */
+  voice: string;
+  /** Instrucciones de interpretación (solo Gemini): acento, tono, ritmo. */
+  style?: string;
+  /** Acelera/frena el audio final sin cambiar el tono (1 = tal cual, 1.1 = 10 % más rápido). */
+  tempo?: number;
+};
+
 /** Guion de un vídeo: lo que se locuta y lo que se ve en cada escena. */
 export type VideoScript = {
-  /** Voz de Edge TTS (es-ES-AlvaroNeural, es-ES-ElviraNeural, es-ES-XimenaNeural). */
-  voice: string;
-  /** Velocidad relativa, p. ej. "+10%". */
-  rate: string;
+  tts: TtsConfig;
   scenes: readonly SceneScript[];
 };
 
@@ -16,54 +24,71 @@ export type SceneScript = {
   /** Titular grande de la escena (vacío si la escena tiene su propio texto, p. ej. el cierre). */
   onScreen: string;
   /** Duración mínima de la escena aunque la locución sea más corta. */
-  minSeconds: number;
+  minSeconds?: number;
   /** Frames de silencio antes de que empiece a hablar (deja sitio a un efecto o a la entrada). */
   leadFrames?: number;
-  /** Frames que se mantiene la escena después de la última palabra. */
+  /** Frames que se mantiene la escena después de su última palabra. */
   tailFrames?: number;
 };
 
-/** Lo que escribe `npm run voice` en `voice.json`, junto al guion de cada vídeo. */
-export type VoiceTrack = {
-  voice: string;
-  rate: string;
-  scenes: VoiceScene[];
-};
+export type VoiceWord = { text: string; startMs: number; endMs: number };
 
-export type VoiceScene = {
-  id: string;
+/**
+ * Lo que escribe `npm run voice` en `voice.json`: una sola toma de audio y, por
+ * escena, el tramo del archivo que le corresponde y sus palabras (ms absolutos del archivo).
+ */
+export type VoiceTrack = {
+  provider: string;
+  voice: string;
+  model?: string;
   /** Ruta dentro de `public/`. */
   file: string;
-  /** Duración del archivo de audio. */
   durationMs: number;
-  /** Fin de la última palabra (el archivo trae silencio detrás). */
-  speechEndMs: number;
-  /** Palabra a palabra, relativo al inicio del archivo. */
-  words: { text: string; startMs: number; endMs: number }[];
-  /** Texto con el que se generó, para detectar guiones cambiados sin regenerar. */
-  sourceText: string;
+  scenes: {
+    id: string;
+    /** Texto con el que se generó, para detectar guiones cambiados sin regenerar. */
+    sourceText: string;
+    segStartMs: number;
+    segEndMs: number;
+    words: VoiceWord[];
+  }[];
 };
 
 export type SceneTiming = {
   id: string;
   from: number;
   durationInFrames: number;
-  /** Frame (relativo a la escena) en el que empieza el audio. */
-  voiceFrom: number;
+  onScreen: string;
+  /** Tramo de la toma de voz que suena en esta escena. */
+  audio: { src: string; from: number; trimBefore: number; durationInFrames: number };
   /** Frame (relativo a la escena) en el que acaba de hablar. */
   speechEnd: number;
-  audio: string;
-  onScreen: string;
+  /** Palabras con su frame de inicio relativo a la escena (para sincronizar golpes visuales). */
+  words: { text: string; frame: number }[];
 };
 
-const DEFAULT_LEAD = 4;
-const DEFAULT_TAIL = 6;
+const norm = (s: string) =>
+  s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-z0-9]/g, "");
+
+/**
+ * Frame (relativo a la escena) en el que se dice `word` (la n-ésima aparición).
+ * Si no la encuentra devuelve `fallback`, para que un cambio de guion no rompa el vídeo.
+ */
+export const wordFrame = (scene: SceneTiming, word: string, fallback = 0, nth = 0) => {
+  const hits = scene.words.filter((w) => norm(w.text) === norm(word));
+  return hits[nth]?.frame ?? fallback;
+};
 
 /**
  * Convierte guion + voz generada en tiempos de escena (frames) y subtítulos
- * absolutos. Cada escena dura lo que su locución, con un mínimo por escena.
+ * absolutos. Cada escena dura lo que su tramo de locución, con un mínimo opcional.
  */
 export const buildTimeline = (script: VideoScript, track: VoiceTrack, fps: number) => {
+  const toFrames = (ms: number) => Math.round((ms / 1000) * fps);
   let cursor = 0;
   const scenes: SceneTiming[] = [];
   const captions: Caption[] = [];
@@ -78,14 +103,16 @@ export const buildTimeline = (script: VideoScript, track: VoiceTrack, fps: numbe
       console.warn(`La locución de "${scene.id}" no coincide con el guion. Ejecuta: npm run voice`);
     }
 
-    const lead = scene.leadFrames ?? DEFAULT_LEAD;
-    const speechFrames = Math.ceil((voice.speechEndMs / 1000) * fps);
+    const lead = scene.leadFrames ?? 0;
+    const trimBefore = toFrames(voice.segStartMs);
+    const segFrames = toFrames(voice.segEndMs) - trimBefore;
     const durationInFrames = Math.max(
-      Math.round(scene.minSeconds * fps),
-      lead + speechFrames + (scene.tailFrames ?? DEFAULT_TAIL),
+      Math.round((scene.minSeconds ?? 0) * fps),
+      lead + segFrames + (scene.tailFrames ?? 0),
     );
 
-    const offsetMs = ((cursor + lead) / fps) * 1000;
+    // ms del archivo → ms de la composición
+    const offsetMs = ((cursor + lead - trimBefore) / fps) * 1000;
     voice.words.forEach((w, i) => {
       captions.push({
         text: (i === 0 ? "" : " ") + w.text,
@@ -96,16 +123,19 @@ export const buildTimeline = (script: VideoScript, track: VoiceTrack, fps: numbe
         pageBreakAfter: i === voice.words.length - 1,
       });
     });
-    voiceRanges.push([cursor + lead, cursor + lead + speechFrames]);
+
+    const lastEnd = voice.words[voice.words.length - 1]?.endMs ?? voice.segEndMs;
+    const speechEnd = lead + toFrames(lastEnd) - trimBefore;
+    voiceRanges.push([cursor + lead, cursor + speechEnd]);
 
     scenes.push({
       id: scene.id,
       from: cursor,
       durationInFrames,
-      voiceFrom: lead,
-      speechEnd: lead + speechFrames,
-      audio: voice.file,
       onScreen: scene.onScreen,
+      audio: { src: track.file, from: cursor + lead, trimBefore, durationInFrames: segFrames },
+      speechEnd,
+      words: voice.words.map((w) => ({ text: w.text, frame: lead + toFrames(w.startMs) - trimBefore })),
     });
     cursor += durationInFrames;
   }

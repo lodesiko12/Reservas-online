@@ -2,7 +2,7 @@ import type React from "react";
 import { interpolate, useCurrentFrame, useVideoConfig } from "remotion";
 import { BRAND } from "../brand";
 import { EASE_IN, clamp, springIn } from "../lib/anim";
-import { COLORS, FONT, STATUS, type StatusKey } from "../theme";
+import { COLORS, FONT, RADIUS, STATUS, type StatusKey } from "../theme";
 import { LogoMark } from "./Logo";
 
 type NotificationProps = {
@@ -50,8 +50,8 @@ export const Notification: React.FC<NotificationProps> = ({
         gap: 24,
         alignItems: "center",
         padding: "26px 30px",
-        borderRadius: 40,
-        background: "rgba(250,250,252,0.97)",
+        borderRadius: RADIUS.lg,
+        background: "rgba(255,255,255,0.98)",
         boxShadow: "0 24px 60px rgba(0,0,0,0.45)",
         fontFamily: FONT,
         color: COLORS.ink,
@@ -63,16 +63,16 @@ export const Notification: React.FC<NotificationProps> = ({
       <LogoMark size={84} />
       <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 4 }}>
         <div style={{ display: "flex", justifyContent: "space-between", fontSize: 23, fontWeight: 600, color: COLORS.inkMuted }}>
-          <span style={{ textTransform: "uppercase", letterSpacing: 1 }}>{appName}</span>
+          <span style={{ textTransform: "uppercase", letterSpacing: 1, color: BRAND.color, fontWeight: 900 }}>{appName}</span>
           <span>{time}</span>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 32, fontWeight: 800 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 34, fontWeight: 900 }}>
           {status ? (
-            <span style={{ width: 18, height: 18, borderRadius: "50%", background: STATUS[status].color, flexShrink: 0 }} />
+            <span style={{ width: 18, height: 18, borderRadius: "50%", background: STATUS[status].solid, flexShrink: 0 }} />
           ) : null}
           {title}
         </div>
-        <div style={{ fontSize: 28, fontWeight: 500, color: "#3B4252" }}>{body}</div>
+        <div style={{ fontSize: 29, fontWeight: 700, color: COLORS.inkMuted }}>{body}</div>
       </div>
     </div>
   );
