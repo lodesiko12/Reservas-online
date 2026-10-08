@@ -20,6 +20,7 @@ import { P08_DURATION, P08ListaDeEspera } from "./videos/p08-lista-de-espera/P08
 import { P15_DURATION, P15FestivoBloqueos } from "./videos/p15-festivo-bloqueos/P15";
 import { P16_DURATION, P16AgendaPorColores } from "./videos/p16-agenda-por-colores/P16";
 import { P17_DURATION, P17FiltroProfesional } from "./videos/p17-filtro-profesional/P17";
+import { P18_DURATION, P18RecordatorioWhatsApp } from "./videos/p18-recordatorio-whatsapp/P18";
 import { TIMELINE as V01, V01MesaVacia } from "./videos/v01-mesa-vacia/V01MesaVacia";
 
 export const RemotionRoot: React.FC = () => {
@@ -172,6 +173,15 @@ export const RemotionRoot: React.FC = () => {
         id="P17-FiltroProfesional"
         component={P17FiltroProfesional}
         durationInFrames={P17_DURATION}
+        fps={30}
+        width={1080}
+        height={1920}
+      />
+      {/* P18: T9 chat, 32 beats a 120 BPM = 16 s; drop en el beat 4 (se abre el chat) */}
+      <Composition
+        id="P18-RecordatorioWhatsApp"
+        component={P18RecordatorioWhatsApp}
+        durationInFrames={P18_DURATION}
         fps={30}
         width={1080}
         height={1920}

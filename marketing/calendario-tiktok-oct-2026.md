@@ -232,11 +232,13 @@ pantalla en el primer beat) y secuencia con el nº de beats entre corchetes. `�
 #### Lun 12 oct (2 piezas) — Fiesta Nacional
 
 **P15 · Vídeo T5 S32 · general** → bloqueos
+- **Hecho (v1, `P15-FestivoBloqueos`, `video/out/p15-festivo-bloqueos.mp4`)**, **adaptado a la app real**: no existe «Cierre puntual»; el flujo real es *+ Nuevo bloqueo* → Alcance *Todo el negocio* → Desde/Hasta → Motivo «Festivo» → *Crear bloqueo* → «🚫 Bloqueo creado.» y la fila «12 oct, 00:00 → 12 oct, 23:59 · Todo el negocio · Festivo». En el widget de citas el lunes 12 sale de la tira de días en el kick (un día sin huecos no se ofrece) y el cliente reserva el martes · resultado: la hoja del 12 vuelve con sello «BLOQUEADO» · EndCard «Festivos sin sorpresas.» Pista con drop en el beat 4.
 - Gancho: **"Festivo. Hoy cierras."**
 - `[4]` calendario con el 12 en rojo → `[8]` en Bloqueos: eliges día, "Cierre puntual", guardar →
   `[8]` el widget del cliente: ese día ya no aparece → `[4]` "Cierras en paz." → `[8]` EndCard.
 
 **P16 · Vídeo T2 S32 · citas** → agenda de papel vs por colores
+- **Hecho (v1, `P16-AgendaPorColores`, `video/out/p16-agenda-por-colores.mp4`)**: libreta garabateada (tachón y círculo rojo) · drop (beat 4): pantalla partida PAPEL VS TURNIGO · la Semana (JUE 15-SÁB 17) se llena en cascada, un profesional por beat, con la paleta real (Lola #ec4899, Paula #3b82f6, Nerea #22c55e) · zoom al sábado · toque en «Paula»: **en la app las citas de las demás desaparecen (no se atenúan)**, los demás chips se apagan y sale «14 citas» · EndCard «Tu agenda, por colores.» Semana reconstruida con pocos bloques.
 - Gancho: **"Tu agenda de papel un sábado."**
 - `[4]` cuaderno emborronado → `[2]` whoosh → `[10]` agenda Semana vacía → bloques en cascada, un color por
   profesional (Lola rosa, Paula azul, Nerea verde) → `[8]` pulsa "Paula" en la leyenda, el resto se
@@ -245,11 +247,13 @@ pantalla en el primer beat) y secuencia con el nº de beats entre corchetes. `�
 #### Mar 13 oct (2 piezas)
 
 **P17 · Vídeo T5 S32 · citas** → filtro por profesional
+- **Hecho (v1, `P17-FiltroProfesional`, `video/out/p17-filtro-profesional.mp4`)**, **adaptado a la app real**: la vista Día **no tiene columnas**; es una lista de filas teñidas por profesional (chip del profesional + «Confirmada»). Leyenda en grande en el gancho · móvil con la agenda del sábado 17 · el toque en «Paula» cae en el drop (beat 12, pista por defecto): las demás filas se pliegan y quedan sus 3 citas («3 citas») · «Un toque. Cada una, lo suyo.» · EndCard «Cada profesional, su agenda.»
 - Gancho: **"¿Solo la agenda de Paula?"**
 - `[4]` pregunta → `[8]` vista Día con 3 columnas de color → `[6]` toque en "Paula" → desaparecen las demás →
   `[6]` "Un toque." → `[8]` EndCard.
 
 **P18 · Vídeo T9 S32 · citas** → recordatorio WhatsApp
+- **Hecho (v1, `P18-RecordatorioWhatsApp`, `video/out/p18-recordatorio-whatsapp.mp4`)**, **adaptado a la app real**: el recordatorio sale solo ~24 h antes con la plantilla del negocio (cliente, negocio, fecha, hora), pero **la respuesta del cliente no cambia nada en Turnigo** → no se enseña «el hueco pasa a verde». Gancho con tres «Ausente» (texto real del no-show en citas) · chat con Clara (no Nerea: es el nombre del estudio y de una profesional) · «Lo envía Turnigo solo» · «¡Allí estaré! 👍» · «Cliente avisado.» · el sábado siguiente esos huecos salen «Completada»: «Ayuda a reducir los huecos vacíos.» · EndCard «Recordatorios que trabajan solos.»
 - Gancho: **"Hoy, 3 huecos vacíos."**
 - `[4]` agenda con 3 huecos grises → `[10]` WhatsApp automático: "Hola Nerea, mañana tienes cita a las 17:00"
   ✓✓ → `[8]` Nerea responde "Allí estaré", hueco pasa a verde → `[4]` "Cliente avisado." → `[6]` EndCard.
