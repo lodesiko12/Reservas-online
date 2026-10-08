@@ -73,6 +73,30 @@ export function ConfirmDialog({ open, title, message, confirmLabel = "Eliminar",
   );
 }
 
+export type PaymentMethod = "bizum" | "efectivo";
+export const PAYMENT_METHOD_LABEL: Record<PaymentMethod, string> = { bizum: "Bizum", efectivo: "Efectivo" };
+
+/** Pregunta cómo se ha cobrado una o varias sesiones; el método es obligatorio. */
+export function PaymentMethodDialog({ open, count, onPick, onCancel }: {
+  open: boolean; count: number; onPick: (m: PaymentMethod) => void; onCancel: () => void;
+}) {
+  if (!open) return null;
+  return (
+    <Modal open onClose={onCancel} title="¿Cómo se ha pagado?" width="max-w-sm">
+      <p className="text-sm text-slate-600 dark:text-slate-300 mb-5">
+        {count === 1 ? "Elige el método de pago de la sesión." : `Elige el método de pago de las ${count} sesiones.`}
+      </p>
+      <div className="grid grid-cols-2 gap-2">
+        <button className="btn-primary" onClick={() => onPick("bizum")}>Bizum</button>
+        <button className="btn-primary" onClick={() => onPick("efectivo")}>Efectivo</button>
+      </div>
+      <div className="flex justify-end mt-4">
+        <button className="btn-ghost" onClick={onCancel}>Cancelar</button>
+      </div>
+    </Modal>
+  );
+}
+
 const STATUS_STYLES: Record<string, string> = {
   pendiente: "bg-amber-100 text-amber-700",
   confirmada: "bg-brand-100 text-brand-700",

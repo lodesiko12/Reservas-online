@@ -4,10 +4,10 @@ import { supabase } from "../lib/supabase";
 import { useAuth } from "../lib/auth";
 import { useBusinessId } from "./hooks";
 import { formatDate, formatTime } from "@reservas/shared";
-import { PageHeader, Spinner, EmptyState, StatCard } from "../components/ui";
+import { PageHeader, Spinner, EmptyState, StatCard, PaymentMethodDialog, PAYMENT_METHOD_LABEL, type PaymentMethod } from "../components/ui";
 
 type PagoRow = {
-  id: string; starts_at: string; ends_at: string; paid_at: string | null; status: string;
+  id: string; starts_at: string; ends_at: string; paid_at: string | null; payment_method: PaymentMethod | null; status: string;
   customer_id: string | null; customer_name: string; customer_last_name: string | null;
   services: { name: string; price: number | null } | null;
 };
@@ -24,7 +24,7 @@ function usePagos(view: "pendientes" | "cobradas") {
     queryFn: async () => {
       let q = supabase
         .from("bookings")
-        .select("id, starts_at, ends_at, paid_at, status, customer_id, customer_name, customer_last_name, services(name, price)")
+        .select("id, starts_at, ends_at, paid_at, payment_method, status, customer_id, customer_name, customer_last_name, services(name, price)")
         .eq("business_id", bid)
         .eq("type", "citas")
         .not("status", "in", "(cancelada,no_show)")
@@ -69,9 +69,11 @@ export function Pagos() {
   const all = groups.flatMap((g) => g.rows);
   const withoutPrice = all.some((r) => r.services?.price == null);
 
-  async function setPaid(ids: string[], paid: boolean) {
+  async function setPaid(ids: string[], paid: boolean, method?: PaymentMethod) {
     setBusy(true); setError(null);
-    const { error } = await supabase.from("bookings").update({ paid_at: paid ? new Date().toISOString() : null }).in("id", ids);
+    const { error } = await supabase.from("bookings")
+      .update({ paid_at: paid ? new Date().toISOString() : null, payment_method: paid ? method ?? null : null })
+      .in("id", ids);
     setBusy(false);
     if (error) { setError(error.message); return; }
     qc.invalidateQueries({ queryKey: ["pagos"] });
@@ -79,6 +81,10 @@ export function Pagos() {
   }
 
   const pendiente = view === "pendientes";
+  // Marcar como pagadas exige elegir el método: se pide en un diálogo.
+  const [picking, setPicking] = useState<string[] | null>(null);
+  const markPaid = (ids: string[]) => setPicking(ids);
+  const byMethod = (m: PaymentMethod | null) => all.filter((r) => r.payment_method === m);
 
   return (
     <div>
@@ -104,6 +110,15 @@ export function Pagos() {
             <StatCard label="Pacientes" value={groups.length} />
             <StatCard label={pendiente ? "Total pendiente" : "Total cobrado"} value={eur(total(all))} hint={withoutPrice ? "Hay servicios sin precio: no suman" : undefined} />
           </div>
+          {!pendiente && (
+            <div className="grid sm:grid-cols-3 gap-3">
+              <StatCard label="Cobrado por Bizum" value={eur(total(byMethod("bizum")))} hint={`${byMethod("bizum").length} sesiones`} />
+              <StatCard label="Cobrado en efectivo" value={eur(total(byMethod("efectivo")))} hint={`${byMethod("efectivo").length} sesiones`} />
+              {byMethod(null).length > 0 && (
+                <StatCard label="Sin método registrado" value={eur(total(byMethod(null)))} hint={`${byMethod(null).length} sesiones anteriores`} />
+              )}
+            </div>
+          )}
           {groups.map((g) => (
             <div key={g.key} className="card">
               <div className="flex items-center gap-3 px-5 py-3 border-b border-slate-100 dark:border-slate-800 flex-wrap">
@@ -111,7 +126,7 @@ export function Pagos() {
                 <span className="text-sm text-slate-500 dark:text-slate-400">
                   {g.rows.length} {g.rows.length === 1 ? "sesión" : "sesiones"} · {eur(total(g.rows))}
                 </span>
-                <button className="btn-primary text-xs ml-auto" disabled={busy} onClick={() => setPaid(g.rows.map((r) => r.id), pendiente)}>
+                <button className="btn-primary text-xs ml-auto" disabled={busy} onClick={() => (pendiente ? markPaid(g.rows.map((r) => r.id)) : setPaid(g.rows.map((r) => r.id), false))}>
                   {pendiente ? "Marcar todas pagadas" : "Deshacer todas"}
                 </button>
               </div>
@@ -122,8 +137,13 @@ export function Pagos() {
                       <span className="font-medium">{formatDate(r.starts_at, tz)}</span>
                       <span className="text-slate-500 dark:text-slate-400"> · {formatTime(r.starts_at, tz)} · {r.services?.name ?? "—"}</span>
                     </div>
+                    {!pendiente && (
+                      <span className="badge bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 shrink-0">
+                        {r.payment_method ? PAYMENT_METHOD_LABEL[r.payment_method] : "Sin método"}
+                      </span>
+                    )}
                     <div className="text-slate-600 dark:text-slate-300 shrink-0">{r.services?.price != null ? eur(r.services.price) : "—"}</div>
-                    <button className="btn-ghost text-xs shrink-0" disabled={busy} onClick={() => setPaid([r.id], pendiente)}>
+                    <button className="btn-ghost text-xs shrink-0" disabled={busy} onClick={() => (pendiente ? markPaid([r.id]) : setPaid([r.id], false))}>
                       {pendiente ? "Pagada" : "Deshacer"}
                     </button>
                   </div>
@@ -133,6 +153,12 @@ export function Pagos() {
           ))}
         </div>
       )}
+      <PaymentMethodDialog
+        open={!!picking}
+        count={picking?.length ?? 0}
+        onCancel={() => setPicking(null)}
+        onPick={(m) => { const ids = picking ?? []; setPicking(null); setPaid(ids, true, m); }}
+      />
     </div>
   );
 }

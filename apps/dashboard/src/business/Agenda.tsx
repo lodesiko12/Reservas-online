@@ -7,7 +7,7 @@ import {
   ymdInTz, addDaysYmd, zonedDayRange, formatTime, formatDate,
   minutesOfDayInTz, WEEKDAYS_SHORT_ES,
 } from "@reservas/shared";
-import { PageHeader, Spinner, StatusBadge, Modal, EmptyState, ConfirmDialog } from "../components/ui";
+import { PageHeader, Spinner, StatusBadge, Modal, EmptyState, ConfirmDialog, PaymentMethodDialog, PAYMENT_METHOD_LABEL, type PaymentMethod } from "../components/ui";
 
 // Restaurante usa el ciclo completo (sentada, confirmada...); citas solo
 // necesita marcar el desenlace de la cita: completada, cancelada o ausente.
@@ -437,6 +437,7 @@ function BookingModal({ booking, tz, trackPayments, onClose, onChanged }: {
   const [tableId, setTableId] = useState(booking.dining_table_id ?? "");
   const [savingTable, setSavingTable] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [pickingMethod, setPickingMethod] = useState(false);
 
   async function loadTableOptions() {
     const { data } = await supabase.rpc("get_dining_table_options", {
@@ -468,9 +469,10 @@ function BookingModal({ booking, tz, trackPayments, onClose, onChanged }: {
     syncGoogle(status === "cancelada" ? "delete" : "upsert");
     qc.invalidateQueries(); onChanged();
   }
-  async function togglePaid() {
+  async function setPaid(method: PaymentMethod | null) {
+    setPickingMethod(false);
     setBusy(true);
-    const { error } = await supabase.from("bookings").update({ paid_at: booking.paid_at ? null : new Date().toISOString() }).eq("id", booking.id);
+    const { error } = await supabase.from("bookings").update({ paid_at: method ? new Date().toISOString() : null, payment_method: method }).eq("id", booking.id);
     setBusy(false);
     if (error) { alert(error.message); return; }
     qc.invalidateQueries(); onChanged();
@@ -511,7 +513,7 @@ function BookingModal({ booking, tz, trackPayments, onClose, onChanged }: {
         {trackPayments && booking.type === "citas" && (
           <Row k="Pago" v={
             <span className="flex items-center gap-2">
-              {booking.paid_at ? <span className="badge bg-emerald-100 text-emerald-700">Pagada</span> : <span className="badge bg-amber-100 text-amber-700">Sin pagar</span>}
+              {booking.paid_at ? <span className="badge bg-emerald-100 text-emerald-700">Pagada{booking.payment_method ? ` · ${PAYMENT_METHOD_LABEL[booking.payment_method as PaymentMethod]}` : ""}</span> : <span className="badge bg-amber-100 text-amber-700">Sin pagar</span>}
               {booking.services?.price != null && <span className="text-slate-500 dark:text-slate-400">{booking.services.price} €</span>}
             </span>
           } />
@@ -562,12 +564,13 @@ function BookingModal({ booking, tz, trackPayments, onClose, onChanged }: {
             <button key={s} className="btn-ghost" disabled={busy} onClick={() => setStatus(s)}>Marcar {label(s)}</button>
           ))}
           {trackPayments && booking.type === "citas" && (
-            <button className="btn-primary" disabled={busy} onClick={togglePaid}>{booking.paid_at ? "Marcar sin pagar" : "Marcar pagada"}</button>
+            <button className="btn-primary" disabled={busy} onClick={() => (booking.paid_at ? setPaid(null) : setPickingMethod(true))}>{booking.paid_at ? "Marcar sin pagar" : "Marcar pagada"}</button>
           )}
           <button className="btn-ghost" onClick={() => setReschedule(true)}>Reprogramar</button>
           <button className="btn-danger ml-auto" disabled={busy} onClick={() => setConfirmingDelete(true)}>Eliminar</button>
         </div>
       )}
+      <PaymentMethodDialog open={pickingMethod} count={1} onPick={setPaid} onCancel={() => setPickingMethod(false)} />
       <ConfirmDialog
         open={confirmingDelete}
         title="Eliminar reserva"
