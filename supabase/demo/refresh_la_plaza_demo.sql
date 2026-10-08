@@ -9,9 +9,13 @@
 -- duración y combinaciones). Los clientes ficticios solo se crean si hay < 30.
 -- Todo son datos inventados: teléfonos 6000000NN, sin emails.
 
+-- Para otro restaurante con la misma configuración, cambiar demo_slug y loc_prefix.
+
 do $$
 declare
   bid uuid;
+  demo_slug text := 'restaurante-la-plaza';
+  loc_prefix text := 'LP-';
   tz text := 'Europe/Madrid';
   firsts text[] := array['Lucía','Carlos','Marta','Javier','Elena','Pablo','Laura','Daniel','Sara','Adrián','Paula','Álvaro','Carmen','Sergio','Irene','Rubén','Nuria','Hugo','Alba','Diego','Claudia','Iván','Rocío','Mario'];
   lasts  text[] := array['García','Martínez','López','Sánchez','Pérez','Gómez','Ruiz','Hernández','Díaz','Moreno','Muñoz','Álvarez','Romero','Alonso','Gutiérrez','Navarro','Torres','Domínguez','Vázquez','Ramos','Gil','Serrano','Blanco','Molina'];
@@ -24,8 +28,8 @@ declare
   today date := (now() at time zone tz)::date;
   n_cust int;
 begin
-  select id into bid from businesses where slug = 'restaurante-la-plaza';
-  if bid is null then raise exception 'No existe el negocio restaurante-la-plaza'; end if;
+  select id into bid from businesses where slug = demo_slug;
+  if bid is null then raise exception 'No existe el negocio %', demo_slug; end if;
   perform setseed(0.42);
 
   delete from waitlist where business_id = bid;
@@ -118,7 +122,7 @@ begin
         end if;
 
         loop
-          loc := 'LP-' || upper(substr(md5(random()::text || clock_timestamp()::text), 1, 6));
+          loc := loc_prefix || upper(substr(md5(random()::text || clock_timestamp()::text), 1, 6));
           exit when not exists (select 1 from bookings where locator = loc);
         end loop;
 
@@ -141,7 +145,7 @@ begin
   -- Lista de espera de hoy
   -- (requiere la migración 0039: waitlist.zone_id; null = "cualquiera")
   insert into waitlist(business_id, name, phone, party_size, notes, status, zone_id, created_at) values
-    (bid, 'Familia Herrero', '600000901', 4, null,         'esperando', (select id from dining_zones where business_id = bid and name = 'Terraza'),  now() - interval '18 minutes'),
+    (bid, 'Familia Navarro', '600000901', 4, null,         'esperando', (select id from dining_zones where business_id = bid and name = 'Terraza'),  now() - interval '18 minutes'),
     (bid, 'Beatriz Cano',    '600000902', 2, null,         'esperando', null,                                                                        now() - interval '9 minutes'),
     (bid, 'Grupo Ortega',    '600000903', 6, 'Cumpleaños', 'avisado',   (select id from dining_zones where business_id = bid and name = 'Interior'), now() - interval '35 minutes');
 end $$;
