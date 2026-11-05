@@ -61,7 +61,7 @@ body {
 .dates { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 6px; }
 .date-pill {
   flex: 0 0 auto; border: 1px solid var(--border); background: var(--surface);
-  border-radius: 10px; padding: 8px 10px; cursor: pointer; text-align: center;
+  border-radius: min(var(--radius-ctl, 10px), 30px); padding: 8px 10px; cursor: pointer; text-align: center;
   min-width: 58px; font: inherit;
 }
 .date-pill.selected { background: var(--primary); color: var(--primary-ink); border-color: var(--primary); }
@@ -71,7 +71,7 @@ body {
 
 .slots { display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 8px; margin-top: 14px; }
 .slot {
-  border: 1px solid var(--border); background: var(--surface); border-radius: 8px;
+  border: 1px solid var(--border); background: var(--surface); border-radius: var(--radius-ctl, 8px);
   padding: 9px 4px; cursor: pointer; font: inherit; font-weight: 600; text-align: center;
 }
 .slot:hover { border-color: var(--primary); }
@@ -80,14 +80,15 @@ body {
 .field { margin-bottom: 12px; }
 .field label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 5px; }
 .field input, .field textarea {
-  width: 100%; border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px;
-  font: inherit; background: #fff;
+  width: 100%; border: 1px solid var(--border); border-radius: var(--radius-ctl, 10px); padding: 10px 12px;
+  font: inherit; background: var(--field, #fff);
 }
+.field textarea { border-radius: min(var(--radius-ctl, 10px), 22px); }
 .field input:focus, .field textarea:focus { outline: 2px solid color-mix(in srgb, var(--primary) 40%, transparent); border-color: var(--primary); }
 .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
 .btn {
-  width: 100%; border: none; border-radius: 10px; padding: 12px 16px; cursor: pointer;
+  width: 100%; border: none; border-radius: var(--radius-ctl, 10px); padding: 12px 16px; cursor: pointer;
   font: inherit; font-weight: 700; font-size: 15px; background: var(--primary); color: var(--primary-ink);
 }
 .btn:disabled { opacity: .55; cursor: not-allowed; }
@@ -238,8 +239,8 @@ html[data-theme="dark"] .dates { scrollbar-width: thin; scrollbar-color: var(--b
 .seg .n { color: var(--muted); font-size: 12px; margin-top: 2px; }
 
 .search {
-  width: 100%; border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px;
-  font: inherit; background: #fff; color: var(--text); margin-bottom: 6px;
+  width: 100%; border: 1px solid var(--border); border-radius: var(--radius-ctl, 10px); padding: 10px 12px;
+  font: inherit; background: var(--field, #fff); color: var(--text); margin-bottom: 6px;
 }
 .search:focus { outline: 2px solid color-mix(in srgb, var(--primary) 40%, transparent); border-color: var(--primary); }
 .group-head {
@@ -255,3 +256,56 @@ html[data-theme="dark"] .dates { scrollbar-width: thin; scrollbar-color: var(--b
 .card-btn.unavailable:hover { border-color: var(--border); }
 html[data-theme="dark"] .search { background: rgba(236, 230, 219, .045); border-radius: var(--radius); }
 html[data-theme="dark"] .seg button { border-radius: var(--radius); }
+
+/* ==========================================================================
+   Integración en la web anfitriona (opt-in): solo se aplica si embed.js pasa
+   alguno de estos parámetros; sin ellos nada de lo siguiente cambia el widget.
+     ?bg= ?text= ?muted= ?surface= ?field= ?border=  colores hex (bg admite "transparent")
+     ?control-radius=  px de botones, campos, horas y fechas (999 = píldora)
+     ?chrome=none      sin cabecera, sin pie "Turnigo", sin emojis y sin padding propio
+     ?font-heading= ?font-body=  Jost, Cormorant Garamond y DM Sans se sirven desde aquí
+   ========================================================================== */
+@font-face {
+  font-family: "DM Sans"; font-style: normal; font-weight: 400 700; font-display: swap;
+  src: url("/fonts/dm-sans-400-700-normal-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+html[data-host] body {
+  font-family: var(--font-body, system-ui), system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+html[data-host] .field input,
+html[data-host] .field textarea { color: var(--text); }
+html[data-host] .dates { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+/* Los <button> no heredan el color del texto: sin esto saldrían negros */
+html[data-host] .card-btn,
+html[data-host] .date-pill,
+html[data-host] .slot { color: var(--text); }
+html[data-host] .date-pill.selected,
+html[data-host] .slot.selected { color: var(--primary-ink); }
+/* Pesos más finos, como el resto de la web (evita el negrita pesado de 700) */
+html[data-host] .card-btn .name,
+html[data-host] .card-btn .price,
+html[data-host] .group-head .gl,
+html[data-host] .group-head .gp,
+html[data-host] .seg .t,
+html[data-host] .date-pill .dom,
+html[data-host] .slot,
+html[data-host] .field label,
+html[data-host] .btn { font-weight: 500; }
+html[data-host] .field input::placeholder,
+html[data-host] .field textarea::placeholder { color: var(--muted); opacity: .75; }
+
+/* Fuente de títulos de la web: serif en peso 500 (los pesos altos se sintetizarían) y un poco más grande */
+html[data-heading-font] .section-title,
+html[data-heading-font] .brand h1,
+html[data-heading-font] .locator { font-family: var(--font-heading), Georgia, serif; font-weight: 500; }
+html[data-heading-font]:not([data-theme="dark"]) .section-title { font-size: 22px; line-height: 1.15; font-variant-numeric: lining-nums; }
+html[data-heading-font]:not([data-theme="dark"]) .locator { font-size: 34px; letter-spacing: .06em; }
+
+/* Sin marco propio: la web anfitriona pone la cabecera, el título y el contenedor */
+html[data-chrome="none"] .widget { padding: 0; }
+html[data-chrome="none"] .brand,
+html[data-chrome="none"] .powered,
+html[data-chrome="none"] .ok-icon { display: none; }
+html[data-chrome="none"] .steps { margin-top: 0; }

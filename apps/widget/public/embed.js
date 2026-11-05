@@ -14,6 +14,16 @@
  *   data-font-body="Lato"      -> fuente del texto (Google Fonts)
  *   data-radius="12"           -> radio de esquinas en px (controles y botones)
  *   data-max-width="720"       -> ancho máximo en px (320-1200; por defecto 520)
+ *   data-bg="transparent"      -> fondo del widget (hex o "transparent")
+ *   data-text="#5a2b33"        -> color del texto (hex)
+ *   data-muted="#85474f"       -> color del texto secundario (hex)
+ *   data-surface="#fffbf9"     -> fondo de tarjetas y botones de elección (hex)
+ *   data-field="#fffbf9"       -> fondo de los campos de texto (hex)
+ *   data-border="#a5565f38"    -> color de líneas y bordes (hex, admite alfa)
+ *   data-control-radius="999"  -> radio en px de botones, campos, horas y fechas (999 = píldora)
+ *   data-chrome="none"         -> sin cabecera, sin pie ni emojis, y sin padding propio:
+ *                                 para webs que ya ponen su propio título y contenedor
+ *   Fuentes: "Jost", "Cormorant Garamond" y "DM Sans" se sirven desde el propio widget.
  *
  * El widget se carga en un <iframe> aislado para no heredar ni romper el CSS
  * del sitio anfitrión, y se autoajusta en altura de forma responsive.
@@ -48,6 +58,17 @@
     if (fontBody) url += "&font-body=" + encodeURIComponent(fontBody);
     var radius = el.getAttribute("data-radius");
     if (radius) url += "&radius=" + encodeURIComponent(radius);
+
+    // Integración fina: colores, radio de controles y modo sin marco (todo opcional).
+    var passthrough = [
+      ["data-bg", "bg"], ["data-text", "text"], ["data-muted", "muted"], ["data-surface", "surface"],
+      ["data-field", "field"], ["data-border", "border"],
+      ["data-control-radius", "control-radius"], ["data-chrome", "chrome"],
+    ];
+    for (var p = 0; p < passthrough.length; p++) {
+      var pv = el.getAttribute(passthrough[p][0]);
+      if (pv) url += "&" + passthrough[p][1] + "=" + encodeURIComponent(pv);
+    }
 
     var maxWidth = el.getAttribute("data-max-width");
     var maxWidthPx = /^\d{3,4}$/.test(maxWidth || "") && +maxWidth >= 320 && +maxWidth <= 1200 ? +maxWidth : 0;

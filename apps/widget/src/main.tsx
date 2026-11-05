@@ -26,13 +26,18 @@ function hostFont(param: string, cssVar: string): string | null {
   document.documentElement.style.setProperty(cssVar, `"${name}"`);
   return name;
 }
-const hostFonts = [hostFont("font-heading", "--font-heading"), hostFont("font-body", "--font-body")]
+const headingFont = hostFont("font-heading", "--font-heading");
+const hostFonts = [headingFont, hostFont("font-body", "--font-body")]
   .filter((n): n is string => !!n);
-if (hostFonts.length) {
+if (headingFont) document.documentElement.dataset.headingFont = "1";
+// Las que ya se sirven desde este mismo origen (ver styles.css) no necesitan Google Fonts.
+const BUNDLED_FONTS = new Set(["Jost", "Cormorant Garamond", "DM Sans"]);
+const remoteFonts = hostFonts.filter((n) => !BUNDLED_FONTS.has(n));
+if (remoteFonts.length) {
   const link = document.createElement("link");
   link.rel = "stylesheet";
   link.href = "https://fonts.googleapis.com/css2?" +
-    hostFonts.map((n) => `family=${encodeURIComponent(n).replace(/%20/g, "+")}:wght@400;500;600;700`).join("&") +
+    remoteFonts.map((n) => `family=${encodeURIComponent(n).replace(/%20/g, "+")}:wght@400;500;600;700`).join("&") +
     "&display=swap";
   document.head.appendChild(link);
 }
@@ -43,6 +48,35 @@ if (/^\d{3,4}$/.test(maxWidthParam) && +maxWidthParam >= 320 && +maxWidthParam <
 }
 const radiusParam = params.get("radius") ?? "";
 if (/^\d{1,2}$/.test(radiusParam)) document.documentElement.style.setProperty("--radius", radiusParam + "px");
+
+// Integración fina en la web anfitriona (todo opcional; sin estos parámetros el widget no cambia).
+// Solo se aceptan hex y números: nada de CSS arbitrario por la URL.
+const HEX = /^#?([0-9a-f]{3}|[0-9a-f]{4}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
+function hostColor(param: string, cssVar: string, allowTransparent = false): boolean {
+  const v = (params.get(param) ?? "").trim();
+  if (allowTransparent && v.toLowerCase() === "transparent") {
+    document.documentElement.style.setProperty(cssVar, "transparent");
+    return true;
+  }
+  const m = HEX.exec(v);
+  if (!m) return false;
+  document.documentElement.style.setProperty(cssVar, "#" + m[1]);
+  return true;
+}
+let hostSkin = false;
+hostSkin = hostColor("bg", "--bg", true) || hostSkin;
+hostSkin = hostColor("text", "--text") || hostSkin;
+hostSkin = hostColor("muted", "--muted") || hostSkin;
+hostSkin = hostColor("surface", "--surface") || hostSkin;
+hostSkin = hostColor("field", "--field") || hostSkin;
+hostSkin = hostColor("border", "--border") || hostSkin;
+const ctlRadius = params.get("control-radius") ?? "";
+if (/^\d{1,3}$/.test(ctlRadius)) {
+  document.documentElement.style.setProperty("--radius-ctl", ctlRadius + "px");
+  hostSkin = true;
+}
+if (params.get("chrome") === "none") { document.documentElement.dataset.chrome = "none"; hostSkin = true; }
+if (hostSkin || hostFonts.length) document.documentElement.dataset.host = "1";
 
 const root = createRoot(document.getElementById("root")!);
 root.render(
