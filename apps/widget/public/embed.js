@@ -13,6 +13,7 @@
  *   data-font-heading="Oswald" -> fuente de títulos (cualquier familia de Google Fonts)
  *   data-font-body="Lato"      -> fuente del texto (Google Fonts)
  *   data-radius="12"           -> radio de esquinas en px (controles y botones)
+ *   data-max-width="720"       -> ancho máximo en px (320-1200; por defecto 520)
  *
  * El widget se carga en un <iframe> aislado para no heredar ni romper el CSS
  * del sitio anfitrión, y se autoajusta en altura de forma responsive.
@@ -48,6 +49,10 @@
     var radius = el.getAttribute("data-radius");
     if (radius) url += "&radius=" + encodeURIComponent(radius);
 
+    var maxWidth = el.getAttribute("data-max-width");
+    var maxWidthPx = /^\d{3,4}$/.test(maxWidth || "") && +maxWidth >= 320 && +maxWidth <= 1200 ? +maxWidth : 0;
+    if (maxWidthPx) url += "&max-width=" + maxWidthPx;
+
     var iframe = document.createElement("iframe");
     iframe.src = url;
     iframe.title = "Reservas";
@@ -57,7 +62,7 @@
     iframe.style.border = "0";
     iframe.style.overflow = "hidden";
     iframe.style.height = "620px"; // altura inicial; se ajusta con postMessage
-    iframe.style.maxWidth = "520px";
+    iframe.style.maxWidth = (maxWidthPx || 520) + "px";
     iframe.style.display = "block";
     iframe.style.margin = "0 auto";
     el.appendChild(iframe);

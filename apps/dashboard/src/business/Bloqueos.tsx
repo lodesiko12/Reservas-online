@@ -70,6 +70,7 @@ export function Bloqueos() {
 
 function BlockModal({ bid, tz, onClose, onSaved }: { bid: string; tz: string; onClose: () => void; onSaved: () => void }) {
   const { data: pros } = useProfessionals();
+  const { business } = useAuth();
   const [scope, setScope] = useState<"business" | "professional">("business");
   const [professionalId, setProfessionalId] = useState("");
   const [from, setFrom] = useState("");
@@ -102,7 +103,7 @@ function BlockModal({ bid, tz, onClose, onSaved }: { bid: string; tz: string; on
     if (cancelAffected) {
       let q = supabase.from("bookings")
         .update({ status: "cancelada" })
-        .eq("business_id", bid).eq("status", "confirmada")
+        .eq("business_id", bid).in("status", business?.order_mode ? ["confirmada", "pendiente"] : ["confirmada"])
         .lt("starts_at", endsAt).gt("ends_at", startsAt);
       if (scope === "professional") q = q.eq("professional_id", professionalId);
       const { data } = await q.select("id");

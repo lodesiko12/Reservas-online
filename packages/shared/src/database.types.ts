@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
+    PostgrestVersion: "14.17"
   }
   public: {
     Tables: {
@@ -920,9 +920,11 @@ export type Database = {
           id: string
           locator: string
           notes: string | null
+          option_id: string | null
+          option_label: string | null
           paid_at: string | null
-          payment_method: string | null
           party_size: number | null
+          payment_method: string | null
           professional_id: string | null
           service_id: string | null
           starts_at: string
@@ -947,9 +949,11 @@ export type Database = {
           id?: string
           locator: string
           notes?: string | null
+          option_id?: string | null
+          option_label?: string | null
           paid_at?: string | null
-          payment_method?: string | null
           party_size?: number | null
+          payment_method?: string | null
           professional_id?: string | null
           service_id?: string | null
           starts_at: string
@@ -974,9 +978,11 @@ export type Database = {
           id?: string
           locator?: string
           notes?: string | null
+          option_id?: string | null
+          option_label?: string | null
           paid_at?: string | null
-          payment_method?: string | null
           party_size?: number | null
+          payment_method?: string | null
           professional_id?: string | null
           service_id?: string | null
           starts_at?: string
@@ -1015,6 +1021,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "bookings_option_id_fkey"
+            columns: ["option_id"]
+            isOneToOne: false
+            referencedRelation: "service_options"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "bookings_professional_id_fkey"
             columns: ["professional_id"]
             isOneToOne: false
@@ -1033,6 +1046,35 @@ export type Database = {
             columns: ["table_combo_id"]
             isOneToOne: false
             referencedRelation: "dining_table_combos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      business_day_overrides: {
+        Row: {
+          business_id: string
+          day: string
+          note: string | null
+          use_weekday: number | null
+        }
+        Insert: {
+          business_id: string
+          day: string
+          note?: string | null
+          use_weekday?: number | null
+        }
+        Update: {
+          business_id?: string
+          day?: string
+          note?: string | null
+          use_weekday?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_day_overrides_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
             referencedColumns: ["id"]
           },
         ]
@@ -1218,6 +1260,7 @@ export type Database = {
           logo_url: string | null
           max_advance_days: number | null
           name: string
+          order_mode: boolean
           primary_color: string
           reminder_lang: string
           reminder_template_name: string | null
@@ -1241,6 +1284,7 @@ export type Database = {
           logo_url?: string | null
           max_advance_days?: number | null
           name: string
+          order_mode?: boolean
           primary_color?: string
           reminder_lang?: string
           reminder_template_name?: string | null
@@ -1264,6 +1308,7 @@ export type Database = {
           logo_url?: string | null
           max_advance_days?: number | null
           name?: string
+          order_mode?: boolean
           primary_color?: string
           reminder_lang?: string
           reminder_template_name?: string | null
@@ -2322,6 +2367,47 @@ export type Database = {
           },
         ]
       }
+      order_settings: {
+        Row: {
+          business_id: string
+          cancel_min_hours: number | null
+          created_at: string
+          daily_max_by_size: Json
+          daily_max_total: number | null
+          min_lead_hours: number | null
+          require_confirmation: boolean
+          updated_at: string
+        }
+        Insert: {
+          business_id: string
+          cancel_min_hours?: number | null
+          created_at?: string
+          daily_max_by_size?: Json
+          daily_max_total?: number | null
+          min_lead_hours?: number | null
+          require_confirmation?: boolean
+          updated_at?: string
+        }
+        Update: {
+          business_id?: string
+          cancel_min_hours?: number | null
+          created_at?: string
+          daily_max_by_size?: Json
+          daily_max_total?: number | null
+          min_lead_hours?: number | null
+          require_confirmation?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_settings_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: true
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       professional_google_accounts: {
         Row: {
           access_token: string | null
@@ -2565,6 +2651,76 @@ export type Database = {
           },
         ]
       }
+      service_option_groups: {
+        Row: {
+          business_id: string
+          group_key: string
+          label: string
+          sort_order: number
+        }
+        Insert: {
+          business_id: string
+          group_key: string
+          label: string
+          sort_order?: number
+        }
+        Update: {
+          business_id?: string
+          group_key?: string
+          label?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_option_groups_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_options: {
+        Row: {
+          business_id: string
+          created_at: string
+          id: string
+          is_available: boolean
+          name: string
+          option_group: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          id?: string
+          is_available?: boolean
+          name: string
+          option_group: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          id?: string
+          is_available?: boolean
+          name?: string
+          option_group?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_options_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       service_professionals: {
         Row: {
           created_at: string
@@ -2607,7 +2763,10 @@ export type Database = {
           id: string
           is_active: boolean
           name: string
+          option_group: string | null
           price: number | null
+          size_key: string | null
+          size_label: string | null
           sort_order: number
           updated_at: string
         }
@@ -2619,7 +2778,10 @@ export type Database = {
           id?: string
           is_active?: boolean
           name: string
+          option_group?: string | null
           price?: number | null
+          size_key?: string | null
+          size_label?: string | null
           sort_order?: number
           updated_at?: string
         }
@@ -2631,7 +2793,10 @@ export type Database = {
           id?: string
           is_active?: boolean
           name?: string
+          option_group?: string | null
           price?: number | null
+          size_key?: string | null
+          size_label?: string | null
           sort_order?: number
           updated_at?: string
         }
@@ -2824,6 +2989,7 @@ export type Database = {
           p_last_name: string
           p_name: string
           p_notes?: string
+          p_option_id?: string
           p_phone: string
           p_professional_id?: string
           p_service_id: string
@@ -2845,7 +3011,11 @@ export type Database = {
           id: string
           locator: string
           notes: string | null
+          option_id: string | null
+          option_label: string | null
+          paid_at: string | null
           party_size: number | null
+          payment_method: string | null
           professional_id: string | null
           service_id: string | null
           starts_at: string
@@ -2891,7 +3061,11 @@ export type Database = {
           id: string
           locator: string
           notes: string | null
+          option_id: string | null
+          option_label: string | null
+          paid_at: string | null
           party_size: number | null
+          payment_method: string | null
           professional_id: string | null
           service_id: string | null
           starts_at: string
@@ -2933,7 +3107,11 @@ export type Database = {
           id: string
           locator: string
           notes: string | null
+          option_id: string | null
+          option_label: string | null
+          paid_at: string | null
           party_size: number | null
+          payment_method: string | null
           professional_id: string | null
           service_id: string | null
           starts_at: string
@@ -3308,9 +3486,12 @@ export type Database = {
           ends_at: string
           locator: string
           logo_url: string
+          option_label: string
+          order_mode: boolean
           party_size: number
           primary_color: string
           service_name: string
+          size_label: string
           starts_at: string
           status: Database["public"]["Enums"]["booking_status"]
           timezone: string
@@ -3392,6 +3573,7 @@ export type Database = {
           id: string
           logo_url: string
           name: string
+          order_mode: boolean
           primary_color: string
           slot_interval_min: number
           timezone: string
@@ -3405,14 +3587,29 @@ export type Database = {
           min_party_online: number
         }[]
       }
+      get_public_options: {
+        Args: { p_business_id: string }
+        Returns: {
+          group_label: string
+          group_sort: number
+          id: string
+          is_available: boolean
+          name: string
+          option_group: string
+          sort_order: number
+        }[]
+      }
       get_public_services: {
         Args: { p_business_id: string }
         Returns: {
           duration_min: number
           id: string
           name: string
+          option_group: string
           price: number
           professionals: Json
+          size_key: string
+          size_label: string
         }[]
       }
       import_customer: {
@@ -3513,6 +3710,7 @@ export type Database = {
         | "no_show"
         | "pendiente"
         | "sentada"
+        | "listo"
       business_type:
         | "citas"
         | "restaurante"
@@ -3666,6 +3864,7 @@ export const Constants = {
         "no_show",
         "pendiente",
         "sentada",
+        "listo",
       ],
       business_type: [
         "citas",

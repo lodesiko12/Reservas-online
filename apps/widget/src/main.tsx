@@ -36,6 +36,11 @@ if (hostFonts.length) {
     "&display=swap";
   document.head.appendChild(link);
 }
+// Ancho máximo del contenido (embed.js: data-max-width). Por defecto 480px (ver .widget en styles.css).
+const maxWidthParam = params.get("max-width") ?? "";
+if (/^\d{3,4}$/.test(maxWidthParam) && +maxWidthParam >= 320 && +maxWidthParam <= 1200) {
+  document.documentElement.style.setProperty("--widget-max", (+maxWidthParam - 40) + "px");
+}
 const radiusParam = params.get("radius") ?? "";
 if (/^\d{1,2}$/.test(radiusParam)) document.documentElement.style.setProperty("--radius", radiusParam + "px");
 

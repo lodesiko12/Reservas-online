@@ -14,6 +14,7 @@ export type PublicBusiness = {
   logo_url: string | null;
   timezone: string;
   slot_interval_min: number;
+  order_mode: boolean;
 };
 
 export type PublicProfessional = { id: string; name: string; color: string };
@@ -24,6 +25,20 @@ export type PublicService = {
   duration_min: number;
   price: number | null;
   professionals: PublicProfessional[];
+  // Modo encargo: cada servicio es un tamaño × nivel de precio.
+  size_key: string | null;
+  size_label: string | null;
+  option_group: string | null;
+};
+
+export type PublicOption = {
+  id: string;
+  option_group: string;
+  group_label: string;
+  group_sort: number;
+  name: string;
+  is_available: boolean;
+  sort_order: number;
 };
 
 export type Slot = { slot_start: string; slot_end: string };
@@ -39,6 +54,12 @@ export async function fetchServices(businessId: string): Promise<PublicService[]
   const { data, error } = await supabase.rpc("get_public_services", { p_business_id: businessId });
   if (error) throw error;
   return (data ?? []) as PublicService[];
+}
+
+export async function fetchOptions(businessId: string): Promise<PublicOption[]> {
+  const { data, error } = await supabase.rpc("get_public_options", { p_business_id: businessId });
+  if (error) throw error;
+  return (data ?? []) as PublicOption[];
 }
 
 export async function fetchSlots(
@@ -120,6 +141,7 @@ export type BookingInput = {
   // citas:
   service_id?: string;
   professional_id?: string | null;
+  option_id?: string; // modo encargo: sabor
   // restaurante:
   dining_shift_id?: string;
   party_size?: number;
@@ -139,6 +161,9 @@ export type BookingResult = {
   service_name: string | null;
   business_name: string;
   status: "confirmada" | "pendiente";
+  option_label?: string | null;
+  size_label?: string | null;
+  order_mode?: boolean;
 };
 
 /** Crea la reserva a través de la Edge Function (envía también el email). */
@@ -163,7 +188,7 @@ export async function createBooking(input: BookingInput): Promise<BookingResult>
 
 export type BookingLookup = {
   locator: string;
-  status: "confirmada" | "cancelada" | "completada" | "no_show" | "pendiente";
+  status: "confirmada" | "cancelada" | "completada" | "no_show" | "pendiente" | "listo";
   type: "citas" | "restaurante" | "psicologo" | "autonomo" | "asesoria" | "agencia";
   starts_at: string;
   ends_at: string;
@@ -174,6 +199,9 @@ export type BookingLookup = {
   service_name: string | null;
   party_size: number | null;
   customer_name: string;
+  option_label: string | null;
+  size_label: string | null;
+  order_mode: boolean;
 };
 
 export async function lookupBooking(locator: string): Promise<BookingLookup | null> {

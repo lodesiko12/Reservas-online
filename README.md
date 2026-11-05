@@ -7,7 +7,7 @@ Plataforma **multi-tenant** de reservas para negocios locales, con tres piezas:
 3. **Panel super-admin** — alta de negocios, usuarios de staff y activación de suscripciones (sin registro público).
 
 Tipos de tenant (`business_type`):
-- **`citas`** (clínicas, peluquerías…): reserva de un servicio con duración y, opcionalmente, un profesional.
+- **`citas`** (clínicas, peluquerías…): reserva de un servicio con duración y, opcionalmente, un profesional. Con `businesses.order_mode = true` funciona como **modo encargo** (pastelerías…): el cliente encarga un producto y elige cuándo recogerlo (ver "Citas → Modo encargo").
 - **`psicologo`**: igual que `citas` + ficha clínica de cliente (sesiones, informe con IA, recibo).
 - **`restaurante`**: franjas de servicio (`dining_shifts`) con aforo, mesas físicas y plano de sala.
 
@@ -85,6 +85,9 @@ Todo el backend vive en **Supabase** (Postgres + Auth + RLS + Edge Functions + S
 | `0027_business_type_psicologo.sql` | Valor `psicologo` en `business_type` |
 | `0028_fix_sync_google_busy_cron_secret.sql` | El cron de `sync-google-busy` pasa a usar `CRON_SECRET` |
 | `0029` / `0030` | Psicólogo: `customers.nif`, `client_sessions` (una fila por sesión: objetivo, notas, seguimiento, tareas_pautas), `client_ai_reports`, `business_integrations.gemini_api_key` + RPCs `get_gemini_status`/`set_gemini_key` |
+| `0031`–`0050` | (no detalladas aquí; ver cada archivo) ficha de cliente ampliada, rate limiting, mini-CRM autónomo, asesorías, agencia, lista de espera por zona, pago de sesiones |
+| `0051_booking_status_listo.sql` | Valor `listo` en `booking_status` (encargo preparado, pendiente de recoger) |
+| `0052_order_mode.sql` | **Modo encargo**: `businesses.order_mode`, `order_settings` (antelación mínima, capacidad diaria total/por tamaño, confirmación manual, antelación de cancelación), `service_option_groups` + `service_options` (niveles y sabores), `services.size_key/size_label/option_group`, `bookings.option_id/option_label`, `business_day_overrides` (festivos). Reescribe `get_available_slots` (día especial, antelación mínima y capacidad diaria solo canal web; `pendiente`/`listo` ocupan hueco), `create_public_booking` (+`p_option_id`, estado `pendiente` con confirmación manual) y las RPC públicas (`get_public_business/services/options`, `get_booking_by_locator`, `cancel_booking_by_locator`) |
 
 Los cron jobs se crean con el secreto como placeholder `REPLACE_WITH_SECRET`; en producción está el valor real embebido en `cron.job`.
 
@@ -153,6 +156,33 @@ Workers Builds está conectado al repo `github.com/lodesiko12/Reservas-online`: 
 
 ### Citas
 - Servicios con duración, precio, disponibilidad propia y profesionales asignados (N:N). Color por profesional (paleta automática, editable). Si un servicio tiene >1 profesional, el widget y la reserva manual ofrecen elegir uno o "cualquiera disponible".
+
+### Modo encargo (2026-11-05)
+Un negocio `citas` con `order_mode = true` (p. ej. *cheesecake.ando*, tartas de queso). Todo está
+activado por negocio: los demás no cambian de comportamiento.
+- **Modelo**: un servicio por nivel de precio × tamaño (`services.size_key/size_label/option_group`,
+  duración = tramo de recogida de 15 min), niveles en `service_option_groups`, sabores en
+  `service_options` (con interruptor «no disponible esta semana»). El encargo guarda `option_id` y
+  `option_label` (el nombre del sabor se conserva aunque se borre). `default_capacity` = recogidas
+  simultáneas por franja.
+- **Widget** (`OrderFlow.tsx`): tamaño → sabor (buscador + niveles plegables con precio del tamaño) →
+  día (solo con hueco, 45 días) → hora de recogida → datos (email opcional, dedicatoria/alergias) →
+  localizador. Vocabulario «encargo/recogida» también en «Mi encargo» y en el email. `embed.js` admite
+  `data-max-width` (320–1200, por defecto 520).
+- **Reglas solo canal web** (`order_settings`; vacío = sin límite): antelación mínima en horas,
+  máximo de tartas por día (total y por tamaño; al llegar, el día desaparece del widget), antelación
+  mínima de cancelación, confirmación manual (los encargos web quedan `pendiente`, ocupan hueco y
+  cuentan para la capacidad). El staff nunca está sujeto a ellas.
+- **Festivos** (`business_day_overrides`): un día concreto usa el horario de otro día de la semana o
+  queda cerrado. Vacaciones largas y franjas sueltas siguen en Bloqueos.
+- **Panel**: Agenda con sabor/tamaño (semana = una columna por día), estados pendiente → confirmado →
+  **listo** → recogido (`completada`) / no recogido (`no_show`) / cancelado, **Nuevo encargo**,
+  **Producción** (recuento por sabor y tamaño + hora de recogida, por día o semana, imprimible),
+  **Catálogo** (sabores, niveles, precios) y, en Configuración, «Reglas de los encargos online» y
+  «Festivos y días especiales». Placeholders extra del email de confirmación: `{sabor}` y `{tamano}`.
+- **Alta de un negocio así**: `supabase/demo/gen_cheesecake_ando.mjs` genera
+  `setup_cheesecake_ando.sql` leyendo la carta de la web (idempotente); el usuario de staff se añade
+  después desde Admin → negocio → Usuarios.
 
 ### Psicólogo
 Todo gateado por `business.type === 'psicologo'` en panel y Edge Function.

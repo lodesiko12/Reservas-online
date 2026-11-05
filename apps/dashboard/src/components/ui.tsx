@@ -101,13 +101,19 @@ const STATUS_STYLES: Record<string, string> = {
   pendiente: "bg-amber-100 text-amber-700",
   confirmada: "bg-brand-100 text-brand-700",
   sentada: "bg-sky-100 text-sky-700",
+  listo: "bg-purple-100 text-purple-700",
   cancelada: "bg-slate-100 text-slate-500",
   completada: "bg-green-100 text-green-700",
   no_show: "bg-red-100 text-red-700",
 };
 const STATUS_TEXT: Record<string, string> = {
-  pendiente: "Pendiente", confirmada: "Confirmada", sentada: "En mesa", cancelada: "Cancelada", completada: "Completada", no_show: "Ausente",
+  pendiente: "Pendiente", confirmada: "Confirmada", sentada: "En mesa", listo: "Listo", cancelada: "Cancelada", completada: "Completada", no_show: "Ausente",
 };
-export function StatusBadge({ status }: { status: string }) {
-  return <span className={`badge ${STATUS_STYLES[status] ?? "bg-slate-100"}`}>{STATUS_TEXT[status] ?? status}</span>;
+const ORDER_STATUS_TEXT: Record<string, string> = {
+  pendiente: "Por confirmar", confirmada: "Confirmado", listo: "Listo", cancelada: "Cancelado", completada: "Recogido", no_show: "No recogido",
+};
+/** `order`: vocabulario del modo encargo (recogido / no recogido…). */
+export function StatusBadge({ status, order }: { status: string; order?: boolean }) {
+  const text = order ? ORDER_STATUS_TEXT[status] : STATUS_TEXT[status];
+  return <span className={`badge ${STATUS_STYLES[status] ?? "bg-slate-100"}`}>{text ?? STATUS_TEXT[status] ?? status}</span>;
 }

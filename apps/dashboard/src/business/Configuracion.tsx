@@ -11,6 +11,7 @@ import { GoogleCalendarBusinessSection } from "../components/GoogleCalendarBusin
 import { GeminiConfigForm } from "../components/GeminiConfigForm";
 import { WindowsEditor, type Win } from "../components/WindowsEditor";
 import { ConfiguracionFiscalSection } from "./crm/ConfiguracionFiscal";
+import { OrderSettingsSection, DayOverridesSection } from "./OrderSettings";
 
 const WIDGET_URL = ((import.meta.env.VITE_WIDGET_URL as string) || "").replace(/\/+$/, "");
 
@@ -21,6 +22,7 @@ export function Configuracion() {
   const isRestaurant = business?.type === "restaurante";
   const isPsicologo = business?.type === "psicologo";
   const isAutonomo = business?.type === "autonomo";
+  const orderMode = !!business?.order_mode;
 
   const [name, setName] = useState(business?.name ?? "");
   const [color, setColor] = useState(business?.primary_color ?? "#4f46e5");
@@ -162,13 +164,16 @@ export function Configuracion() {
           <code className="bg-slate-100 dark:bg-slate-800 px-1 rounded">{"{negocio}"}</code>{" "}
           <code className="bg-slate-100 dark:bg-slate-800 px-1 rounded">{"{servicio}"}</code>{" "}
           <code className="bg-slate-100 dark:bg-slate-800 px-1 rounded">{"{fecha}"}</code>{" "}
-          <code className="bg-slate-100 dark:bg-slate-800 px-1 rounded">{"{hora}"}</code>.
+          <code className="bg-slate-100 dark:bg-slate-800 px-1 rounded">{"{hora}"}</code>
+          {orderMode && <>{" "}<code className="bg-slate-100 dark:bg-slate-800 px-1 rounded">{"{sabor}"}</code>{" "}<code className="bg-slate-100 dark:bg-slate-800 px-1 rounded">{"{tamano}"}</code></>}.
         </p>
         <textarea
           className="input min-h-[100px]"
           value={confirmationMessage}
           onChange={(e) => setConfirmationMessage(e.target.value)}
-          placeholder={`Hola {cliente}, tu reserva en {negocio} está confirmada para el {fecha} a las {hora}. ¡Te esperamos!`}
+          placeholder={orderMode
+            ? `Hola {cliente}, tu tarta de {sabor} ({tamano}) está confirmada para recogerla el {fecha} a las {hora}. ¡Gracias por encargar en {negocio}!`
+            : `Hola {cliente}, tu reserva en {negocio} está confirmada para el {fecha} a las {hora}. ¡Te esperamos!`}
         />
         <button className="btn-primary mt-4" onClick={saveConfirmationMessage} disabled={savingConfirmation}>{savingConfirmation ? "Guardando…" : "Guardar mensaje"}</button>
       </section>
@@ -216,12 +221,12 @@ export function Configuracion() {
       {/* Reservas */}
       {!isRestaurant && !isAutonomo && (
         <section className="card p-6">
-          <h2 className="font-semibold mb-4">Reservas</h2>
+          <h2 className="font-semibold mb-4">{orderMode ? "Recogidas" : "Reservas"}</h2>
           <div className="grid sm:grid-cols-2 gap-4">
-            <div><label className="label">Aforo por defecto (servicios sin profesional)</label><input type="number" min={1} className="input" value={capacity} onChange={(e) => setCapacity(+e.target.value)} /></div>
-            <div><label className="label">Granularidad de huecos (min)</label><input type="number" min={5} step={5} className="input" value={slotInterval} onChange={(e) => setSlotInterval(+e.target.value)} /></div>
+            <div><label className="label">{orderMode ? "Recogidas simultáneas por franja" : "Aforo por defecto (servicios sin profesional)"}</label><input type="number" min={1} className="input" value={capacity} onChange={(e) => setCapacity(+e.target.value)} /></div>
+            <div><label className="label">{orderMode ? "Intervalo entre horas de recogida (min)" : "Granularidad de huecos (min)"}</label><input type="number" min={5} step={5} className="input" value={slotInterval} onChange={(e) => setSlotInterval(+e.target.value)} /></div>
             <div>
-              <label className="label">Antelación máxima de reserva (días)</label>
+              <label className="label">{orderMode ? "Antelación máxima de encargo (días)" : "Antelación máxima de reserva (días)"}</label>
               <input type="number" min={1} className="input" value={maxAdvanceDays} onChange={(e) => setMaxAdvanceDays(e.target.value)} placeholder="Sin límite" />
               <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Vacío = sin límite. Ej. 90 = no se puede reservar con más de 3 meses de antelación. Solo afecta a las reservas web, no a las que crea el staff manualmente.</p>
             </div>
@@ -229,6 +234,10 @@ export function Configuracion() {
           <button className="btn-primary mt-4" onClick={saveReservas} disabled={savingRes}>{savingRes ? "Guardando…" : "Guardar"}</button>
         </section>
       )}
+
+      {/* Reglas de los encargos web y festivos (modo encargo) */}
+      {orderMode && <OrderSettingsSection flash={flash} />}
+      {orderMode && <DayOverridesSection flash={flash} />}
 
       {/* Reglas generales de reserva (restaurante) */}
       {isRestaurant && <DiningSettingsSection bid={bid} flash={flash} />}

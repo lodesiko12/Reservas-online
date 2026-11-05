@@ -5,15 +5,17 @@ import { useAuth } from "../lib/auth";
 import { useServices, useProfessionals, useServiceProfessionals } from "./hooks";
 import { ymdInTz, addDaysYmd, weekdayInTz, WEEKDAYS_SHORT_ES, formatTime, formatDuration, PARTY_SIZE_OPTIONS } from "@reservas/shared";
 import { PageHeader, Spinner } from "../components/ui";
+import { NuevoEncargo } from "./NuevoEncargo";
 
 const PARTY_OPTIONS = PARTY_SIZE_OPTIONS;
 
 export function NuevaReserva() {
   const { business } = useAuth();
+  if (business?.order_mode) return <NuevoEncargo />;
   return business?.type === "restaurante" ? <NuevaReservaRestaurante /> : <NuevaReservaCitas />;
 }
 
-function DateStrip({ tz, date, setDate }: { tz: string; date: string; setDate: (d: string) => void }) {
+export function DateStrip({ tz, date, setDate }: { tz: string; date: string; setDate: (d: string) => void }) {
   const dates = Array.from({ length: 21 }, (_, i) => addDaysYmd(ymdInTz(new Date(), tz), i));
   return (
     <div className="flex gap-2 overflow-x-auto pb-2">
@@ -31,7 +33,7 @@ function DateStrip({ tz, date, setDate }: { tz: string; date: string; setDate: (
   );
 }
 
-function CustomerFields({ form, setForm }: { form: any; setForm: (f: any) => void }) {
+export function CustomerFields({ form, setForm }: { form: any; setForm: (f: any) => void }) {
   return (
     <div className="card p-5 grid sm:grid-cols-2 gap-4">
       <div><label className="label">Nombre *</label><input className="input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required /></div>
@@ -43,7 +45,7 @@ function CustomerFields({ form, setForm }: { form: any; setForm: (f: any) => voi
   );
 }
 
-function Done({ locator }: { locator: string }) {
+export function Done({ locator }: { locator: string }) {
   return (
     <div className="grid place-items-center py-20 text-center">
       <div className="card p-8">

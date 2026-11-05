@@ -10,6 +10,7 @@ import {
 } from "@reservas/shared";
 import { Lookup } from "./Lookup";
 import { RestaurantFlow } from "./RestaurantFlow";
+import { OrderFlow } from "./OrderFlow";
 
 type Props = { slug: string; initialView: "booking" | "lookup"; initialLocator: string };
 
@@ -44,21 +45,27 @@ export default function App({ slug, initialView, initialLocator }: Props) {
         {business.logo_url && <img src={business.logo_url} alt={business.name} />}
         <div>
           <h1>{business.name}</h1>
-          <p className="sub">{view === "lookup" ? "Consulta tu reserva" : "Reserva online"}</p>
+          <p className="sub">
+            {business.order_mode
+              ? (view === "lookup" ? "Consulta tu encargo" : "Haz tu encargo")
+              : (view === "lookup" ? "Consulta tu reserva" : "Reserva online")}
+          </p>
         </div>
       </div>
 
       {business.type === "asesoria" || business.type === "agencia" ? (
         <p className="sub">Este negocio no admite reservas online.</p>
       ) : view === "lookup" ? (
-        <Lookup initialLocator={initialLocator} onBack={() => setView("booking")} />
+        <Lookup initialLocator={initialLocator} onBack={() => setView("booking")} orderMode={business.order_mode} />
+      ) : business.order_mode ? (
+        <OrderFlow business={business} onLookup={() => setView("lookup")} />
       ) : business.type === "restaurante" ? (
         <RestaurantFlow business={business} onLookup={() => setView("lookup")} />
       ) : (
         <BookingFlow business={business} onLookup={() => setView("lookup")} />
       )}
 
-      <p className="powered">Reservas · Turnigo</p>
+      <p className="powered">{business.order_mode ? "Encargos" : "Reservas"} · Turnigo</p>
     </div>
   );
 }

@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { lookupBooking, cancelBooking, type BookingLookup } from "./api";
-import { formatDate, formatTime, STATUS_LABEL, STATUS_COLOR } from "@reservas/shared";
+import { formatDate, formatTime, STATUS_LABEL, STATUS_COLOR, ORDER_STATUS_LABEL } from "@reservas/shared";
 
-export function Lookup({ initialLocator, onBack }: { initialLocator: string; onBack: () => void }) {
+export function Lookup({ initialLocator, onBack, orderMode = false }: { initialLocator: string; onBack: () => void; orderMode?: boolean }) {
   const [code, setCode] = useState(initialLocator);
   const [booking, setBooking] = useState<BookingLookup | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -15,9 +15,9 @@ export function Lookup({ initialLocator, onBack }: { initialLocator: string; onB
     try {
       const b = await lookupBooking(c);
       setBooking(b);
-      if (!b) setError("No encontramos ninguna reserva con ese código.");
+      if (!b) setError(orderMode ? "No encontramos ningún encargo con ese código." : "No encontramos ninguna reserva con ese código.");
     } catch (e: any) {
-      setError(e.message ?? "Error al buscar la reserva.");
+      setError(e.message ?? (orderMode ? "Error al buscar el encargo." : "Error al buscar la reserva."));
     } finally {
       setLoading(false); setSearched(true);
     }
@@ -27,7 +27,7 @@ export function Lookup({ initialLocator, onBack }: { initialLocator: string; onB
 
   async function doCancel() {
     if (!booking) return;
-    if (!confirm("¿Seguro que quieres cancelar esta reserva?")) return;
+    if (!confirm(orderMode ? "¿Seguro que quieres cancelar este encargo?" : "¿Seguro que quieres cancelar esta reserva?")) return;
     setCancelling(true); setError(null);
     try {
       await cancelBooking(booking.locator);
@@ -53,7 +53,7 @@ export function Lookup({ initialLocator, onBack }: { initialLocator: string; onB
         />
       </div>
       <button className="btn" disabled={!code.trim() || loading} onClick={() => search(code)}>
-        {loading ? "Buscando…" : "Buscar reserva"}
+        {loading ? "Buscando…" : orderMode ? "Buscar encargo" : "Buscar reserva"}
       </button>
 
       {error && <div className="error" style={{ marginTop: 12 }}>{error}</div>}
@@ -64,26 +64,34 @@ export function Lookup({ initialLocator, onBack }: { initialLocator: string; onB
             <div className="line">
               <span className="k">Estado</span>
               <span className="badge" style={{ background: STATUS_COLOR[booking.status] }}>
-                {STATUS_LABEL[booking.status]}
+                {(orderMode || booking.order_mode ? ORDER_STATUS_LABEL : STATUS_LABEL)[booking.status] ?? booking.status}
               </span>
             </div>
             <div className="line"><span className="k">Negocio</span><span>{booking.business_name}</span></div>
-            {booking.service_name && <div className="line"><span className="k">Servicio</span><span>{booking.service_name}</span></div>}
-            <div className="line"><span className="k">Fecha</span><span>{formatDate(booking.starts_at, booking.timezone)}</span></div>
-            <div className="line"><span className="k">Hora</span><span>{formatTime(booking.starts_at, booking.timezone)}</span></div>
+            {booking.order_mode ? (
+              <>
+                {booking.option_label && <div className="line"><span className="k">Sabor</span><span>{booking.option_label}</span></div>}
+                {booking.size_label && <div className="line"><span className="k">Tamaño</span><span>{booking.size_label}</span></div>}
+              </>
+            ) : (
+              booking.service_name && <div className="line"><span className="k">Servicio</span><span>{booking.service_name}</span></div>
+            )}
+            <div className="line"><span className="k">{booking.order_mode ? "Día de recogida" : "Fecha"}</span><span>{formatDate(booking.starts_at, booking.timezone)}</span></div>
+            <div className="line"><span className="k">{booking.order_mode ? "Hora de recogida" : "Hora"}</span><span>{formatTime(booking.starts_at, booking.timezone)}</span></div>
             <div className="line"><span className="k">A nombre de</span><span>{booking.customer_name}</span></div>
           </div>
           {canCancel && (
             <button className="btn danger" disabled={cancelling} onClick={doCancel}>
-              {cancelling ? "Cancelando…" : "Cancelar reserva"}
+              {cancelling ? "Cancelando…" : orderMode ? "Cancelar encargo" : "Cancelar reserva"}
             </button>
           )}
-          {booking.status === "cancelada" && <p className="hint center">Esta reserva está cancelada.</p>}
+          {booking.status === "cancelada" && <p className="hint center">{orderMode ? "Este encargo está cancelado." : "Esta reserva está cancelada."}</p>}
+          {booking.status === "listo" && <p className="hint center">¡Tu encargo está listo! Puedes pasar a recogerlo.</p>}
         </div>
       )}
 
       <div className="footer-link">
-        <button onClick={onBack}>← Volver a reservar</button>
+        <button onClick={onBack}>{orderMode ? "← Volver a encargar" : "← Volver a reservar"}</button>
       </div>
     </>
   );

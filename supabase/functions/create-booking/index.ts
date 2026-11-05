@@ -12,6 +12,7 @@ type Body = {
   // citas:
   service_id?: string;
   professional_id?: string;
+  option_id?: string; // modo encargo: sabor elegido
   // restaurante:
   dining_shift_id?: string;
   party_size?: number;
@@ -52,11 +53,20 @@ Deno.serve(async (req) => {
   if (!isUuid(business_id)) return json({ error: "Negocio no válido." }, 400);
   if (!isIsoDate(starts_at)) return json({ error: "Fecha/hora no válida." }, 400);
 
+  // Modo encargo: el email es opcional (el canal habitual es el teléfono/WhatsApp).
+  const { data: bizRow } = await supabase.from("businesses").select("order_mode").eq("id", business_id).maybeSingle();
+  const orderMode = !!bizRow?.order_mode;
+
   const name = cleanText(body.name, 100);
   const phone = body.phone && isPhone(body.phone, 30) ? body.phone.trim() : null;
-  const email = body.email && isEmail(body.email, 254) ? body.email.trim() : null;
-  if (!name || !phone || !email) {
-    return json({ error: "Faltan campos obligatorios o no son válidos (nombre, teléfono, email)." }, 400);
+  const emailRaw = typeof body.email === "string" ? body.email.trim() : "";
+  const email = emailRaw && isEmail(emailRaw, 254) ? emailRaw : null;
+  if (!name || !phone || (!email && !(orderMode && !emailRaw))) {
+    return json({
+      error: orderMode
+        ? "Faltan campos obligatorios o no son válidos (nombre, teléfono; el email, si lo indicas, debe ser válido)."
+        : "Faltan campos obligatorios o no son válidos (nombre, teléfono, email).",
+    }, 400);
   }
   const lastName = cleanOptionalText(body.last_name, 100);
   const notes = cleanOptionalText(body.notes, 1000) || undefined;
@@ -67,6 +77,7 @@ Deno.serve(async (req) => {
   } else {
     if (!isUuid(service_id)) return json({ error: "Falta el servicio." }, 400);
     if (body.professional_id && !isUuid(body.professional_id)) return json({ error: "Profesional no válido." }, 400);
+    if (orderMode && !isUuid(body.option_id)) return json({ error: "Elige un sabor." }, 400);
   }
 
   // 1) Crear la reserva (re-valida disponibilidad/aforo bajo lock dentro del RPC).
@@ -94,6 +105,7 @@ Deno.serve(async (req) => {
         p_notes: notes,
         p_channel: "web",
         p_professional_id: body.professional_id || undefined,
+        p_option_id: orderMode ? body.option_id : undefined,
       });
 
   if (error) {
@@ -106,7 +118,7 @@ Deno.serve(async (req) => {
     supabase.from("businesses").select("name, timezone, primary_color, slug, confirmation_email_message").eq("id", business_id).single(),
     isRestaurant
       ? Promise.resolve({ data: null })
-      : supabase.from("services").select("name").eq("id", service_id!).single(),
+      : supabase.from("services").select("name, size_label").eq("id", service_id!).single(),
     supabase.from("business_integrations").select("email_from, resend_api_key").eq("business_id", business_id).maybeSingle(),
   ]);
   const serviceLabel = isRestaurant
@@ -118,8 +130,10 @@ Deno.serve(async (req) => {
     ? `${widgetUrl}/?slug=${encodeURIComponent(biz.slug)}&view=mi-reserva&locator=${encodeURIComponent(booking.locator)}`
     : undefined;
 
-  // 3) Enviar email (no bloquea el éxito de la reserva si falla).
+  // 3) Enviar email (no bloquea el éxito de la reserva si falla). Sin email (solo
+  // posible en modo encargo) no hay nada que enviar.
   try {
+    if (!email) throw new Error("sin email");
     const mail = buildConfirmationEmail({
       businessName: biz?.name ?? "Reserva",
       serviceName: serviceLabel,
@@ -131,10 +145,13 @@ Deno.serve(async (req) => {
       primaryColor: biz?.primary_color,
       isPending: booking.status === "pendiente",
       customMessage: biz?.confirmation_email_message,
+      orderMode,
+      optionLabel: booking.option_label,
+      sizeLabel: (svc as { size_label?: string | null } | null)?.size_label ?? null,
     });
     await sendEmail(email, mail.subject, mail.html, mail.text, integ?.resend_api_key, integ?.email_from);
   } catch (e) {
-    console.error("Email no enviado:", (e as Error).message);
+    if (email) console.error("Email no enviado:", (e as Error).message);
   }
 
   // 4) Exportar a Google Calendar si el profesional lo tiene conectado
@@ -154,5 +171,8 @@ Deno.serve(async (req) => {
     service_name: serviceLabel,
     business_name: biz?.name ?? "",
     status: booking.status,
+    option_label: booking.option_label ?? null,
+    size_label: (svc as { size_label?: string | null } | null)?.size_label ?? null,
+    order_mode: orderMode,
   });
 });

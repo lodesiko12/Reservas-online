@@ -44,16 +44,16 @@ Deno.serve(async (req) => {
   // que solo la ve quien pertenece al negocio dueño de la reserva.
   const { data: b, error } = await asCaller
     .from("bookings")
-    .select("locator, starts_at, customer_name, customer_email, business_id, service_id")
+    .select("locator, starts_at, customer_name, customer_email, business_id, service_id, status, option_label")
     .eq("locator", locator)
     .maybeSingle();
   if (error || !b) return json({ error: "Reserva no encontrada." }, 404);
   if (!b.customer_email) return json({ error: "La reserva no tiene email." }, 400);
 
   const [{ data: biz }, { data: svc }, { data: integ }] = await Promise.all([
-    service.from("businesses").select("name, timezone, primary_color, slug, confirmation_email_message").eq("id", b.business_id).single(),
+    service.from("businesses").select("name, timezone, primary_color, slug, confirmation_email_message, order_mode").eq("id", b.business_id).single(),
     b.service_id
-      ? service.from("services").select("name").eq("id", b.service_id).single()
+      ? service.from("services").select("name, size_label").eq("id", b.service_id).single()
       : Promise.resolve({ data: null }),
     service.from("business_integrations").select("email_from, resend_api_key").eq("business_id", b.business_id).maybeSingle(),
   ]);
@@ -73,6 +73,10 @@ Deno.serve(async (req) => {
     manageUrl,
     primaryColor: biz?.primary_color,
     customMessage: biz?.confirmation_email_message,
+    isPending: b.status === "pendiente",
+    orderMode: !!biz?.order_mode,
+    optionLabel: b.option_label,
+    sizeLabel: (svc as any)?.size_label ?? null,
   });
 
   try {

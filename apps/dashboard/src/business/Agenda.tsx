@@ -13,12 +13,19 @@ import { PageHeader, Spinner, StatusBadge, Modal, EmptyState, ConfirmDialog, Pay
 // necesita marcar el desenlace de la cita: completada, cancelada o ausente.
 const STATUSES_RESTAURANTE: Booking["status"][] = ["confirmada", "sentada", "completada", "no_show", "cancelada"];
 const STATUSES_CITAS: Booking["status"][] = ["completada", "cancelada", "no_show"];
+// Modo encargo: pendiente de confirmar → confirmado → listo → recogido / no recogido / cancelado.
+const STATUSES_ENCARGO: Booking["status"][] = ["pendiente", "confirmada", "listo", "completada", "no_show", "cancelada"];
+const ENCARGO_ACTION: Record<string, string> = {
+  pendiente: "Volver a pendiente", confirmada: "Confirmar", listo: "Marcar listo",
+  completada: "Marcar recogido", no_show: "Marcar no recogido", cancelada: "Cancelar encargo",
+};
 
 // Color de fondo/borde del bloque de reserva según estado.
 const BLOCK_STYLE: Record<string, { bg: string; border: string; text: string }> = {
   pendiente: { bg: "#FBF3E3", border: "#B7791F", text: "#4A310D" },
   confirmada: { bg: "#E8F4F3", border: "#0B6E6A", text: "#07403E" },
   sentada: { bg: "#EAF1F9", border: "#2563A8", text: "#0F2744" },
+  listo: { bg: "#F3EAFB", border: "#7E3FB5", text: "#2E1747" },
   completada: { bg: "#EAF6EF", border: "#1F8A4C", text: "#0D3A20" },
   no_show: { bg: "#FBEDEB", border: "#C0392B", text: "#4F1812" },
   cancelada: { bg: "#F3F7F6", border: "#8CA3A1", text: "#4A6362" },
@@ -54,6 +61,7 @@ function tableLabel(b: any): string {
   return b.dining_tables?.name ?? "Sin mesa";
 }
 function detail(b: any): string {
+  if (b.option_label) return `${b.option_label}${b.services?.size_label ? ` · ${b.services.size_label}` : ""}`;
   return b.type === "restaurante"
     ? `${tableLabel(b)} · ${b.party_size} pers.`
     : `${b.services?.name ?? ""}${b.professionals?.name ? ` · ${b.professionals.name}` : ""}`;
@@ -66,6 +74,7 @@ export function Agenda() {
   const [anchor, setAnchor] = useState(ymdInTz(new Date(), tz));
   const [selected, setSelected] = useState<any | null>(null);
   const trackPayments = business?.type === "psicologo";
+  const orderMode = !!business?.order_mode;
   // Filtro por profesional (clic en la leyenda). Vacío = todas.
   const [proFilter, setProFilter] = useState<Set<string>>(new Set());
 
@@ -188,6 +197,8 @@ export function Agenda() {
 
       {isLoading ? (
         <div className="grid place-items-center py-20"><Spinner /></div>
+      ) : view === "week" && orderMode ? (
+        <OrderWeek weekDays={weekDays} tz={tz} bookings={bookings ?? []} today={ymdInTz(new Date(), tz)} onSelect={setSelected} />
       ) : view === "week" ? (
         <WeekGrid weekDays={weekDays} tz={tz} bookings={bookings ?? []} today={ymdInTz(new Date(), tz)} onSelect={setSelected} trackPayments={trackPayments} />
       ) : view === "month" ? (
@@ -197,7 +208,7 @@ export function Agenda() {
           onDayClick={(d) => { setAnchor(d); setView("day"); }}
         />
       ) : !bookings?.length ? (
-        <EmptyState title="Sin reservas este día" hint="Prueba otra fecha o crea una reserva manual." />
+        <EmptyState title={orderMode ? "Sin encargos este día" : "Sin reservas este día"} hint={orderMode ? "Prueba otra fecha o crea un encargo manual." : "Prueba otra fecha o crea una reserva manual."} />
       ) : (
         <div className="card divide-y divide-slate-100 dark:divide-slate-800">
           {bookings.map((b) => {
@@ -216,7 +227,7 @@ export function Agenda() {
               <div className="flex-1 min-w-0">
                 <div className="font-medium truncate">{b.customer_name} {b.customer_last_name ?? ""}</div>
                 <div className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                  {b.type === "citas" ? (b.services?.name ?? "") : detail(b)}{" · "}{b.customer_phone}
+                  {b.type === "citas" && !b.option_label ? (b.services?.name ?? "") : detail(b)}{" · "}{b.customer_phone}
                 </div>
               </div>
               <div className="flex items-center gap-2 shrink-0">
@@ -227,7 +238,7 @@ export function Agenda() {
                 )}
                 <span className={`badge ${b.channel === "web" ? "bg-brand-50 text-brand-700" : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400"}`}>{b.channel}</span>
                 {trackPayments && <PayBadge b={b} />}
-                <StatusBadge status={b.status} />
+                <StatusBadge status={b.status} order={orderMode} />
               </div>
             </button>
             );
@@ -236,6 +247,59 @@ export function Agenda() {
       )}
 
       {selected && <BookingModal booking={selected} tz={tz} trackPayments={trackPayments} onClose={() => setSelected(null)} onChanged={() => { refetch(); setSelected(null); }} />}
+    </div>
+  );
+}
+
+/* ------------------------- Semana en modo encargo ------------------------- */
+/** Una columna por día con la lista de encargos por hora de recogida (sin eje horario:
+ * varias recogidas pueden coincidir en la misma hora y se solaparían en la rejilla). */
+function OrderWeek({ weekDays, tz, bookings, today, onSelect }: {
+  weekDays: string[]; tz: string; bookings: any[]; today: string; onSelect: (b: any) => void;
+}) {
+  const byDay = useMemo(() => {
+    const map: Record<string, any[]> = {};
+    for (const d of weekDays) map[d] = [];
+    for (const b of bookings) {
+      const ymd = ymdInTz(new Date(b.starts_at), tz);
+      if (map[ymd]) map[ymd].push(b);
+    }
+    for (const d of weekDays) map[d].sort((a, b) => a.starts_at.localeCompare(b.starts_at));
+    return map;
+  }, [bookings, weekDays, tz]);
+
+  return (
+    <div className="grid gap-3 md:grid-cols-7">
+      {weekDays.map((d) => {
+        const dow = new Date(d + "T00:00:00Z").getUTCDay();
+        const list = byDay[d];
+        const active = list.filter((b) => b.status !== "cancelada" && b.status !== "no_show").length;
+        return (
+          <div key={d} className={`card p-2 min-h-[120px] ${d === today ? "ring-2 ring-brand-300" : ""}`}>
+            <div className="flex items-baseline justify-between px-1 pb-1.5 border-b border-slate-100 dark:border-slate-800 mb-2">
+              <span className="text-[11px] uppercase text-slate-400 dark:text-slate-500">{WEEKDAYS_SHORT_ES[dow]} <span className={`text-sm font-bold ${d === today ? "text-brand-600" : "text-slate-700 dark:text-slate-200"}`}>{d.slice(8)}</span></span>
+              <span className="text-[11px] text-slate-400 dark:text-slate-500">{active ? `${active} 🍰` : ""}</span>
+            </div>
+            <div className="space-y-1.5">
+              {list.length === 0 && <p className="text-[11px] text-slate-300 dark:text-slate-600 px-1">—</p>}
+              {list.map((b) => {
+                const bs = blockStyle(b);
+                return (
+                  <button
+                    key={b.id}
+                    onClick={() => onSelect(b)}
+                    className={`w-full text-left rounded-md px-1.5 py-1 hover:shadow-md transition ${bs.className}`}
+                    style={bs.style}
+                  >
+                    <div className="text-[11px] font-semibold leading-tight">{formatTime(b.starts_at, tz)} · {b.customer_name}</div>
+                    <div className="text-[11px] leading-tight opacity-80">{detail(b)}</div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -429,6 +493,8 @@ function BookingModal({ booking, tz, trackPayments, onClose, onChanged }: {
   booking: any; tz: string; trackPayments: boolean; onClose: () => void; onChanged: () => void;
 }) {
   const qc = useQueryClient();
+  const { business } = useAuth();
+  const orderMode = !!business?.order_mode && !!booking.option_label;
   const [busy, setBusy] = useState(false);
   const [reschedule, setReschedule] = useState(false);
   const [newStart, setNewStart] = useState(toLocalInput(booking.starts_at, tz));
@@ -500,16 +566,22 @@ function BookingModal({ booking, tz, trackPayments, onClose, onChanged }: {
   return (
     <Modal open onClose={onClose} title={`${booking.customer_name} ${booking.customer_last_name ?? ""}`}>
       <div className="space-y-2 text-sm">
-        {booking.type === "restaurante"
+        {orderMode ? (
+          <>
+            <Row k="Sabor" v={booking.option_label} />
+            <Row k="Tamaño" v={booking.services?.size_label ?? booking.services?.name ?? "—"} />
+            {booking.services?.price != null && <Row k="Precio" v={`${booking.services.price} €`} />}
+          </>
+        ) : booking.type === "restaurante"
           ? <Row k="Mesa" v={`${tableLabel(booking)} · ${booking.party_size} comensales`} />
           : <Row k="Servicio" v={booking.services?.name ?? "—"} />}
         {booking.professionals?.name && <Row k="Profesional" v={booking.professionals.name} />}
-        <Row k="Fecha" v={formatDate(booking.starts_at, tz)} />
-        <Row k="Hora" v={`${formatTime(booking.starts_at, tz)} – ${formatTime(booking.ends_at, tz)}`} />
+        <Row k={orderMode ? "Día de recogida" : "Fecha"} v={formatDate(booking.starts_at, tz)} />
+        <Row k={orderMode ? "Hora de recogida" : "Hora"} v={orderMode ? formatTime(booking.starts_at, tz) : `${formatTime(booking.starts_at, tz)} – ${formatTime(booking.ends_at, tz)}`} />
         <Row k="Teléfono" v={booking.customer_phone ?? "—"} />
         <Row k="Email" v={booking.customer_email ?? "—"} />
         <Row k="Localizador" v={booking.locator} />
-        <Row k="Estado" v={<StatusBadge status={booking.status} />} />
+        <Row k="Estado" v={<StatusBadge status={booking.status} order={orderMode} />} />
         {trackPayments && booking.type === "citas" && (
           <Row k="Pago" v={
             <span className="flex items-center gap-2">
@@ -518,7 +590,7 @@ function BookingModal({ booking, tz, trackPayments, onClose, onChanged }: {
             </span>
           } />
         )}
-        {booking.notes && <Row k="Notas" v={booking.notes} />}
+        {booking.notes && <Row k={orderMode ? "Dedicatoria / alergias" : "Notas"} v={booking.notes} />}
       </div>
 
       {booking.type === "restaurante" && booking.table_combo_id && (
@@ -560,8 +632,10 @@ function BookingModal({ booking, tz, trackPayments, onClose, onChanged }: {
         </div>
       ) : (
         <div className="mt-5 border-t pt-4 flex flex-wrap gap-2">
-          {(booking.type === "restaurante" ? STATUSES_RESTAURANTE : STATUSES_CITAS).filter((s) => s !== booking.status).map((s) => (
-            <button key={s} className="btn-ghost" disabled={busy} onClick={() => setStatus(s)}>Marcar {label(s)}</button>
+          {(orderMode ? STATUSES_ENCARGO : booking.type === "restaurante" ? STATUSES_RESTAURANTE : STATUSES_CITAS).filter((s) => s !== booking.status).map((s) => (
+            <button key={s} className={orderMode && s === "confirmada" && booking.status === "pendiente" ? "btn-primary" : "btn-ghost"} disabled={busy} onClick={() => setStatus(s)}>
+              {orderMode ? ENCARGO_ACTION[s] : <>Marcar {label(s)}</>}
+            </button>
           ))}
           {trackPayments && booking.type === "citas" && (
             <button className="btn-primary" disabled={busy} onClick={() => (booking.paid_at ? setPaid(null) : setPickingMethod(true))}>{booking.paid_at ? "Marcar sin pagar" : "Marcar pagada"}</button>
@@ -586,7 +660,7 @@ function Row({ k, v }: { k: string; v: React.ReactNode }) {
   return <div className="flex justify-between gap-4"><span className="text-slate-500 dark:text-slate-400">{k}</span><span className="font-medium text-right">{v}</span></div>;
 }
 function label(s: string) {
-  return ({ pendiente: "pendiente", confirmada: "confirmada", sentada: "sentada", completada: "completada", no_show: "ausente", cancelada: "cancelada" } as any)[s];
+  return ({ pendiente: "pendiente", confirmada: "confirmada", sentada: "sentada", listo: "listo", completada: "completada", no_show: "ausente", cancelada: "cancelada" } as any)[s];
 }
 function fmtShort(ymd: string, tz: string): string {
   return new Intl.DateTimeFormat("es-ES", { day: "numeric", month: "short", timeZone: tz }).format(new Date(zonedDayRange(ymd, tz)[0]));

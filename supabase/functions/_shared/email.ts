@@ -12,6 +12,10 @@ export type ConfirmationData = {
   primaryColor?: string;
   isPending?: boolean; // el negocio requiere confirmación manual
   customMessage?: string | null; // párrafo de introducción personalizado por el negocio
+  // Modo encargo (businesses.order_mode): vocabulario "encargo/recogida" + sabor y tamaño.
+  orderMode?: boolean;
+  optionLabel?: string | null; // sabor elegido
+  sizeLabel?: string | null;   // tamaño elegido
 };
 
 function fmtDate(iso: string, tz: string): string {
@@ -39,25 +43,36 @@ export function buildConfirmationEmail(d: ConfirmationData): { subject: string; 
   const date = fmtDate(d.startsAt, d.timezone);
   const time = fmtTime(d.startsAt, d.timezone);
   const pending = !!d.isPending;
-  const subject = pending ? `Solicitud recibida · ${d.businessName}` : `Reserva confirmada · ${d.businessName}`;
-  const heading = pending ? "Pendiente de confirmación" : "Reserva confirmada";
+  const order = !!d.orderMode;
+  const subject = order
+    ? (pending ? `Encargo recibido · ${d.businessName}` : `Encargo confirmado · ${d.businessName}`)
+    : (pending ? `Solicitud recibida · ${d.businessName}` : `Reserva confirmada · ${d.businessName}`);
+  const heading = order
+    ? (pending ? "Pendiente de confirmación" : "Encargo confirmado")
+    : (pending ? "Pendiente de confirmación" : "Reserva confirmada");
   const customerNameHtml = escapeHtml(d.customerName);
-  const defaultIntro = pending
-    ? `Hola ${d.customerName}, hemos recibido tu solicitud de reserva. El negocio la confirmará en breve. Estos son los detalles:`
-    : `Hola ${d.customerName}, tu reserva está confirmada. Estos son los detalles:`;
-  const defaultIntroHtml = pending
-    ? `Hola ${customerNameHtml}, hemos recibido tu solicitud de reserva. El negocio la confirmará en breve. Estos son los detalles:`
-    : `Hola ${customerNameHtml}, tu reserva está confirmada. Estos son los detalles:`;
+  const introTail = (name: string) => order
+    ? (pending
+        ? `Hola ${name}, hemos recibido tu encargo. Te lo confirmaremos en breve. Estos son los detalles:`
+        : `Hola ${name}, tu encargo está confirmado. Estos son los detalles:`)
+    : (pending
+        ? `Hola ${name}, hemos recibido tu solicitud de reserva. El negocio la confirmará en breve. Estos son los detalles:`
+        : `Hola ${name}, tu reserva está confirmada. Estos son los detalles:`);
+  const defaultIntro = introTail(d.customerName);
+  const defaultIntroHtml = introTail(customerNameHtml);
+  const dateLabel = order ? "Día de recogida" : "Fecha";
+  const timeLabel = order ? "Hora de recogida" : "Hora";
+  const thing = order ? "encargo" : "reserva";
   const custom = d.customMessage?.trim();
   // Nota: el placeholder {cliente} usa el nombre sin escapar aquí porque
   // introPlain (custom) se escapa entero justo debajo antes de ir al HTML.
   const introPlain = custom
-    ? applyPlaceholders(custom, { cliente: d.customerName, negocio: d.businessName, servicio: d.serviceName ?? "", fecha: date, hora: time })
+    ? applyPlaceholders(custom, { cliente: d.customerName, negocio: d.businessName, servicio: d.serviceName ?? "", fecha: date, hora: time, sabor: d.optionLabel ?? "", tamano: d.sizeLabel ?? "" })
     : defaultIntro;
   const introHtml = custom ? escapeHtml(introPlain).replace(/\n/g, "<br>") : defaultIntroHtml;
 
   const manage = d.manageUrl
-    ? `<p style="margin:16px 0 0">Puedes consultar o cancelar tu reserva aquí:<br>
+    ? `<p style="margin:16px 0 0">Puedes consultar o cancelar tu ${thing} aquí:<br>
          <a href="${d.manageUrl}" style="color:${color}">${d.manageUrl}</a></p>`
     : "";
 
@@ -70,24 +85,33 @@ export function buildConfirmationEmail(d: ConfirmationData): { subject: string; 
     <div style="padding:24px">
       <p style="margin:0 0 12px">${introHtml}</p>
       <table style="width:100%;border-collapse:collapse;font-size:15px">
-        ${d.serviceName ? `<tr><td style="padding:6px 0;color:#64748b">Detalle</td><td style="padding:6px 0;text-align:right"><strong>${d.serviceName}</strong></td></tr>` : ""}
-        <tr><td style="padding:6px 0;color:#64748b">Fecha</td><td style="padding:6px 0;text-align:right"><strong>${date}</strong></td></tr>
-        <tr><td style="padding:6px 0;color:#64748b">Hora</td><td style="padding:6px 0;text-align:right"><strong>${time}</strong></td></tr>
+        ${order
+          ? `${d.optionLabel ? `<tr><td style="padding:6px 0;color:#64748b">Sabor</td><td style="padding:6px 0;text-align:right"><strong>${escapeHtml(d.optionLabel)}</strong></td></tr>` : ""}
+        ${d.sizeLabel ? `<tr><td style="padding:6px 0;color:#64748b">Tamaño</td><td style="padding:6px 0;text-align:right"><strong>${escapeHtml(d.sizeLabel)}</strong></td></tr>` : ""}`
+          : (d.serviceName ? `<tr><td style="padding:6px 0;color:#64748b">Detalle</td><td style="padding:6px 0;text-align:right"><strong>${d.serviceName}</strong></td></tr>` : "")}
+        <tr><td style="padding:6px 0;color:#64748b">${dateLabel}</td><td style="padding:6px 0;text-align:right"><strong>${date}</strong></td></tr>
+        <tr><td style="padding:6px 0;color:#64748b">${timeLabel}</td><td style="padding:6px 0;text-align:right"><strong>${time}</strong></td></tr>
       </table>
       <div style="margin:20px 0;text-align:center;background:#f8fafc;border:1px dashed ${color};border-radius:12px;padding:16px">
         <div style="color:#64748b;font-size:13px">Código localizador</div>
         <div style="font-size:26px;font-weight:800;letter-spacing:2px;color:${color}">${d.locator}</div>
       </div>
       ${manage}
-      <p style="margin:18px 0 0;color:#94a3b8;font-size:12px">Guarda este código para gestionar tu reserva.</p>
+      <p style="margin:18px 0 0;color:#94a3b8;font-size:12px">Guarda este código para gestionar tu ${thing}.</p>
     </div>
   </div></body></html>`;
 
-  const text = `${custom ? introPlain : `${pending ? "Solicitud de reserva recibida en" : "Reserva confirmada en"} ${d.businessName}`}
-${d.serviceName ? `Detalle: ${d.serviceName}\n` : ""}Fecha: ${date}
-Hora: ${time}
+  const headText = order
+    ? `${pending ? "Encargo recibido en" : "Encargo confirmado en"} ${d.businessName}`
+    : `${pending ? "Solicitud de reserva recibida en" : "Reserva confirmada en"} ${d.businessName}`;
+  const detailText = order
+    ? `${d.optionLabel ? `Sabor: ${d.optionLabel}\n` : ""}${d.sizeLabel ? `Tamaño: ${d.sizeLabel}\n` : ""}`
+    : (d.serviceName ? `Detalle: ${d.serviceName}\n` : "");
+  const text = `${custom ? introPlain : headText}
+${detailText}${dateLabel}: ${date}
+${timeLabel}: ${time}
 Código localizador: ${d.locator}
-${d.manageUrl ? `Gestiona tu reserva: ${d.manageUrl}` : ""}`;
+${d.manageUrl ? `Gestiona tu ${thing}: ${d.manageUrl}` : ""}`;
 
   return { subject, html, text };
 }

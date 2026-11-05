@@ -107,15 +107,27 @@ export const STATUS_LABEL: Record<string, string> = {
   pendiente: "Pendiente de confirmación",
   confirmada: "Confirmada",
   sentada: "En mesa",
+  listo: "Listo para recoger",
   cancelada: "Cancelada",
   completada: "Completada",
   no_show: "No-show",
+};
+
+/** Etiquetas de estado en modo encargo (businesses.order_mode). */
+export const ORDER_STATUS_LABEL: Record<string, string> = {
+  pendiente: "Pendiente de confirmar",
+  confirmada: "Confirmado",
+  listo: "Listo para recoger",
+  completada: "Recogido",
+  no_show: "No recogido",
+  cancelada: "Cancelado",
 };
 
 export const STATUS_COLOR: Record<string, string> = {
   pendiente: "#f59e0b",
   confirmada: "#0ea5e9",
   sentada: "#16a34a",
+  listo: "#a855f7",
   cancelada: "#94a3b8",
   completada: "#16a34a",
   no_show: "#dc2626",

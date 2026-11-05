@@ -21,7 +21,7 @@ body {
 }
 
 .widget {
-  max-width: 480px;
+  max-width: var(--widget-max, 480px);
   margin: 0 auto;
   padding: 20px 18px 28px;
   background: var(--bg);
@@ -223,3 +223,35 @@ html[data-theme="dark"] .footer-link button:hover,
 html[data-theme="dark"] .back:hover { color: var(--text); }
 html[data-theme="dark"] .powered { color: var(--muted); opacity: .45; }
 html[data-theme="dark"] .dates { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+
+/* ==========================================================================
+   Modo encargo (OrderFlow): selector de tamaño, buscador y sabores por nivel.
+   ========================================================================== */
+.seg { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 18px; }
+.seg button {
+  border: 1px solid var(--border); background: var(--surface); color: var(--text);
+  border-radius: var(--radius); padding: 10px 12px; font: inherit; cursor: pointer; text-align: left;
+}
+.seg button:hover { border-color: var(--primary); }
+.seg button.selected { border-color: var(--primary); box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 25%, transparent); }
+.seg .t { font-weight: 700; font-size: 15px; }
+.seg .n { color: var(--muted); font-size: 12px; margin-top: 2px; }
+
+.search {
+  width: 100%; border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px;
+  font: inherit; background: #fff; color: var(--text); margin-bottom: 6px;
+}
+.search:focus { outline: 2px solid color-mix(in srgb, var(--primary) 40%, transparent); border-color: var(--primary); }
+.group-head {
+  width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 10px;
+  padding: 12px 2px; background: none; border: none; border-bottom: 1px solid var(--border);
+  font: inherit; cursor: pointer; color: var(--text); text-align: left;
+}
+.group-head .gl { font-weight: 700; }
+.group-head .gm { color: var(--muted); font-size: 13px; }
+.group-head .gp { font-weight: 700; color: var(--primary); white-space: nowrap; }
+.group-head .chev { color: var(--muted); margin-left: 10px; font-weight: 400; }
+.card-btn.unavailable { opacity: .5; cursor: not-allowed; }
+.card-btn.unavailable:hover { border-color: var(--border); }
+html[data-theme="dark"] .search { background: rgba(236, 230, 219, .045); border-radius: var(--radius); }
+html[data-theme="dark"] .seg button { border-radius: var(--radius); }

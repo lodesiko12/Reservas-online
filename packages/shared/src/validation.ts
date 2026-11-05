@@ -31,6 +31,14 @@ export function validateBookingContact(input: BookingContactInput) {
   return bookingContactSchema.safeParse(input);
 }
 
+/** Encargo (modo encargo): igual que la reserva pero el email es opcional. */
+export function validateOrderContact(input: BookingContactInput) {
+  const noEmail = input.email.trim() === "";
+  const r = bookingContactSchema.safeParse(noEmail ? { ...input, email: "sin-email@ejemplo.es" } : input);
+  if (r.success && noEmail) return { success: true as const, data: { ...r.data, email: "" } };
+  return r;
+}
+
 // ---------------------------------------------------------------------
 // Validadores genéricos para el resto de formularios del panel (datos de
 // cliente, notas de sesión, ajustes de negocio…): mismo patrón que arriba

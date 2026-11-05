@@ -14,6 +14,10 @@ export type DiningTableCombo = Tables<"dining_table_combos">;
 export type DiningSettings = Tables<"dining_settings">;
 export type DiningShift = Tables<"dining_shifts">;
 export type WaitlistEntry = Tables<"waitlist">;
+export type OrderSettings = Tables<"order_settings">;
+export type ServiceOption = Tables<"service_options">;
+export type OptionGroup = Tables<"service_option_groups">;
+export type DayOverride = Tables<"business_day_overrides">;
 
 export function useBusinessId() {
   const { business } = useAuth();
@@ -74,14 +78,14 @@ export function useBookings(fromISO: string, toISO: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("bookings")
-        .select("*, services(name, price), professionals(name, color), dining_tables(name), dining_table_combos(name)")
+        .select("*, services(name, price, size_label, size_key), professionals(name, color), dining_tables(name), dining_table_combos(name)")
         .eq("business_id", bid)
         .gte("starts_at", fromISO)
         .lt("starts_at", toISO)
         .order("starts_at");
       if (error) throw error;
       return data as unknown as (Booking & {
-        services: { name: string; price: number | null } | null;
+        services: { name: string; price: number | null; size_label: string | null; size_key: string | null } | null;
         professionals: { name: string; color: string } | null;
         dining_tables: { name: string } | null;
         dining_table_combos: { name: string | null } | null;
@@ -190,6 +194,64 @@ export function useDiningSettings() {
       const { data, error } = await supabase.from("dining_settings").select("*").eq("business_id", bid).maybeSingle();
       if (error) throw error;
       return data as DiningSettings | null;
+    },
+  });
+}
+
+/* ------------------------- Modo encargo (order_mode) ------------------------- */
+
+/** Ajustes de encargos del negocio (antelación mínima, capacidad diaria…); null si aún no hay fila. */
+export function useOrderSettings() {
+  const bid = useBusinessId();
+  return useQuery({
+    queryKey: ["order_settings", bid],
+    enabled: !!bid,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("order_settings").select("*").eq("business_id", bid).maybeSingle();
+      if (error) throw error;
+      return data as OrderSettings | null;
+    },
+  });
+}
+
+/** Niveles de precio (Básicas, Clásicas…). */
+export function useOptionGroups() {
+  const bid = useBusinessId();
+  return useQuery({
+    queryKey: ["service_option_groups", bid],
+    enabled: !!bid,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("service_option_groups").select("*").eq("business_id", bid).order("sort_order");
+      if (error) throw error;
+      return data as OptionGroup[];
+    },
+  });
+}
+
+/** Sabores del negocio. */
+export function useServiceOptions() {
+  const bid = useBusinessId();
+  return useQuery({
+    queryKey: ["service_options", bid],
+    enabled: !!bid,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("service_options").select("*").eq("business_id", bid).order("sort_order").order("name");
+      if (error) throw error;
+      return data as ServiceOption[];
+    },
+  });
+}
+
+/** Días especiales (festivos que usan el horario de otro día, o cierres). */
+export function useDayOverrides() {
+  const bid = useBusinessId();
+  return useQuery({
+    queryKey: ["business_day_overrides", bid],
+    enabled: !!bid,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("business_day_overrides").select("*").eq("business_id", bid).order("day");
+      if (error) throw error;
+      return data as DayOverride[];
     },
   });
 }

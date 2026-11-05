@@ -14,6 +14,8 @@ import { Mesas } from "./Mesas";
 import { PlanoSala } from "./PlanoSala";
 import { Seguimiento } from "./Seguimiento";
 import { Pagos } from "./Pagos";
+import { Produccion } from "./Produccion";
+import { Catalogo } from "./Catalogo";
 import { ResumenAutonomo } from "./crm/ResumenAutonomo";
 import { Pipeline } from "./crm/Pipeline";
 import { AgendaInterna } from "./crm/AgendaInterna";
@@ -32,6 +34,7 @@ export function BusinessApp() {
   const isPsicologo = business?.type === "psicologo";
   const isAutonomo = business?.type === "autonomo";
   const isAsesoria = business?.type === "asesoria";
+  const isOrder = !!business?.order_mode && !isRestaurant && !isPsicologo;
   if (business?.type === "agencia") return <AgenciaApp />;
 
   const nav: NavItem[] = isAsesoria
@@ -55,11 +58,14 @@ export function BusinessApp() {
         { to: "/app", label: "Resumen", icon: "📊", end: true },
         ...(isRestaurant ? [{ to: "/app/plano", label: "Plano de sala", icon: "🟢" }] : []),
         { to: "/app/agenda", label: "Agenda", icon: "🗓️" },
-        { to: "/app/nueva", label: "Nueva reserva", icon: "➕" },
+        { to: "/app/nueva", label: isOrder ? "Nuevo encargo" : "Nueva reserva", icon: "➕" },
+        ...(isOrder ? [{ to: "/app/produccion", label: "Producción", icon: "🍰" }] : []),
         { to: "/app/clientes", label: "Clientes", icon: "👤" },
         ...(isPsicologo ? [{ to: "/app/seguimiento", label: "Seguimiento", icon: "🩺" }, { to: "/app/pagos", label: "Pagos", icon: "💶" }] : []),
         isRestaurant
           ? { to: "/app/franjas", label: "Franjas y aforo", icon: "🍽️" }
+          : isOrder
+          ? { to: "/app/catalogo", label: "Catálogo", icon: "📒" }
           : { to: "/app/servicios", label: "Servicios", icon: "✂️" },
         ...(isRestaurant ? [{ to: "/app/mesas", label: "Mesas y zonas", icon: "🪑" }] : []),
         { to: "/app/bloqueos", label: "Bloqueos", icon: "🚫" },
@@ -100,6 +106,8 @@ export function BusinessApp() {
             <Route path="seguimiento" element={<Seguimiento />} />
             {isPsicologo && <Route path="pagos" element={<Pagos />} />}
             <Route path="servicios" element={<Servicios />} />
+            <Route path="catalogo" element={<Catalogo />} />
+            <Route path="produccion" element={<Produccion />} />
             <Route path="franjas" element={<Franjas />} />
             <Route path="mesas" element={<Mesas />} />
             <Route path="bloqueos" element={<Bloqueos />} />

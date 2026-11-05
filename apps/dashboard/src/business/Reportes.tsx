@@ -7,7 +7,7 @@ import { useBusinessId } from "./hooks";
 import { ymdInTz, addDaysYmd, zonedDayRange, formatDateTime } from "@reservas/shared";
 import { PageHeader, StatCard, Spinner, StatusBadge } from "../components/ui";
 
-const COLORS = { web: "var(--chart-1)", manual: "var(--chart-2)", walkin: "#2563A8", pendiente: "#B7791F", confirmada: "var(--chart-1)", sentada: "#2563A8", completada: "#1F8A4C", no_show: "#C0392B", cancelada: "#8CA3A1" };
+const COLORS = { web: "var(--chart-1)", manual: "var(--chart-2)", walkin: "#2563A8", pendiente: "#B7791F", confirmada: "var(--chart-1)", sentada: "#2563A8", listo: "#7E3FB5", completada: "#1F8A4C", no_show: "#C0392B", cancelada: "#8CA3A1" };
 
 export function Reportes() {
   const bid = useBusinessId();
@@ -25,7 +25,7 @@ export function Reportes() {
       const from = zonedDayRange(startYmd, tz)[0];
       const to = zonedDayRange(todayYmd, tz)[1];
       const { data, error } = await supabase.from("bookings")
-        .select("starts_at, status, channel, customer_name, service_id, services(name)")
+        .select("starts_at, status, channel, customer_name, service_id, option_label, services(name, size_label)")
         .eq("business_id", bid).gte("starts_at", from).lt("starts_at", to).order("starts_at");
       if (error) throw error;
       return data as any[];
@@ -42,7 +42,7 @@ export function Reportes() {
     queryFn: async () => {
       const from = zonedDayRange(todayYmd, tz)[1];
       const { data, error } = await supabase.from("bookings")
-        .select("id, starts_at, status, channel, customer_name, service_id, services(name)")
+        .select("id, starts_at, status, channel, customer_name, service_id, option_label, services(name, size_label)")
         .eq("business_id", bid).gte("starts_at", from).order("starts_at").limit(50);
       if (error) throw error;
       return data as any[];
@@ -75,7 +75,7 @@ export function Reportes() {
       { name: "Web", value: web, key: "web" },
       { name: "Manual", value: total - web, key: "manual" },
     ];
-    const statusPie = ["pendiente", "confirmada", "sentada", "completada", "no_show", "cancelada"].map((s) => ({
+    const statusPie = ["pendiente", "confirmada", "sentada", "listo", "completada", "no_show", "cancelada"].map((s) => ({
       name: s, value: rows.filter((r) => r.status === s).length, key: s,
     })).filter((x) => x.value > 0);
 
@@ -92,7 +92,7 @@ export function Reportes() {
     if (!rows) return;
     const header = "fecha,estado,canal,cliente,servicio\n";
     const body = rows.map((r) =>
-      [formatDateTime(r.starts_at, tz), r.status, r.channel, `"${r.customer_name}"`, `"${r.services?.name ?? ""}"`].join(",")
+      [formatDateTime(r.starts_at, tz), r.status, r.channel, `"${r.customer_name}"`, `"${r.option_label ? `${r.option_label} · ${r.services?.size_label ?? ""}` : (r.services?.name ?? "")}"`].join(",")
     ).join("\n");
     const blob = new Blob([header + body], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
@@ -162,7 +162,7 @@ export function Reportes() {
                       <tr key={r.id}>
                         <td className="py-2 pr-4">{formatDateTime(r.starts_at, tz)}</td>
                         <td className="py-2 pr-4">{r.customer_name}</td>
-                        <td className="py-2 pr-4">{r.services?.name ?? "—"}</td>
+                        <td className="py-2 pr-4">{r.option_label ? `${r.option_label} · ${r.services?.size_label ?? ""}` : (r.services?.name ?? "—")}</td>
                         <td className="py-2 pr-4"><span className={`badge ${r.channel === "web" ? "bg-brand-50 text-brand-700" : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400"}`}>{r.channel}</span></td>
                         <td className="py-2"><StatusBadge status={r.status} /></td>
                       </tr>
