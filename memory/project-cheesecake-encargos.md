@@ -32,8 +32,16 @@ Funcionalidad y migraciones (0051, 0052) en `README.md → Modo encargo`; aquí 
 - `embed.js` limita el iframe a 520 px y `.widget` a 480 px; `data-max-width` (→ `?max-width=` →
   `--widget-max`) lo amplía sin cambiar el comportamiento por defecto.
 
-**Estado:** migraciones y Edge Functions (`create-booking` v20, `send-confirmation-email` v15)
-desplegadas en producción; el negocio aún NO existe en producción hasta ejecutar
-`supabase/demo/setup_cheesecake_ando.sql` y añadir el staff. Pendiente del dueño: antelación mínima,
+**Estado (2026-11-05):** migraciones, Edge Functions (`create-booking` v20,
+`send-confirmation-email` v15), widget y panel desplegados en producción. El negocio
+`cheesecake-ando` existe (horario, 8 servicios, 56 sabores). Verificado en vivo: encargo real a 375 px
+(queda `pendiente`, «Mi encargo» OK), embed sin doble scroll, y las reglas del motor (pendiente ocupa
+hueco, capacidad diaria total/por tamaño, antelación mínima, festivo cerrado/abre como domingo,
+cancelación mínima, `listo` no cancelable, sabor no disponible solo bloquea a la web) probadas por
+SQL en una transacción que se revierte con `raise exception`. Datos de prueba borrados.
+**Sin verificar en vivo:** las pantallas del panel (Agenda, Producción, Catálogo, Configuración) —
+requieren sesión de staff. Falta crear el staff (correo dado por el usuario; la contraseña la teclea
+él en Admin → Usuarios, y conviene que la cambie porque se compartió en el chat), subir el logo y
+poner el slug en `site.ts` de la web. Pendiente del dueño: antelación mínima,
 capacidad diaria, política de cancelación, enlace de reseña de Google, correo remitente (Resend) y
 plantilla de WhatsApp (4 variables: cliente, negocio, fecha, hora; sin sabor).
