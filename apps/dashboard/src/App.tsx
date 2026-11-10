@@ -6,7 +6,7 @@ import { AdminApp } from "./admin/AdminApp";
 import { BusinessApp } from "./business/BusinessApp";
 
 export default function App() {
-  const { loading, session, isSuperAdmin, business, businesses } = useAuth();
+  const { loading, session, isSuperAdmin, business, businesses, signOut } = useAuth();
 
   if (loading) {
     return <div className="min-h-screen grid place-items-center"><Spinner /></div>;
@@ -39,9 +39,12 @@ export default function App() {
         <p className="text-slate-600 text-sm">
           Tu cuenta no está vinculada a ningún negocio. Contacta con el administrador.
         </p>
-        {businesses.length === 0 && (
-          <a href="/" className="btn-ghost mt-4" onClick={() => { /* fallthrough */ }}>Reintentar</a>
-        )}
+        <div className="flex items-center justify-center gap-2 mt-4">
+          {businesses.length === 0 && (
+            <a href="/" className="btn-ghost">Reintentar</a>
+          )}
+          <button className="btn-primary" onClick={() => signOut()}>Cerrar sesión</button>
+        </div>
       </div>
     </div>
   );
