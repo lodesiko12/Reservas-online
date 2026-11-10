@@ -227,7 +227,7 @@ end $$;
 -- para que el enlace "Mi reserva" sirva para ambos).
 -- ---------------------------------------------------------------------
 create or replace function public.generate_order_locator()
-returns text language plpgsql as $$
+returns text language plpgsql set search_path = public as $$
 declare
   chars text := 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
   code  text;
