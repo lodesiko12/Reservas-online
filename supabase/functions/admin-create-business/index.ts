@@ -3,6 +3,7 @@
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { json, handleOptions } from "../_shared/cors.ts";
 import { rateLimitHit, tooManyRequests } from "../_shared/rateLimit.ts";
+import { findUserByEmail, sendPasswordSetupLink } from "../_shared/passwordSetup.ts";
 
 type Body = {
   name?: string;
@@ -45,8 +46,8 @@ Deno.serve(async (req) => {
   const type = b.type;
   if (!name || !slug || !type) return json({ error: "Faltan name, slug o type." }, 400);
   if (!/^[a-z0-9-]+$/.test(slug)) return json({ error: "El slug solo admite minúsculas, números y guiones." }, 400);
-  if (!b.staff_email || !b.staff_password) return json({ error: "Faltan credenciales del staff." }, 400);
-  if (b.staff_password.length < 8) return json({ error: "La contraseña debe tener al menos 8 caracteres." }, 400);
+  if (!b.staff_email) return json({ error: "Falta el email del staff." }, 400);
+  if (b.staff_password && b.staff_password.length < 8) return json({ error: "La contraseña debe tener al menos 8 caracteres." }, 400);
 
   // 3) Crear el negocio.
   const { data: biz, error: bizErr } = await admin
@@ -64,30 +65,34 @@ Deno.serve(async (req) => {
   }
 
   // 4) Crear el usuario de staff (o vincular si ya existe).
+  // Sin contraseña, la cuenta se crea sin ella y se envía el enlace para que el staff la elija.
+  const staffEmail = b.staff_email.trim();
   const { data: created, error: userErr } = await admin.auth.admin.createUser({
-    email: b.staff_email.trim(),
-    password: b.staff_password,
+    email: staffEmail,
     email_confirm: true,
     user_metadata: { full_name: b.staff_name || name },
+    ...(b.staff_password ? { password: b.staff_password } : {}),
   });
 
   let staffId = created?.user?.id;
+  const isNewUser = !!staffId;
   if (userErr || !staffId) {
-    // Si el email ya existe, lo localizamos y le fijamos la contraseña indicada
+    // Si el email ya existe, lo localizamos; si se indicó contraseña, se la fijamos
     // (antes se vinculaba sin actualizarla, dejando activa la contraseña anterior).
-    const { data: list } = await admin.auth.admin.listUsers();
-    staffId = list?.users.find((u) => u.email === b.staff_email!.trim())?.id;
+    staffId = (await findUserByEmail(admin, staffEmail))?.id;
     if (!staffId) {
       await admin.from("businesses").delete().eq("id", biz.id); // rollback
       return json({ error: `No se pudo crear el usuario: ${userErr?.message}` }, 400);
     }
-    const { error: updErr } = await admin.auth.admin.updateUserById(staffId, {
-      password: b.staff_password,
-      email_confirm: true,
-    });
-    if (updErr) {
-      await admin.from("businesses").delete().eq("id", biz.id); // rollback
-      return json({ error: `El email ya existía y no se pudo actualizar su contraseña: ${updErr.message}` }, 400);
+    if (b.staff_password) {
+      const { error: updErr } = await admin.auth.admin.updateUserById(staffId, {
+        password: b.staff_password,
+        email_confirm: true,
+      });
+      if (updErr) {
+        await admin.from("businesses").delete().eq("id", biz.id); // rollback
+        return json({ error: `El email ya existía y no se pudo actualizar su contraseña: ${updErr.message}` }, 400);
+      }
     }
   }
 
@@ -149,5 +154,12 @@ Deno.serve(async (req) => {
     }
   }
 
-  return json({ business: biz, staff_id: staffId });
+  // 9) Cuenta nueva sin contraseña: enlace para que la elija el propio staff.
+  let invite: "sent" | "not_sent" | "none" = "none";
+  if (isNewUser && !b.staff_password) {
+    const r = await sendPasswordSetupLink(admin, staffEmail, "invite", name);
+    invite = r === "sent" ? "sent" : "not_sent";
+  }
+
+  return json({ business: biz, staff_id: staffId, invite });
 });

@@ -5,6 +5,7 @@
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { json, handleOptions } from "../_shared/cors.ts";
 import { rateLimitHit, tooManyRequests } from "../_shared/rateLimit.ts";
+import { findUserByEmail, sendPasswordSetupLink } from "../_shared/passwordSetup.ts";
 
 type Body = {
   action?: "list" | "add" | "remove" | "update_role";
@@ -63,42 +64,47 @@ Deno.serve(async (req) => {
     const role = body.role === "owner" ? "owner" : "staff";
     if (!email) return json({ error: "Falta el email." }, 400);
 
-    let userId: string | undefined;
-    let existedAlready = false;
-    if (body.staff_password) {
-      if (body.staff_password.length < 8) return json({ error: "La contraseña debe tener al menos 8 caracteres." }, 400);
-      const { data: created, error: createErr } = await admin.auth.admin.createUser({
-        email, password: body.staff_password, email_confirm: true,
-      });
-      if (created?.user) userId = created.user.id;
-      else if (createErr && /already registered|already exists/i.test(createErr.message)) {
-        existedAlready = true;
-      } else if (createErr) {
-        return json({ error: `No se pudo crear el usuario: ${createErr.message}` }, 400);
-      }
+    if (body.staff_password && body.staff_password.length < 8) {
+      return json({ error: "La contraseña debe tener al menos 8 caracteres." }, 400);
     }
-    if (!userId) {
-      // O bien no se dio contraseña (vincular cuenta existente), o el email ya estaba registrado.
-      const { data: list } = await admin.auth.admin.listUsers();
-      userId = list?.users.find((u) => u.email === email)?.id;
-      if (!userId) {
-        return json({ error: "Ese email no tiene cuenta todavía; indica una contraseña para crearla." }, 400);
-      }
+
+    // Se crea la cuenta (con la contraseña indicada, o sin contraseña si no se da) o se localiza la existente.
+    let userId: string | undefined;
+    let isNewUser = false;
+    const { data: created, error: createErr } = await admin.auth.admin.createUser({
+      email, email_confirm: true, ...(body.staff_password ? { password: body.staff_password } : {}),
+    });
+    if (created?.user) {
+      userId = created.user.id;
+      isNewUser = true;
+    } else if (createErr && /already registered|already exists/i.test(createErr.message)) {
+      userId = (await findUserByEmail(admin, email))?.id;
+      if (!userId) return json({ error: "Ese email ya está registrado pero no se pudo localizar la cuenta." }, 400);
       // Si el email ya existía y se dio contraseña, la fijamos (antes se ignoraba
       // silenciosamente y quedaba activa la contraseña anterior de la cuenta).
-      if (existedAlready && body.staff_password) {
+      if (body.staff_password) {
         const { error: updErr } = await admin.auth.admin.updateUserById(userId, {
           password: body.staff_password, email_confirm: true,
         });
         if (updErr) return json({ error: `El email ya existía y no se pudo actualizar su contraseña: ${updErr.message}` }, 400);
       }
+    } else if (createErr) {
+      return json({ error: `No se pudo crear el usuario: ${createErr.message}` }, 400);
     }
 
     const { error: linkErr } = await admin
       .from("business_users")
       .upsert({ business_id: businessId, user_id: userId, role }, { onConflict: "business_id,user_id" });
     if (linkErr) return json({ error: linkErr.message }, 400);
-    return json({ ok: true, user_id: userId });
+
+    // Cuenta nueva sin contraseña: se le envía el enlace para que la elija ella misma.
+    let invite: "sent" | "not_sent" | "none" = "none";
+    if (isNewUser && !body.staff_password) {
+      const { data: biz } = await admin.from("businesses").select("name").eq("id", businessId).maybeSingle();
+      const r = await sendPasswordSetupLink(admin, email, "invite", biz?.name);
+      invite = r === "sent" ? "sent" : "not_sent";
+    }
+    return json({ ok: true, user_id: userId, invite });
   }
 
   if (body.action === "update_role") {

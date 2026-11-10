@@ -237,7 +237,8 @@ export const adminNewBusinessSchema = z.object({
   timezone: timezoneField,
   staff_name: optionalText(NAME_MAX),
   staff_email: z.string().trim().min(1, "El email es obligatorio").max(EMAIL_MAX, `Máximo ${EMAIL_MAX} caracteres`).email("Email no válido"),
-  staff_password: passwordField,
+  // Opcional: sin contraseña, el staff recibe un email para elegirla él mismo.
+  staff_password: z.preprocess((v) => (v === "" ? undefined : v), passwordField.optional()),
 });
 
 export const adminAddMemberSchema = z.object({

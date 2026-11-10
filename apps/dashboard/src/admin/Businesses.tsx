@@ -202,6 +202,7 @@ function NewBusinessModal({ open, onClose, onCreated }: { open: boolean; onClose
   });
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+  const [invite, setInvite] = useState<"sent" | "not_sent" | "none">("none");
   const [saving, setSaving] = useState(false);
 
   function set<K extends keyof typeof form>(k: K, v: string) {
@@ -226,12 +227,13 @@ function NewBusinessModal({ open, onClose, onCreated }: { open: boolean; onClose
       return;
     }
     if ((data as any)?.error) { setError((data as any).error); return; }
+    setInvite((data as any)?.invite ?? "none");
     setDone(true);
     onCreated();
   }
 
   function close() {
-    setDone(false); setError(null);
+    setDone(false); setError(null); setInvite("none");
     setForm({ name: "", slug: "", type: "citas", primary_color: "#4f46e5", timezone: "Europe/Madrid", staff_name: "", staff_email: "", staff_password: "" });
     onClose();
   }
@@ -243,7 +245,11 @@ function NewBusinessModal({ open, onClose, onCreated }: { open: boolean; onClose
           <div className="text-4xl">✅</div>
           <p className="font-semibold mt-2">Negocio creado</p>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            El staff ya puede acceder con <strong>{form.staff_email}</strong>.
+            {invite === "sent"
+              ? <>Hemos enviado a <strong>{form.staff_email}</strong> un email para que elija su contraseña.</>
+              : invite === "not_sent"
+                ? <>Cuenta creada para <strong>{form.staff_email}</strong>, pero no se pudo enviar el email. Que pulse «Primera vez o contraseña olvidada» en el login, o fija tú una contraseña en <em>Usuarios</em>.</>
+                : <>El staff ya puede acceder con <strong>{form.staff_email}</strong>.</>}
           </p>
           <button className="btn-primary mt-4" onClick={close}>Hecho</button>
         </div>
@@ -290,8 +296,8 @@ function NewBusinessModal({ open, onClose, onCreated }: { open: boolean; onClose
               <input type="email" className="input" value={form.staff_email} onChange={(e) => set("staff_email", e.target.value)} required />
             </div>
             <div>
-              <label className="label">Contraseña</label>
-              <input type="text" className="input" value={form.staff_password} onChange={(e) => set("staff_password", e.target.value)} required minLength={8} placeholder="mín. 8 caracteres" />
+              <label className="label">Contraseña (opcional)</label>
+              <input type="text" className="input" value={form.staff_password} onChange={(e) => set("staff_password", e.target.value)} minLength={8} placeholder="vacío = recibe un email para elegirla" />
             </div>
           </div>
 

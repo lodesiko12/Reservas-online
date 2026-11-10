@@ -1,12 +1,17 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "./lib/auth";
 import { Login } from "./pages/Login";
+import { SetPassword, getRecoveryToken } from "./pages/SetPassword";
 import { Spinner } from "./components/ui";
 import { AdminApp } from "./admin/AdminApp";
 import { BusinessApp } from "./business/BusinessApp";
 
 export default function App() {
   const { loading, session, isSuperAdmin, business, businesses, signOut } = useAuth();
+
+  // Enlace del email para elegir contraseña: tiene prioridad sobre cualquier sesión.
+  const recoveryToken = getRecoveryToken();
+  if (recoveryToken) return <SetPassword tokenHash={recoveryToken} />;
 
   if (loading) {
     return <div className="min-h-screen grid place-items-center"><Spinner /></div>;

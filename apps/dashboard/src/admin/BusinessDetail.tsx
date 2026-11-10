@@ -77,6 +77,7 @@ function BusinessUsersSection({ businessId }: { businessId: string }) {
   const [members, setMembers] = useState<{ id: string; user_id: string; role: string; email: string; created_at: string }[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
   const [form, setForm] = useState({ email: "", password: "", role: "staff" as "owner" | "staff" });
   const [saving, setSaving] = useState(false);
@@ -95,7 +96,7 @@ function BusinessUsersSection({ businessId }: { businessId: string }) {
 
   async function addMember(e: React.FormEvent) {
     e.preventDefault();
-    setError(null);
+    setError(null); setNotice(null);
     const parsed = adminAddMemberSchema.safeParse(form);
     if (!parsed.success) { setError(firstIssue(parsed.error)); return; }
     setSaving(true);
@@ -104,6 +105,12 @@ function BusinessUsersSection({ businessId }: { businessId: string }) {
     });
     setSaving(false);
     if (error || (data as any)?.error) { setError((data as any)?.error ?? error!.message); return; }
+    const invite = (data as any)?.invite as "sent" | "not_sent" | "none" | undefined;
+    setNotice(
+      invite === "sent" ? `Hemos enviado a ${parsed.data.email} un email para que elija su contraseña.`
+      : invite === "not_sent" ? `Usuario añadido, pero no se pudo enviar el email a ${parsed.data.email}. Que pulse «Primera vez o contraseña olvidada» en el login.`
+      : null
+    );
     setForm({ email: "", password: "", role: "staff" });
     setAdding(false);
     load();
@@ -135,6 +142,8 @@ function BusinessUsersSection({ businessId }: { businessId: string }) {
 
       {error && <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-4">{error}</div>}
 
+      {notice && <div className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2 mb-4 dark:bg-emerald-950/40 dark:border-emerald-900 dark:text-emerald-400">{notice}</div>}
+
       {adding && (
         <form onSubmit={addMember} className="border border-slate-200 dark:border-slate-700 rounded-lg p-4 mb-4 space-y-3">
           <div className="grid sm:grid-cols-2 gap-3">
@@ -147,8 +156,8 @@ function BusinessUsersSection({ businessId }: { businessId: string }) {
             </div>
           </div>
           <div>
-            <label className="label">Contraseña (solo si es un email nuevo, sin cuenta todavía)</label>
-            <input type="text" className="input" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="mín. 8 caracteres, dejar vacío si ya tiene cuenta" minLength={8} />
+            <label className="label">Contraseña (opcional)</label>
+            <input type="text" className="input" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="vacío = recibe un email para elegirla él mismo" minLength={8} />
           </div>
           <button className="btn-primary" disabled={saving}>{saving ? "Añadiendo…" : "Añadir"}</button>
         </form>
