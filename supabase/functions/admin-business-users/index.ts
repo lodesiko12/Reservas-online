@@ -5,7 +5,7 @@
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { json, handleOptions } from "../_shared/cors.ts";
 import { rateLimitHit, tooManyRequests } from "../_shared/rateLimit.ts";
-import { findUserByEmail, sendPasswordSetupLink } from "../_shared/passwordSetup.ts";
+import { findUserByEmail, resendCandidates, sendPasswordSetupLink } from "../_shared/passwordSetup.ts";
 
 type Body = {
   action?: "list" | "add" | "remove" | "update_role";
@@ -101,7 +101,7 @@ Deno.serve(async (req) => {
     let invite: "sent" | "not_sent" | "none" = "none";
     if (isNewUser && !body.staff_password) {
       const { data: biz } = await admin.from("businesses").select("name").eq("id", businessId).maybeSingle();
-      const r = await sendPasswordSetupLink(admin, email, "invite", biz?.name);
+      const r = await sendPasswordSetupLink(admin, email, "invite", biz?.name, await resendCandidates(admin, [businessId]));
       invite = r === "sent" ? "sent" : "not_sent";
     }
     return json({ ok: true, user_id: userId, invite });

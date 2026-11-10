@@ -1,13 +1,12 @@
 // password-setup — "Primera vez o contraseña olvidada" del login (endpoint público, verify_jwt=false).
-// Recibe { email } y, si existe una cuenta con ese email, le envía por Resend un enlace para elegir
-// contraseña. Responde SIEMPRE lo mismo (también si el email no existe o no se pudo enviar) para no
-// revelar qué emails tienen cuenta. Limitado por IP y por email.
+// Recibe { email }. Solo envía el enlace si el email está dado de alta (es super-admin o pertenece a
+// algún negocio); si no, responde error y no envía nada. El correo sale por la cuenta de Resend del
+// negocio al que pertenece (business_integrations) y, si no hay o falla, por la global.
+// Limitado por IP y por email.
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { json, handleOptions } from "../_shared/cors.ts";
 import { getClientIp, rateLimitHit, tooManyRequests } from "../_shared/rateLimit.ts";
-import { sendPasswordSetupLink } from "../_shared/passwordSetup.ts";
-
-declare const EdgeRuntime: { waitUntil(p: Promise<unknown>): void } | undefined;
+import { findUserByEmail, resendCandidates, sendPasswordSetupLink } from "../_shared/passwordSetup.ts";
 
 Deno.serve(async (req) => {
   const pre = handleOptions(req);
@@ -29,10 +28,21 @@ Deno.serve(async (req) => {
   if (!(await rateLimitHit(admin, `password-setup:ip:${getClientIp(req)}`, 10, 3600))) return tooManyRequests(3600);
   if (!(await rateLimitHit(admin, `password-setup:email:${email}`, 3, 3600))) return tooManyRequests(3600);
 
-  // El trabajo se hace en segundo plano para que el tiempo de respuesta sea igual exista o no la cuenta.
-  const work = sendPasswordSetupLink(admin, email, "reset").catch((e) => console.error("[password-setup]", e));
-  if (typeof EdgeRuntime !== "undefined") EdgeRuntime.waitUntil(work);
-  else await work;
+  // ¿Está dado de alta? (cuenta existente + super-admin o miembro de algún negocio)
+  const notRegistered = () => json({ error: "Ese email no está dado de alta en ningún negocio de Turnigo. Pide acceso a tu administrador." }, 404);
+  const user = await findUserByEmail(admin, email);
+  if (!user) return notRegistered();
+  const [{ data: prof }, { data: memberships }] = await Promise.all([
+    admin.from("profiles").select("is_super_admin").eq("id", user.id).maybeSingle(),
+    admin.from("business_users").select("business_id").eq("user_id", user.id),
+  ]);
+  const businessIds = (memberships ?? []).map((m) => m.business_id as string);
+  if (!prof?.is_super_admin && !businessIds.length) return notRegistered();
 
-  return json({ ok: true });
+  const result = await sendPasswordSetupLink(admin, email, "reset", null, await resendCandidates(admin, businessIds));
+  if (result === "sent") return json({ ok: true });
+  if (result === "not_configured") {
+    return json({ error: "Tu negocio no tiene configurado el envío de correos. Pídele a tu administrador que te fije una contraseña." }, 503);
+  }
+  return json({ error: "No se pudo enviar el correo. Inténtalo de nuevo en unos minutos o pídele a tu administrador que te fije una contraseña." }, 502);
 });

@@ -3,7 +3,7 @@
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { json, handleOptions } from "../_shared/cors.ts";
 import { rateLimitHit, tooManyRequests } from "../_shared/rateLimit.ts";
-import { findUserByEmail, sendPasswordSetupLink } from "../_shared/passwordSetup.ts";
+import { findUserByEmail, resendCandidates, sendPasswordSetupLink } from "../_shared/passwordSetup.ts";
 
 type Body = {
   name?: string;
@@ -157,7 +157,7 @@ Deno.serve(async (req) => {
   // 9) Cuenta nueva sin contraseña: enlace para que la elija el propio staff.
   let invite: "sent" | "not_sent" | "none" = "none";
   if (isNewUser && !b.staff_password) {
-    const r = await sendPasswordSetupLink(admin, staffEmail, "invite", name);
+    const r = await sendPasswordSetupLink(admin, staffEmail, "invite", name, await resendCandidates(admin, [biz.id]));
     invite = r === "sent" ? "sent" : "not_sent";
   }
 

@@ -79,7 +79,7 @@ export function Login() {
             <div className="text-4xl">📧</div>
             <p className="font-semibold">Revisa tu correo</p>
             <p className="text-sm text-slate-500 dark:text-slate-400">
-              Si <strong>{email.trim()}</strong> tiene cuenta en Turnigo, te hemos enviado un enlace para elegir tu contraseña. Caduca en 1 hora; mira también en spam.
+              Hemos enviado a <strong>{email.trim()}</strong> un enlace para elegir tu contraseña. Caduca en 1 hora; mira también en spam.
             </p>
             <button type="button" className="btn-ghost w-full" onClick={() => switchMode("login")}>Volver a entrar</button>
           </div>

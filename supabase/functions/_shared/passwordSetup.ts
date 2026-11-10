@@ -58,15 +58,39 @@ export function buildPasswordSetupEmail(d: { link: string; kind: SetupKind; busi
   return { subject, html, text };
 }
 
+/** Credenciales de Resend con las que intentar el envío. `{}` = las globales (RESEND_API_KEY / EMAIL_FROM). */
+export type ResendCreds = { apiKey?: string | null; from?: string | null };
+
 /**
- * Genera el enlace de contraseña para `email` y lo envía. No revela nada al llamante público:
- * quien use esto desde un endpoint abierto debe responder igual para cualquier resultado.
+ * Credenciales de Resend de los negocios indicados (`business_integrations`), en el orden dado,
+ * y al final las globales como último recurso. Solo incluye negocios que tengan clave propia.
+ */
+export async function resendCandidates(admin: SupabaseClient, businessIds: string[]): Promise<ResendCreds[]> {
+  const out: ResendCreds[] = [];
+  if (businessIds.length) {
+    const { data } = await admin
+      .from("business_integrations")
+      .select("business_id, email_from, resend_api_key")
+      .in("business_id", businessIds);
+    for (const id of businessIds) {
+      const row = data?.find((r) => r.business_id === id);
+      if (row?.resend_api_key) out.push({ apiKey: row.resend_api_key, from: row.email_from });
+    }
+  }
+  out.push({}); // globales
+  return out;
+}
+
+/**
+ * Genera el enlace de contraseña para `email` y lo envía probando cada juego de credenciales
+ * (primero las del negocio, al final las globales) hasta que una lo envíe.
  */
 export async function sendPasswordSetupLink(
   admin: SupabaseClient,
   email: string,
   kind: SetupKind,
   businessName?: string | null,
+  candidates: ResendCreds[] = [{}],
 ): Promise<SetupResult> {
   const base = (Deno.env.get("DASHBOARD_URL") ?? "").replace(/\/+$/, "");
   if (!base) {
@@ -79,11 +103,15 @@ export async function sendPasswordSetupLink(
 
   const link = `${base}/?token_hash=${encodeURIComponent(hashed)}&type=recovery`;
   const { subject, html, text } = buildPasswordSetupEmail({ link, kind, businessName });
-  try {
-    const id = await sendEmail(email.trim(), subject, html, text);
-    return id ? "sent" : "not_configured";
-  } catch (e) {
-    console.error("[password-setup] Fallo al enviar:", (e as Error).message);
-    return "failed";
+  let failed = false;
+  for (const c of candidates) {
+    try {
+      const id = await sendEmail(email.trim(), subject, html, text, c.apiKey, c.from);
+      if (id) return "sent";
+    } catch (e) {
+      failed = true;
+      console.error("[password-setup] Fallo al enviar:", (e as Error).message);
+    }
   }
+  return failed ? "failed" : "not_configured";
 }
