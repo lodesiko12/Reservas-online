@@ -15,10 +15,10 @@ export function NuevaReserva() {
   return business?.type === "restaurante" ? <NuevaReservaRestaurante /> : <NuevaReservaCitas />;
 }
 
-const DAYS_AHEAD = 21;
+const DAYS_AHEAD = 45;
 
 /**
- * Días (YYYY-MM-DD) de los próximos 21 con algún hueco para el staff (canal "manual"), igual que
+ * Días (YYYY-MM-DD) de los próximos 45 con algún hueco para el staff (canal "manual"), igual que
  * el selector del widget solo ofrece días con disponibilidad. `fetchDays` llama a la RPC de días;
  * `deps` son los filtros que la invalidan (servicio, profesional, comensales…). Si la fecha elegida
  * deja de tener huecos se limpia. `enabled=false` aún no consulta (p. ej. sin servicio elegido).
