@@ -6,7 +6,7 @@ import { useAuth } from "../lib/auth";
 import { useServices, useServiceOptions, useOptionGroups } from "./hooks";
 import { ymdInTz, formatTime } from "@reservas/shared";
 import { PageHeader, Spinner } from "../components/ui";
-import { DateStrip, CustomerFields, Done } from "./NuevaReserva";
+import { DateStrip, CustomerFields, Done, useAvailableDays, rpcDays } from "./NuevaReserva";
 
 /** Alta manual de un encargo (WhatsApp, teléfono, en tienda): tamaño + sabor + recogida.
  * Canal "manual": el staff no está sujeto a antelación mínima, capacidad diaria ni a que el
@@ -45,6 +45,10 @@ export function NuevoEncargo() {
 
   // Si cambia el tamaño y el sabor ya no tiene servicio para ese tamaño, se limpia.
   useEffect(() => { if (option && !service) setOptionId(""); }, [option, service]);
+
+  const avail = useAvailableDays(tz, !!service, (from, to) => rpcDays("get_available_days", {
+    p_business_id: bid, p_service_id: service!.id, p_date_from: from, p_date_to: to,
+  }), date, setDate, [service?.id, bid]);
 
   useEffect(() => {
     if (!service || !date) { setSlots([]); return; }
@@ -111,9 +115,9 @@ export function NuevoEncargo() {
         {service && (
           <div className="card p-5">
             <label className="label">Día de recogida</label>
-            <DateStrip tz={tz} date={date} setDate={setDate} />
+            <DateStrip tz={tz} date={date} setDate={setDate} available={avail.days} loading={avail.loading} failed={avail.failed} />
             <label className="label mt-3">Hora de recogida</label>
-            {loadingSlots ? <Spinner /> : slots.length === 0 ? (
+            {!date ? <p className="text-sm text-slate-400 dark:text-slate-500">Selecciona un día para ver las horas.</p> : loadingSlots ? <Spinner /> : slots.length === 0 ? (
               <p className="text-sm text-slate-400 dark:text-slate-500">No hay horas ese día (horario, festivo o bloqueo).</p>
             ) : (
               <div className="flex flex-wrap gap-2">

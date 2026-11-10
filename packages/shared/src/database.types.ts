@@ -3850,6 +3850,7 @@ export type Database = {
       get_available_days: {
         Args: {
           p_business_id: string
+          p_channel?: Database["public"]["Enums"]["booking_channel"]
           p_date_from: string
           p_date_to: string
           p_professional_id?: string
@@ -3862,6 +3863,7 @@ export type Database = {
       get_available_dining_days: {
         Args: {
           p_business_id: string
+          p_channel?: Database["public"]["Enums"]["booking_channel"]
           p_date_from: string
           p_date_to: string
           p_party_size: number

@@ -15,9 +15,67 @@ export function NuevaReserva() {
   return business?.type === "restaurante" ? <NuevaReservaRestaurante /> : <NuevaReservaCitas />;
 }
 
-export function DateStrip({ tz, date, setDate }: { tz: string; date: string; setDate: (d: string) => void }) {
-  const dates = Array.from({ length: 21 }, (_, i) => addDaysYmd(ymdInTz(new Date(), tz), i));
+const DAYS_AHEAD = 21;
+
+/**
+ * Días (YYYY-MM-DD) de los próximos 21 con algún hueco para el staff (canal "manual"), igual que
+ * el selector del widget solo ofrece días con disponibilidad. `fetchDays` llama a la RPC de días;
+ * `deps` son los filtros que la invalidan (servicio, profesional, comensales…). Si la fecha elegida
+ * deja de tener huecos se limpia. `enabled=false` aún no consulta (p. ej. sin servicio elegido).
+ */
+export function useAvailableDays(
+  tz: string,
+  enabled: boolean,
+  fetchDays: (from: string, to: string) => PromiseLike<Set<string>>,
+  date: string,
+  setDate: (d: string) => void,
+  deps: unknown[],
+) {
+  const [days, setDays] = useState<Set<string> | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    if (!enabled) { setDays(null); setLoading(false); return; }
+    let cancelled = false;
+    const from = ymdInTz(new Date(), tz);
+    setDays(null); setLoading(true); setFailed(false);
+    Promise.resolve(fetchDays(from, addDaysYmd(from, DAYS_AHEAD - 1)))
+      .then((set) => {
+        if (cancelled) return;
+        setDays(set);
+        if (date && !set.has(date)) setDate("");
+      })
+      .catch(() => { if (!cancelled) { setFailed(true); setDays(null); } })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enabled, tz, ...deps]);
+
+  return { days, loading, failed };
+}
+
+export async function rpcDays(fn: "get_available_days" | "get_available_dining_days", args: Record<string, unknown>): Promise<Set<string>> {
+  const { data, error } = await supabase.rpc(fn as any, { ...args, p_channel: "manual" } as any);
+  if (error) throw error;
+  return new Set(((data as { day: string }[]) ?? []).map((r) => r.day));
+}
+
+export function DateStrip({ tz, date, setDate, available, loading, failed }: {
+  tz: string; date: string; setDate: (d: string) => void;
+  /** Días con huecos; null = aún sin cargar (o error) → no se filtra. */
+  available?: Set<string> | null; loading?: boolean; failed?: boolean;
+}) {
+  if (loading) return <div className="py-2"><Spinner /></div>;
+  const today = ymdInTz(new Date(), tz);
+  const all = Array.from({ length: DAYS_AHEAD }, (_, i) => addDaysYmd(today, i));
+  const dates = available ? all.filter((d) => available.has(d)) : all;
+  if (available && dates.length === 0) {
+    return <p className="text-sm text-slate-400 dark:text-slate-500 pb-2">No hay días con disponibilidad en las próximas semanas.</p>;
+  }
   return (
+    <div>
+    {failed && <p className="text-xs text-amber-600 mb-1">No se pudo comprobar la disponibilidad; se muestran todos los días.</p>}
     <div className="flex gap-2 overflow-x-auto pb-2">
       {dates.map((ymd) => {
         const d = new Date(ymd + "T12:00:00");
@@ -29,6 +87,7 @@ export function DateStrip({ tz, date, setDate }: { tz: string; date: string; set
           </button>
         );
       })}
+    </div>
     </div>
   );
 }
@@ -82,6 +141,11 @@ function NuevaReservaCitas() {
   const serviceProfessionals = (pros ?? []).filter((p) =>
     (links ?? []).some((l) => l.service_id === serviceId && l.professional_id === p.id)
   );
+
+  const avail = useAvailableDays(tz, !!serviceId, (from, to) => rpcDays("get_available_days", {
+    p_business_id: bid, p_service_id: serviceId, p_date_from: from, p_date_to: to,
+    p_professional_id: professionalId || undefined,
+  }), date, setDate, [serviceId, professionalId, bid]);
 
   useEffect(() => {
     if (!serviceId || !date) { setSlots([]); return; }
@@ -137,9 +201,9 @@ function NuevaReservaCitas() {
           {serviceId && (
             <>
               <label className="label mt-4">Fecha</label>
-              <DateStrip tz={tz} date={date} setDate={setDate} />
+              <DateStrip tz={tz} date={date} setDate={setDate} available={avail.days} loading={avail.loading} failed={avail.failed} />
               <label className="label mt-2">Hora</label>
-              {loadingSlots ? <Spinner /> : slots.length === 0 ? <p className="text-sm text-slate-400 dark:text-slate-500">No hay huecos ese día.</p> : (
+              {!date ? <p className="text-sm text-slate-400 dark:text-slate-500">Selecciona una fecha para ver los huecos.</p> : loadingSlots ? <Spinner /> : slots.length === 0 ? <p className="text-sm text-slate-400 dark:text-slate-500">No hay huecos ese día.</p> : (
                 <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
                   {slots.map((s) => (
                     <button type="button" key={s.slot_start} onClick={() => setSlot(s.slot_start)}
@@ -178,6 +242,10 @@ function NuevaReservaRestaurante() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [ok, setOk] = useState<string | null>(null);
+
+  const avail = useAvailableDays(tz, true, (from, to) => rpcDays("get_available_dining_days", {
+    p_business_id: bid, p_date_from: from, p_date_to: to, p_party_size: party,
+  }), date, setDate, [party, bid]);
 
   useEffect(() => {
     if (!date) { setSlots([]); return; }
@@ -241,10 +309,10 @@ function NuevaReservaRestaurante() {
           </div>
 
           <label className="label mt-4">Fecha</label>
-          <DateStrip tz={tz} date={date} setDate={setDate} />
+          <DateStrip tz={tz} date={date} setDate={setDate} available={avail.days} loading={avail.loading} failed={avail.failed} />
 
           <label className="label mt-2">Hora</label>
-          {loadingSlots ? <Spinner /> : grouped.length === 0 ? <p className="text-sm text-slate-400 dark:text-slate-500">No hay mesas ese día para {party} comensales.</p> : (
+          {!date ? <p className="text-sm text-slate-400 dark:text-slate-500">Selecciona una fecha para ver las mesas.</p> : loadingSlots ? <Spinner /> : grouped.length === 0 ? <p className="text-sm text-slate-400 dark:text-slate-500">No hay mesas ese día para {party} comensales.</p> : (
             grouped.map((g) => (
               <div key={g.name} className="mb-3">
                 <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">{g.name}</div>
