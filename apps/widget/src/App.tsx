@@ -11,6 +11,7 @@ import {
 import { Lookup } from "./Lookup";
 import { RestaurantFlow } from "./RestaurantFlow";
 import { OrderFlow } from "./OrderFlow";
+import { TakeawayFlow } from "./TakeawayFlow";
 
 type Props = { slug: string; initialView: "booking" | "lookup"; initialLocator: string };
 
@@ -24,6 +25,8 @@ export default function App({ slug, initialView, initialLocator }: Props) {
   const [business, setBusiness] = useState<PublicBusiness | null>(null);
   const [loadErr, setLoadErr] = useState<string | null>(null);
   const [view, setView] = useState<"booking" | "lookup">(initialView);
+  // Restaurantes con pedidos online: pestañas "Reservar mesa" / "Pedir para llevar".
+  const [tab, setTab] = useState<"mesa" | "llevar">("mesa");
 
   useEffect(() => {
     if (!slug) { setLoadErr("Falta el identificador del negocio (slug)."); return; }
@@ -39,6 +42,8 @@ export default function App({ slug, initialView, initialLocator }: Props) {
   if (loadErr) return <div className="widget"><div className="error">{loadErr}</div></div>;
   if (!business) return <div className="widget center"><span className="spinner" /></div>;
 
+  const takeaway = business.type === "restaurante" && business.online_orders && !business.order_mode;
+
   return (
     <div className="widget">
       <div className="brand">
@@ -48,6 +53,8 @@ export default function App({ slug, initialView, initialLocator }: Props) {
           <p className="sub">
             {business.order_mode
               ? (view === "lookup" ? "Consulta tu encargo" : "Haz tu encargo")
+              : takeaway
+              ? (view === "lookup" ? "Consulta tu reserva o pedido" : "Reserva mesa o pide para llevar")
               : (view === "lookup" ? "Consulta tu reserva" : "Reserva online")}
           </p>
         </div>
@@ -56,11 +63,21 @@ export default function App({ slug, initialView, initialLocator }: Props) {
       {business.type === "asesoria" || business.type === "agencia" ? (
         <p className="sub">Este negocio no admite reservas online.</p>
       ) : view === "lookup" ? (
-        <Lookup initialLocator={initialLocator} onBack={() => setView("booking")} orderMode={business.order_mode} />
+        <Lookup initialLocator={initialLocator} onBack={() => setView("booking")} orderMode={business.order_mode} takeaway={takeaway} />
       ) : business.order_mode ? (
         <OrderFlow business={business} onLookup={() => setView("lookup")} />
       ) : business.type === "restaurante" ? (
-        <RestaurantFlow business={business} onLookup={() => setView("lookup")} />
+        <>
+          {takeaway && (
+            <div className="tabs" role="tablist">
+              <button role="tab" aria-selected={tab === "mesa"} className={tab === "mesa" ? "selected" : ""} onClick={() => setTab("mesa")}>🍽️ Reservar mesa</button>
+              <button role="tab" aria-selected={tab === "llevar"} className={tab === "llevar" ? "selected" : ""} onClick={() => setTab("llevar")}>🛍️ Pedir para llevar</button>
+            </div>
+          )}
+          {takeaway && tab === "llevar"
+            ? <TakeawayFlow business={business} onLookup={() => setView("lookup")} />
+            : <RestaurantFlow business={business} onLookup={() => setView("lookup")} />}
+        </>
       ) : (
         <BookingFlow business={business} onLookup={() => setView("lookup")} />
       )}

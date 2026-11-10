@@ -116,6 +116,65 @@ ${d.manageUrl ? `Gestiona tu ${thing}: ${d.manageUrl}` : ""}`;
   return { subject, html, text };
 }
 
+export type OrderEmailData = {
+  businessName: string;
+  customerName: string;
+  pickupAt: string; // ISO
+  timezone: string;
+  locator: string;
+  total: number;
+  items: { name: string; quantity: number; line_total: number; modifiers: { name: string }[]; notes?: string | null }[];
+  manageUrl?: string;
+  primaryColor?: string;
+};
+
+const eur = (n: number) => new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR" }).format(n);
+
+/** Email de confirmación de un pedido para llevar (recibido; el local lo irá aceptando). */
+export function buildOrderEmail(d: OrderEmailData): { subject: string; html: string; text: string } {
+  const color = d.primaryColor || "#4f46e5";
+  const date = fmtDate(d.pickupAt, d.timezone);
+  const time = fmtTime(d.pickupAt, d.timezone);
+  const subject = `Pedido recibido · ${d.businessName}`;
+  const rows = d.items.map((i) => {
+    const mods = i.modifiers.length ? `<div style="color:#64748b;font-size:13px">${i.modifiers.map((m) => escapeHtml(m.name)).join(" · ")}</div>` : "";
+    const note = i.notes ? `<div style="color:#64748b;font-size:13px">“${escapeHtml(i.notes)}”</div>` : "";
+    return `<tr><td style="padding:6px 0;vertical-align:top"><strong>${i.quantity}×</strong> ${escapeHtml(i.name)}${mods}${note}</td><td style="padding:6px 0;text-align:right;vertical-align:top;white-space:nowrap">${eur(i.line_total)}</td></tr>`;
+  }).join("");
+  const manage = d.manageUrl
+    ? `<p style="margin:16px 0 0">Puedes consultar o cancelar tu pedido (mientras no esté en preparación) aquí:<br>
+         <a href="${d.manageUrl}" style="color:${color}">${d.manageUrl}</a></p>`
+    : "";
+  const html = `<!doctype html><html><body style="margin:0;background:#f1f5f9;padding:24px;font-family:system-ui,Segoe UI,Arial,sans-serif;color:#0f172a">
+  <div style="max-width:520px;margin:0 auto;background:#fff;border-radius:14px;overflow:hidden;border:1px solid #e2e8f0">
+    <div style="background:${color};color:#fff;padding:20px 24px">
+      <h1 style="margin:0;font-size:20px">${escapeHtml(d.businessName)}</h1>
+      <p style="margin:4px 0 0;opacity:.9">Pedido recibido</p>
+    </div>
+    <div style="padding:24px">
+      <p style="margin:0 0 12px">Hola ${escapeHtml(d.customerName)}, hemos recibido tu pedido. Lo recogerás el <strong>${date}</strong> a las <strong>${time}</strong> y lo pagarás en el local.</p>
+      <table style="width:100%;border-collapse:collapse;font-size:15px;border-top:1px solid #e2e8f0;border-bottom:1px solid #e2e8f0;margin:12px 0">
+        ${rows}
+        <tr><td style="padding:10px 0 4px"><strong>Total</strong></td><td style="padding:10px 0 4px;text-align:right"><strong>${eur(d.total)}</strong></td></tr>
+      </table>
+      <div style="margin:20px 0;text-align:center;background:#f8fafc;border:1px dashed ${color};border-radius:12px;padding:16px">
+        <div style="color:#64748b;font-size:13px">Código localizador</div>
+        <div style="font-size:26px;font-weight:800;letter-spacing:2px;color:${color}">${d.locator}</div>
+      </div>
+      ${manage}
+      <p style="margin:18px 0 0;color:#94a3b8;font-size:12px">Guarda este código para consultar tu pedido.</p>
+    </div>
+  </div></body></html>`;
+  const lines = d.items.map((i) => `${i.quantity}x ${i.name}${i.modifiers.length ? ` (${i.modifiers.map((m) => m.name).join(", ")})` : ""} — ${eur(i.line_total)}`).join("\n");
+  const text = `Pedido recibido en ${d.businessName}
+Recogida: ${date} a las ${time} (pago en el local)
+${lines}
+Total: ${eur(d.total)}
+Código localizador: ${d.locator}
+${d.manageUrl ? `Consulta tu pedido: ${d.manageUrl}` : ""}`;
+  return { subject, html, text };
+}
+
 export type ReviewRequestData = {
   businessName: string;
   customerName: string;

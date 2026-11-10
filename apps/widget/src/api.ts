@@ -15,6 +15,7 @@ export type PublicBusiness = {
   timezone: string;
   slot_interval_min: number;
   order_mode: boolean;
+  online_orders: boolean;
 };
 
 export type PublicProfessional = { id: string; name: string; color: string };
@@ -212,6 +213,113 @@ export async function lookupBooking(locator: string): Promise<BookingLookup | nu
 
 export async function cancelBooking(locator: string): Promise<boolean> {
   const { data, error } = await supabase.rpc("cancel_booking_by_locator", { p_locator: locator.trim() });
+  if (error) throw error;
+  return data as boolean;
+}
+
+/* ------------------------- Pedidos para llevar (restaurante) ------------------------- */
+
+export type MenuModifier = { id: string; name: string; price_delta: number; is_available: boolean };
+export type MenuGroup = { id: string; name: string; min_choices: number; max_choices: number; modifiers: MenuModifier[] };
+export type MenuItem = {
+  id: string;
+  name: string;
+  description: string | null;
+  price: number;
+  allergens: string[];
+  is_available: boolean;
+  groups: MenuGroup[];
+};
+export type MenuCategory = { id: string; name: string; items: MenuItem[] };
+export type PublicMenu = {
+  accepting: boolean;
+  min_order_amount: number;
+  prep_minutes: number;
+  max_advance_days: number;
+  categories: MenuCategory[];
+};
+
+/** Carta pública; null si el negocio no tiene pedidos online. */
+export async function fetchMenu(businessId: string): Promise<PublicMenu | null> {
+  const { data, error } = await supabase.rpc("get_public_menu", { p_business_id: businessId });
+  if (error) throw error;
+  return (data as unknown as PublicMenu | null) ?? null;
+}
+
+export async function fetchTakeawaySlots(businessId: string, date: string): Promise<string[]> {
+  const { data, error } = await supabase.rpc("get_takeaway_slots", { p_business_id: businessId, p_date: date });
+  if (error) throw error;
+  return (data ?? []).map((r: { slot_start: string }) => r.slot_start);
+}
+
+export async function fetchTakeawayDays(businessId: string, dateFrom: string, dateTo: string): Promise<Set<string>> {
+  const { data, error } = await supabase.rpc("get_takeaway_days", {
+    p_business_id: businessId, p_date_from: dateFrom, p_date_to: dateTo,
+  });
+  if (error) throw error;
+  return new Set((data ?? []).map((r: { day: string }) => r.day));
+}
+
+export type OrderLineInput = { item_id: string; quantity: number; modifier_ids: string[]; notes?: string };
+export type OrderInput = {
+  business_id: string;
+  pickup_at: string;
+  items: OrderLineInput[];
+  name: string;
+  last_name: string;
+  phone: string;
+  email: string;
+  notes?: string;
+};
+export type OrderResult = {
+  locator: string;
+  status: string;
+  pickup_at: string;
+  total: number;
+  business_name: string;
+};
+
+/** Crea el pedido a través de la Edge Function (recalcula precios en servidor y envía el email). */
+export async function createOrder(input: OrderInput): Promise<OrderResult> {
+  const { data, error } = await supabase.functions.invoke("create-order", { body: input });
+  if (error) {
+    let msg = error.message;
+    try {
+      const ctx = (error as any).context;
+      if (ctx && typeof ctx.json === "function") {
+        const j = await ctx.json();
+        if (j?.error) msg = j.error;
+      }
+    } catch {
+      /* noop */
+    }
+    throw new Error(msg);
+  }
+  return data as OrderResult;
+}
+
+export type OrderLookup = {
+  locator: string;
+  status: "nuevo" | "preparando" | "listo" | "entregado" | "cancelado";
+  pickup_at: string;
+  total: number;
+  customer_name: string;
+  notes: string | null;
+  business_name: string;
+  primary_color: string;
+  logo_url: string | null;
+  timezone: string;
+  items: { name: string; quantity: number; line_total: number; modifiers: { name: string; price_delta: number }[]; notes: string | null }[];
+};
+
+export async function lookupOrder(locator: string): Promise<OrderLookup | null> {
+  const { data, error } = await supabase.rpc("get_order_by_locator", { p_locator: locator.trim() });
+  if (error) throw error;
+  return (data as unknown as OrderLookup | null) ?? null;
+}
+
+export async function cancelOrder(locator: string): Promise<boolean> {
+  const { data, error } = await supabase.rpc("cancel_order_by_locator", { p_locator: locator.trim() });
   if (error) throw error;
   return data as boolean;
 }

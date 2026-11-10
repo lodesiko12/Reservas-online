@@ -18,6 +18,15 @@ export type OrderSettings = Tables<"order_settings">;
 export type ServiceOption = Tables<"service_options">;
 export type OptionGroup = Tables<"service_option_groups">;
 export type DayOverride = Tables<"business_day_overrides">;
+export type MenuCategory = Tables<"menu_categories">;
+export type MenuItemRow = Tables<"menu_items">;
+export type ModifierGroup = Tables<"menu_modifier_groups">;
+export type Modifier = Tables<"menu_modifiers">;
+export type ItemGroupLink = Tables<"menu_item_modifier_groups">;
+export type TakeawaySettings = Tables<"takeaway_settings">;
+export type TakeawayHour = Tables<"takeaway_hours">;
+export type OrderItemRow = Tables<"order_items">;
+export type OrderRow = Tables<"orders"> & { order_items: OrderItemRow[] };
 
 export function useBusinessId() {
   const { business } = useAuth();
@@ -254,4 +263,155 @@ export function useDayOverrides() {
       return data as DayOverride[];
     },
   });
+}
+
+/* ------------------------- Pedidos para llevar (online_orders) ------------------------- */
+
+export function useMenuCategories() {
+  const bid = useBusinessId();
+  return useQuery({
+    queryKey: ["menu_categories", bid],
+    enabled: !!bid,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("menu_categories").select("*").eq("business_id", bid).order("sort_order").order("name");
+      if (error) throw error;
+      return data as MenuCategory[];
+    },
+  });
+}
+
+export function useMenuItems() {
+  const bid = useBusinessId();
+  return useQuery({
+    queryKey: ["menu_items", bid],
+    enabled: !!bid,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("menu_items").select("*").eq("business_id", bid).order("sort_order").order("name");
+      if (error) throw error;
+      return data as MenuItemRow[];
+    },
+  });
+}
+
+export function useModifierGroups() {
+  const bid = useBusinessId();
+  return useQuery({
+    queryKey: ["menu_modifier_groups", bid],
+    enabled: !!bid,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("menu_modifier_groups").select("*").eq("business_id", bid).order("sort_order").order("name");
+      if (error) throw error;
+      return data as ModifierGroup[];
+    },
+  });
+}
+
+export function useModifiers() {
+  const bid = useBusinessId();
+  return useQuery({
+    queryKey: ["menu_modifiers", bid],
+    enabled: !!bid,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("menu_modifiers").select("*").eq("business_id", bid).order("sort_order").order("name");
+      if (error) throw error;
+      return data as Modifier[];
+    },
+  });
+}
+
+/** Qué grupos de extras tiene cada plato (tabla puente). */
+export function useItemGroupLinks() {
+  const bid = useBusinessId();
+  return useQuery({
+    queryKey: ["menu_item_modifier_groups", bid],
+    enabled: !!bid,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("menu_item_modifier_groups")
+        .select("item_id, group_id, sort_order, menu_items!inner(business_id)")
+        .eq("menu_items.business_id", bid);
+      if (error) throw error;
+      return (data ?? []).map((r) => ({ item_id: r.item_id, group_id: r.group_id, sort_order: r.sort_order })) as ItemGroupLink[];
+    },
+  });
+}
+
+export function useTakeawaySettings() {
+  const bid = useBusinessId();
+  return useQuery({
+    queryKey: ["takeaway_settings", bid],
+    enabled: !!bid,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("takeaway_settings").select("*").eq("business_id", bid).maybeSingle();
+      if (error) throw error;
+      return data as TakeawaySettings | null;
+    },
+  });
+}
+
+export function useTakeawayHours() {
+  const bid = useBusinessId();
+  return useQuery({
+    queryKey: ["takeaway_hours", bid],
+    enabled: !!bid,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("takeaway_hours").select("*").eq("business_id", bid).order("weekday").order("start_time");
+      if (error) throw error;
+      return data as TakeawayHour[];
+    },
+  });
+}
+
+/** Pedidos con recogida en [fromISO, toISO), con sus líneas. */
+export function useOrders(fromISO: string, toISO: string) {
+  const bid = useBusinessId();
+  return useQuery({
+    queryKey: ["orders", bid, fromISO, toISO],
+    enabled: !!bid,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("orders")
+        .select("*, order_items(*)")
+        .eq("business_id", bid)
+        .gte("pickup_at", fromISO)
+        .lt("pickup_at", toISO)
+        .order("pickup_at");
+      if (error) throw error;
+      const rows = data as unknown as OrderRow[];
+      rows.forEach((o) => o.order_items.sort((a, b) => a.sort_order - b.sort_order));
+      return rows;
+    },
+  });
+}
+
+/** Pedidos nuevos sin atender (para el globo del menú), con suscripción en vivo a `orders`. */
+export function useNewOrdersCount(enabled: boolean) {
+  const bid = useBusinessId();
+  const qc = useQueryClient();
+  useEffect(() => {
+    if (!bid || !enabled) return;
+    const channel = supabase
+      .channel(`orders-${bid}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "orders", filter: `business_id=eq.${bid}` },
+        () => {
+          qc.invalidateQueries({ queryKey: ["orders", bid] });
+          qc.invalidateQueries({ queryKey: ["orders-new", bid] });
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [bid, enabled, qc]);
+  const { data } = useQuery({
+    queryKey: ["orders-new", bid],
+    enabled: !!bid && enabled,
+    queryFn: async () => {
+      const { count, error } = await supabase.from("orders").select("id", { count: "exact", head: true }).eq("business_id", bid).eq("status", "nuevo");
+      if (error) throw error;
+      return count ?? 0;
+    },
+    refetchInterval: 60000, // red de seguridad si el canal en vivo se cae
+  });
+  return data ?? 0;
 }

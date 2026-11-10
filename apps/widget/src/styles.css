@@ -309,3 +309,66 @@ html[data-chrome="none"] .brand,
 html[data-chrome="none"] .powered,
 html[data-chrome="none"] .ok-icon { display: none; }
 html[data-chrome="none"] .steps { margin-top: 0; }
+
+/* ==========================================================================
+   Pedidos para llevar (TakeawayFlow): pestañas, carta, extras, carrito.
+   ========================================================================== */
+.tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 14px 0 4px; }
+.tabs button {
+  border: 1px solid var(--border); background: var(--surface); color: var(--text);
+  border-radius: var(--radius); padding: 10px 8px; font: inherit; font-weight: 600; font-size: 14px; cursor: pointer;
+}
+.tabs button:hover { border-color: var(--primary); }
+.tabs button.selected { background: var(--primary); color: var(--primary-ink); border-color: var(--primary); }
+
+.cats { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 8px; scrollbar-width: thin; }
+.cats button {
+  flex: 0 0 auto; border: 1px solid var(--border); background: var(--surface); color: var(--text);
+  border-radius: 999px; padding: 6px 14px; font: inherit; font-size: 13px; cursor: pointer; white-space: nowrap;
+}
+.cats button:hover { border-color: var(--primary); }
+.menu-cat { margin-bottom: 18px; scroll-margin-top: 8px; }
+
+.card-btn.menu-item { cursor: default; align-items: stretch; padding: 0; overflow: hidden; }
+.menu-item .menu-main {
+  flex: 1; min-width: 0; text-align: left; background: none; border: none; color: var(--text);
+  font: inherit; padding: 12px 0 12px 14px; cursor: pointer;
+}
+.menu-item .menu-main:disabled { cursor: not-allowed; }
+.menu-item .meta.allergens { font-size: 12px; opacity: .8; }
+.menu-side { display: flex; flex-direction: column; align-items: flex-end; justify-content: space-between; gap: 8px; padding: 12px 14px 12px 6px; }
+.menu-item .add {
+  min-width: 34px; height: 34px; border-radius: 999px; border: none; cursor: pointer;
+  background: var(--primary); color: var(--primary-ink); font: inherit; font-weight: 700; font-size: 17px; line-height: 1;
+}
+.menu-item .add:disabled { opacity: .45; cursor: not-allowed; }
+
+.opt-group { margin-bottom: 16px; }
+.opt-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 8px; }
+.opt-head .gl { font-weight: 700; }
+.opt-head .gm { color: var(--muted); font-size: 12px; }
+.card-btn.opt { color: var(--text); }
+
+.qty-row { display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: center; margin-top: 6px; }
+.qty { display: inline-flex; align-items: center; border: 1px solid var(--border); border-radius: 999px; overflow: hidden; background: var(--surface); }
+.qty button { background: none; border: none; color: var(--text); width: 36px; height: 38px; font: inherit; font-size: 18px; cursor: pointer; }
+.qty span { min-width: 26px; text-align: center; font-weight: 700; }
+.qty.small button { width: 30px; height: 30px; font-size: 16px; }
+
+.cart-bar { position: sticky; bottom: 0; padding: 12px 0 4px; margin-top: 8px; background: linear-gradient(to top, var(--bg, #fff) 70%, transparent); }
+.cart-bar .btn { display: flex; justify-content: space-between; align-items: center; gap: 12px; box-shadow: 0 4px 14px rgba(0,0,0,.18); }
+
+.cart-line { display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); }
+.cart-line:last-of-type { border-bottom: none; }
+.cart-line .cl-name { font-weight: 600; font-size: 14px; }
+.cart-line .cl-meta { color: var(--muted); font-size: 12px; margin-top: 2px; }
+.cart-line .cl-price { font-weight: 700; font-size: 14px; min-width: 62px; text-align: right; }
+.summary .cart-total { border-top: 1px solid var(--border); margin-top: 6px; padding-top: 10px; font-size: 15px; }
+.summary .cart-line:only-child + .cart-total { margin-top: 0; }
+
+html[data-theme="dark"] .tabs button,
+html[data-theme="dark"] .cats button { border-radius: var(--radius); }
+html[data-theme="dark"] .tabs button.selected { color: var(--primary-ink); }
+html[data-theme="dark"] .menu-item .add { border-radius: var(--radius); }
+html[data-theme="dark"] .qty { border-radius: var(--radius); }
+html[data-chrome="none"] .cart-bar { background: none; }

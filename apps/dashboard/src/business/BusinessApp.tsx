@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { Layout, type NavItem } from "../components/Layout";
 import { useAuth } from "../lib/auth";
@@ -27,6 +28,10 @@ import { FichaCliente } from "./asesoria/FichaCliente";
 import { SinClasificar } from "./asesoria/SinClasificar";
 import { ConfiguracionAsesoria } from "./asesoria/ConfiguracionAsesoria";
 import { AgenciaApp } from "./agencia/AgenciaApp";
+import { Carta } from "./Carta";
+import { Pedidos } from "./Pedidos";
+import { useNewOrdersCount } from "./hooks";
+import { isOrderSoundOn, playOrderBeep } from "../lib/orderAlert";
 
 export function BusinessApp() {
   const { business } = useAuth();
@@ -35,6 +40,15 @@ export function BusinessApp() {
   const isAutonomo = business?.type === "autonomo";
   const isAsesoria = business?.type === "asesoria";
   const isOrder = !!business?.order_mode && !isRestaurant && !isPsicologo;
+  // Restaurante con pedidos online para llevar: sección Pedidos (con globo de nuevos) y Carta.
+  const takeaway = isRestaurant && !!business?.online_orders;
+  const newOrders = useNewOrdersCount(takeaway);
+  const prevNew = useRef<number | null>(null);
+  useEffect(() => {
+    if (!takeaway) { prevNew.current = null; return; }
+    if (prevNew.current !== null && newOrders > prevNew.current && isOrderSoundOn()) playOrderBeep();
+    prevNew.current = newOrders;
+  }, [newOrders, takeaway]);
   if (business?.type === "agencia") return <AgenciaApp />;
 
   const nav: NavItem[] = isAsesoria
@@ -57,6 +71,7 @@ export function BusinessApp() {
     : [
         { to: "/app", label: "Resumen", icon: "📊", end: true },
         ...(isRestaurant ? [{ to: "/app/plano", label: "Plano de sala", icon: "🟢" }] : []),
+        ...(takeaway ? [{ to: "/app/pedidos", label: "Pedidos", icon: "🛍️", badge: newOrders }] : []),
         { to: "/app/agenda", label: "Agenda", icon: "🗓️" },
         { to: "/app/nueva", label: isOrder ? "Nuevo encargo" : "Nueva reserva", icon: "➕" },
         ...(isOrder ? [{ to: "/app/produccion", label: "Producción", icon: "🍰" }] : []),
@@ -68,6 +83,7 @@ export function BusinessApp() {
           ? { to: "/app/catalogo", label: "Catálogo", icon: "📒" }
           : { to: "/app/servicios", label: "Servicios", icon: "✂️" },
         ...(isRestaurant ? [{ to: "/app/mesas", label: "Mesas y zonas", icon: "🪑" }] : []),
+        ...(takeaway ? [{ to: "/app/carta", label: "Carta", icon: "📖" }] : []),
         { to: "/app/bloqueos", label: "Bloqueos", icon: "🚫" },
         { to: "/app/reportes", label: "Reportes", icon: "📈" },
         { to: "/app/config", label: "Configuración", icon: "⚙️" },
@@ -110,6 +126,8 @@ export function BusinessApp() {
             <Route path="produccion" element={<Produccion />} />
             <Route path="franjas" element={<Franjas />} />
             <Route path="mesas" element={<Mesas />} />
+            {takeaway && <Route path="pedidos" element={<Pedidos />} />}
+            {takeaway && <Route path="carta" element={<Carta />} />}
             <Route path="bloqueos" element={<Bloqueos />} />
             <Route path="reportes" element={<Reportes />} />
             <Route path="config" element={<Configuracion />} />

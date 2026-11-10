@@ -61,6 +61,13 @@ export function Configuracion() {
 
   function flash(m: string) { setToast(m); setTimeout(() => setToast(null), 2500); }
 
+  async function toggleOnlineOrders(v: boolean) {
+    const { error } = await supabase.from("businesses").update({ online_orders: v }).eq("id", bid);
+    if (error) { flash(error.message); return; }
+    await refresh(); qc.invalidateQueries();
+    flash(v ? "Pedidos para llevar activados: configura la carta en «Carta»" : "Pedidos para llevar desactivados");
+  }
+
   async function saveBranding() {
     const result = businessBrandingSchema.safeParse({ name });
     if (!result.success) { flash(result.error.issues[0]?.message ?? "Revisa el nombre."); return; }
@@ -238,6 +245,21 @@ export function Configuracion() {
       {/* Reglas de los encargos web y festivos (modo encargo) */}
       {orderMode && <OrderSettingsSection flash={flash} />}
       {orderMode && <DayOverridesSection flash={flash} />}
+
+      {/* Pedidos online para llevar (restaurante) */}
+      {isRestaurant && (
+        <section className="card p-6">
+          <h2 className="font-semibold mb-1">Pedidos online para llevar</h2>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mb-3">
+            Además de reservar mesa, tus clientes podrán elegir platos de tu carta y una hora de recogida desde el mismo widget
+            (pestaña «Pedir para llevar»). Aparecen las secciones <strong>Pedidos</strong> y <strong>Carta</strong> en el menú.
+          </p>
+          <label className="flex items-center gap-2 text-sm font-medium">
+            <input type="checkbox" checked={!!business?.online_orders} onChange={(e) => toggleOnlineOrders(e.target.checked)} />
+            Activar pedidos para llevar
+          </label>
+        </section>
+      )}
 
       {/* Reglas generales de reserva (restaurante) */}
       {isRestaurant && <DiningSettingsSection bid={bid} flash={flash} />}

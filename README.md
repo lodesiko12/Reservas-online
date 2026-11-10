@@ -88,6 +88,7 @@ Todo el backend vive en **Supabase** (Postgres + Auth + RLS + Edge Functions + S
 | `0031`–`0050` | (no detalladas aquí; ver cada archivo) ficha de cliente ampliada, rate limiting, mini-CRM autónomo, asesorías, agencia, lista de espera por zona, pago de sesiones |
 | `0051_booking_status_listo.sql` | Valor `listo` en `booking_status` (encargo preparado, pendiente de recoger) |
 | `0052_order_mode.sql` | **Modo encargo**: `businesses.order_mode`, `order_settings` (antelación mínima, capacidad diaria total/por tamaño, confirmación manual, antelación de cancelación), `service_option_groups` + `service_options` (niveles y sabores), `services.size_key/size_label/option_group`, `bookings.option_id/option_label`, `business_day_overrides` (festivos). Reescribe `get_available_slots` (día especial, antelación mínima y capacidad diaria solo canal web; `pendiente`/`listo` ocupan hueco), `create_public_booking` (+`p_option_id`, estado `pendiente` con confirmación manual) y las RPC públicas (`get_public_business/services/options`, `get_booking_by_locator`, `cancel_booking_by_locator`) |
+| `0053_takeaway_orders.sql` | **Pedidos online para llevar** (restaurante): `businesses.online_orders`, carta (`menu_categories`, `menu_items`, extras reutilizables `menu_modifier_groups`/`menu_modifiers`/`menu_item_modifier_groups`), `takeaway_settings` + `takeaway_hours`, `orders` + `order_items` (Realtime), RPCs `get_public_menu`, `get_takeaway_slots/_days`, `create_public_order` (solo `service_role`), `get_order_by_locator`, `cancel_order_by_locator`; `get_public_business` + `online_orders` |
 
 Los cron jobs se crean con el secreto como placeholder `REPLACE_WITH_SECRET`; en producción está el valor real embebido en `cron.job`.
 
@@ -183,6 +184,26 @@ activado por negocio: los demás no cambian de comportamiento.
 - **Alta de un negocio así**: `supabase/demo/gen_cheesecake_ando.mjs` genera
   `setup_cheesecake_ando.sql` leyendo la carta de la web (idempotente); el usuario de staff se añade
   después desde Admin → negocio → Usuarios.
+
+### Pedidos online para llevar (2026-11-10)
+Un negocio `restaurante` con `online_orders = true` (se activa en `Configuración → Pedidos online para llevar`; no
+es un tipo nuevo de `business_type`, así que La Plaza, La Taberna del Herrero… pueden activarlo sin migrar datos).
+Un pedido tiene varias líneas, por eso **no** usa `bookings` (a diferencia del modo encargo de citas).
+- **Widget** (`TakeawayFlow.tsx`): pestañas «Reservar mesa» / «Pedir para llevar». Carta por categorías (alérgenos,
+  «agotado»), extras por plato (obligatorios u opcionales, mín/máx, suplemento), carrito, día y hora de recogida
+  (solo huecos libres), datos (email opcional) y localizador. «Mi reserva» (`Lookup.tsx`) busca primero reserva y
+  luego pedido; el cliente puede cancelar mientras esté `nuevo`.
+- **Servidor**: Edge Function `create-order` (pública, rate limit por IP) → RPC `create_public_order`, que **recalcula
+  todos los precios desde la carta** (el cliente solo manda ids y cantidades), valida extras, hueco de recogida,
+  pedidos máximos por hueco y pedido mínimo bajo lock, y crea/actualiza el cliente. Pago siempre en el local (Stripe
+  queda en Pendientes). Email de confirmación (`buildOrderEmail`) solo si el cliente dejó email.
+- **Panel**: `Pedidos` (Realtime sobre `orders`; globo con los nuevos en el menú y aviso sonoro; Hoy / Próximos 15
+  días / Otro día; estados nuevo → preparando → listo → entregado o cancelado; pausa «Aceptando pedidos»;
+  comanda imprimible; enlace a WhatsApp) y `Carta` (pestañas Platos / Extras y opciones / Ajustes de pedidos:
+  tiempo de preparación, hueco, pedidos por hueco, antelación máxima, mínimo y horario de recogida con varias
+  franjas por día). Los bloqueos de negocio (`Bloqueos`) también cierran los huecos de recogida.
+- **Alta de un negocio así**: activar el interruptor, crear categorías/platos/extras, guardar los ajustes y el
+  horario de recogida (sin ajustes ni franjas, el widget muestra «nada disponible»).
 
 ### Psicólogo
 Todo gateado por `business.type === 'psicologo'` en panel y Edge Function.

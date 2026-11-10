@@ -1260,6 +1260,7 @@ export type Database = {
           logo_url: string | null
           max_advance_days: number | null
           name: string
+          online_orders: boolean
           order_mode: boolean
           primary_color: string
           reminder_lang: string
@@ -1284,6 +1285,7 @@ export type Database = {
           logo_url?: string | null
           max_advance_days?: number | null
           name: string
+          online_orders?: boolean
           order_mode?: boolean
           primary_color?: string
           reminder_lang?: string
@@ -1308,6 +1310,7 @@ export type Database = {
           logo_url?: string | null
           max_advance_days?: number | null
           name?: string
+          online_orders?: boolean
           order_mode?: boolean
           primary_color?: string
           reminder_lang?: string
@@ -2363,6 +2366,422 @@ export type Database = {
             columns: ["business_id"]
             isOneToOne: false
             referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      menu_categories: {
+        Row: {
+          business_id: string
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "menu_categories_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      menu_items: {
+        Row: {
+          allergens: string[]
+          business_id: string
+          category_id: string
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          is_available: boolean
+          name: string
+          price: number
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          allergens?: string[]
+          business_id: string
+          category_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_available?: boolean
+          name: string
+          price: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          allergens?: string[]
+          business_id?: string
+          category_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_available?: boolean
+          name?: string
+          price?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "menu_items_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "menu_items_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "menu_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      menu_modifier_groups: {
+        Row: {
+          business_id: string
+          created_at: string
+          id: string
+          max_choices: number
+          min_choices: number
+          name: string
+          sort_order: number
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          id?: string
+          max_choices?: number
+          min_choices?: number
+          name: string
+          sort_order?: number
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          id?: string
+          max_choices?: number
+          min_choices?: number
+          name?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "menu_modifier_groups_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      menu_modifiers: {
+        Row: {
+          business_id: string
+          created_at: string
+          group_id: string
+          id: string
+          is_available: boolean
+          name: string
+          price_delta: number
+          sort_order: number
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          group_id: string
+          id?: string
+          is_available?: boolean
+          name: string
+          price_delta?: number
+          sort_order?: number
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          group_id?: string
+          id?: string
+          is_available?: boolean
+          name?: string
+          price_delta?: number
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "menu_modifiers_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "menu_modifiers_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "menu_modifier_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      menu_item_modifier_groups: {
+        Row: {
+          group_id: string
+          item_id: string
+          sort_order: number
+        }
+        Insert: {
+          group_id: string
+          item_id: string
+          sort_order?: number
+        }
+        Update: {
+          group_id?: string
+          item_id?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "menu_item_modifier_groups_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "menu_modifier_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "menu_item_modifier_groups_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "menu_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      takeaway_settings: {
+        Row: {
+          accepting: boolean
+          business_id: string
+          created_at: string
+          max_advance_days: number
+          max_orders_per_slot: number | null
+          min_order_amount: number
+          prep_minutes: number
+          slot_interval_min: number
+          updated_at: string
+        }
+        Insert: {
+          accepting?: boolean
+          business_id: string
+          created_at?: string
+          max_advance_days?: number
+          max_orders_per_slot?: number | null
+          min_order_amount?: number
+          prep_minutes?: number
+          slot_interval_min?: number
+          updated_at?: string
+        }
+        Update: {
+          accepting?: boolean
+          business_id?: string
+          created_at?: string
+          max_advance_days?: number
+          max_orders_per_slot?: number | null
+          min_order_amount?: number
+          prep_minutes?: number
+          slot_interval_min?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "takeaway_settings_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: true
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      takeaway_hours: {
+        Row: {
+          business_id: string
+          end_time: string
+          id: string
+          start_time: string
+          weekday: number
+        }
+        Insert: {
+          business_id: string
+          end_time: string
+          id?: string
+          start_time: string
+          weekday: number
+        }
+        Update: {
+          business_id?: string
+          end_time?: string
+          id?: string
+          start_time?: string
+          weekday?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "takeaway_hours_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          business_id: string
+          created_at: string
+          customer_email: string | null
+          customer_id: string | null
+          customer_last_name: string | null
+          customer_name: string
+          customer_phone: string
+          id: string
+          locator: string
+          notes: string | null
+          payment_method: string
+          pickup_at: string
+          status: string
+          total: number
+          updated_at: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          customer_email?: string | null
+          customer_id?: string | null
+          customer_last_name?: string | null
+          customer_name: string
+          customer_phone: string
+          id?: string
+          locator: string
+          notes?: string | null
+          payment_method?: string
+          pickup_at: string
+          status?: string
+          total?: number
+          updated_at?: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          customer_email?: string | null
+          customer_id?: string | null
+          customer_last_name?: string | null
+          customer_name?: string
+          customer_phone?: string
+          id?: string
+          locator?: string
+          notes?: string | null
+          payment_method?: string
+          pickup_at?: string
+          status?: string
+          total?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      order_items: {
+        Row: {
+          id: string
+          item_id: string | null
+          line_total: number
+          modifiers: Json
+          name: string
+          notes: string | null
+          order_id: string
+          quantity: number
+          sort_order: number
+          unit_price: number
+        }
+        Insert: {
+          id?: string
+          item_id?: string | null
+          line_total: number
+          modifiers?: Json
+          name: string
+          notes?: string | null
+          order_id: string
+          quantity: number
+          sort_order?: number
+          unit_price: number
+        }
+        Update: {
+          id?: string
+          item_id?: string | null
+          line_total?: number
+          modifiers?: Json
+          name?: string
+          notes?: string | null
+          order_id?: string
+          quantity?: number
+          sort_order?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_items_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "menu_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
             referencedColumns: ["id"]
           },
         ]
@@ -3567,12 +3986,33 @@ export type Database = {
           sync_enabled: boolean
         }[]
       }
+      get_takeaway_slots: {
+        Args: { p_business_id: string; p_date: string }
+        Returns: { slot_start: string }[]
+      }
+      get_takeaway_days: {
+        Args: { p_business_id: string; p_date_from: string; p_date_to: string }
+        Returns: { day: string }[]
+      }
+      get_public_menu: {
+        Args: { p_business_id: string }
+        Returns: Json
+      }
+      get_order_by_locator: {
+        Args: { p_locator: string }
+        Returns: Json
+      }
+      cancel_order_by_locator: {
+        Args: { p_locator: string }
+        Returns: boolean
+      }
       get_public_business: {
         Args: { p_slug: string }
         Returns: {
           id: string
           logo_url: string
           name: string
+          online_orders: boolean
           order_mode: boolean
           primary_color: string
           slot_interval_min: number
