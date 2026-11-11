@@ -275,6 +275,7 @@ Lista única. Si retomas el proyecto, empieza por aquí.
 | **Horario desde Google Business Profile operativo** (código desplegado, inerte) | Misma aprobación de Google: ficha verificada 60+ días, web propia enlazada, solicitante owner/manager; sin plazo | Conectar en `Configuración → Horario en Google Business Profile` y comprobar la siguiente pasada del cron (minuto 5) |
 | **Google Calendar operativo de punta a punta** | Ningún negocio ha puesto aún su Client ID/Secret en `Configuración → Integraciones` | Conectar un profesional → exportar cita → ver ocupados importados |
 | **Ver una generación exitosa del Informe de IA** | Gemini devolviendo 503/429 en todos los intentos hasta ahora (capacidad de Google) | Confirmar contenido generado + fila en `client_ai_reports` + visualización en la pestaña Informe |
+| **Contraseña por email (login «Primera vez o contraseña olvidada» + alta de usuarios solo con correo)** — desplegado 2026-11-10 | `RESEND_API_KEY` global sin poner en Supabase (el usuario la pondrá); solo `centrodepsicologia-anasanchez` y `turnigo` tienen Resend propio | Pedir el enlace desde el login, elegir contraseña (la teclea el usuario), probar alta sin contraseña y pantalla de enlace caducado. Detalle en `memory/sesion-2026-11-10-password-por-email.md` |
 
 ### Decisión pendiente del usuario
 - **Pasar Supabase a plan Pro** ($25/mes): el plan Free pausa el proyecto tras 7 días sin actividad; los crons probablemente lo evitan pero sin garantía, y ya hay negocios reales dependiendo de la plataforma.
