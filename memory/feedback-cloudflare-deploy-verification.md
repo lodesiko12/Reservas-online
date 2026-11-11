@@ -22,8 +22,8 @@ contra un build local hecho a mano es fiable.
 
 **Cómo verificar de verdad que un cambio concreto llegó a producción:**
 ```bash
-hash=$(curl -s https://turnigo-panel.lodesiko12.workers.dev/ | grep -o 'assets/index-[a-zA-Z0-9_-]*\.js')
-curl -s "https://turnigo-panel.lodesiko12.workers.dev/$hash" -o /tmp/bundle.js
+hash=$(curl -s https://app.turnigo.es/ | grep -o 'assets/index-[a-zA-Z0-9_-]*\.js')
+curl -s "https://app.turnigo.es/$hash" -o /tmp/bundle.js
 grep -aoc "cadena distintiva del cambio (mensaje de error, fragmento de regex...)" /tmp/bundle.js
 ```
 Usar una cadena que solo exista si el cambio está — un mensaje de error nuevo, un fragmento de

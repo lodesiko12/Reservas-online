@@ -104,7 +104,7 @@ Secrets de Edge Functions (Supabase → Edge Functions → Manage secrets; `SUPA
 |---|---|
 | `CRON_SECRET` | Cabecera `x-cron-secret` de todos los crons (`whatsapp-reminders`, `request-reviews`, `sync-google-busy`, `sync-google-business-hours`) |
 | `GOOGLE_STATE_SECRET` | Firma HMAC del `state` de los flujos OAuth de Google |
-| `DASHBOARD_URL` | Redirección al panel tras el callback de OAuth |
+| `DASHBOARD_URL` | URL base del panel: redirección tras el callback de OAuth y enlaces de "elegir contraseña" de los correos. Valor actual: `https://app.turnigo.es` (sin barra final) |
 | `GOOGLE_SYNC_CRON_SECRET` | Legado (sustituido por `CRON_SECRET` en 0028) |
 | `RESEND_API_KEY`, `EMAIL_FROM`, `WIDGET_URL` | Fallback global de email si el negocio no tiene su propia clave |
 | `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_TEMPLATE_NAME`, `WHATSAPP_TEMPLATE_LANG` | Fallback global de WhatsApp |
@@ -136,6 +136,8 @@ Solo para desarrollo; la verificación se hace contra Cloudflare (ver `CLAUDE.md
 
 ### Despliegue (Cloudflare Workers)
 Workers Builds está conectado al repo `github.com/lodesiko12/Reservas-online`: cada push a `main` construye y despliega `turnigo-panel` (`apps/dashboard`) y `turnigo-widget` (`apps/widget`) según sus `wrangler.jsonc`. Las variables `VITE_*` se leen de `apps/*/.env.production`. Las Edge Functions no pasan por Cloudflare: se despliegan con el CLI/MCP de Supabase.
+
+**URL del panel:** `https://app.turnigo.es` (custom domain del Worker `turnigo-panel`, en la zona `turnigo.es` de Cloudflare). `apps/dashboard/worker/index.js` redirige con 301 el host antiguo `turnigo-panel.lodesiko12.workers.dev` a la URL nueva, conservando ruta y parámetros (excepto `/sw.js`, que se sirve para no romper service workers ya instalados). Solo se redirige ese host exacto: las URL de previsualización de Cloudflare siguen funcionando. La sesión y las suscripciones push se guardan por origen, así que en `app.turnigo.es` hay que iniciar sesión y reactivar las notificaciones. El widget **no** se redirige: las webs de los clientes cargan `embed.js` desde `turnigo-widget.lodesiko12.workers.dev`.
 
 ---
 
