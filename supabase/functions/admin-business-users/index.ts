@@ -77,7 +77,7 @@ Deno.serve(async (req) => {
     if (created?.user) {
       userId = created.user.id;
       isNewUser = true;
-    } else if (createErr && /already registered|already exists/i.test(createErr.message)) {
+    } else if (createErr && (createErr.code === "email_exists" || /already (been )?registered|already exists/i.test(createErr.message))) {
       userId = (await findUserByEmail(admin, email))?.id;
       if (!userId) return json({ error: "Ese email ya está registrado pero no se pudo localizar la cuenta." }, 400);
       // Si el email ya existía y se dio contraseña, la fijamos (antes se ignoraba

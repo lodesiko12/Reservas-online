@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { supabase } from "../lib/supabase";
+import { fnError } from "../lib/functionError";
 import type { Tables } from "@reservas/shared";
 import { ymdInTz, addDaysYmd, zonedDayRange, formatDateTime, adminEditBusinessSchema, adminAddMemberSchema, firstIssue } from "@reservas/shared";
 import { PageHeader, StatCard, Spinner, StatusBadge, ConfirmDialog } from "../components/ui";
@@ -88,7 +89,7 @@ function BusinessUsersSection({ businessId }: { businessId: string }) {
     setLoading(true); setError(null);
     const { data, error } = await supabase.functions.invoke("admin-business-users", { body: { action: "list", business_id: businessId } });
     setLoading(false);
-    if (error || (data as any)?.error) { setError((data as any)?.error ?? error!.message); return; }
+    if (error || (data as any)?.error) { setError(await fnError(error, data)); return; }
     setMembers((data as any).members);
   }
 
@@ -104,7 +105,7 @@ function BusinessUsersSection({ businessId }: { businessId: string }) {
       body: { action: "add", business_id: businessId, staff_email: parsed.data.email, staff_password: parsed.data.password, role: parsed.data.role },
     });
     setSaving(false);
-    if (error || (data as any)?.error) { setError((data as any)?.error ?? error!.message); return; }
+    if (error || (data as any)?.error) { setError(await fnError(error, data)); return; }
     const invite = (data as any)?.invite as "sent" | "not_sent" | "none" | undefined;
     setNotice(
       invite === "sent" ? `Hemos enviado a ${parsed.data.email} un email para que elija su contraseña.`
@@ -121,7 +122,7 @@ function BusinessUsersSection({ businessId }: { businessId: string }) {
     setBusyUserId(userId);
     const { data, error } = await supabase.functions.invoke("admin-business-users", { body: { action: "remove", business_id: businessId, user_id: userId } });
     setBusyUserId(null);
-    if (error || (data as any)?.error) { setError((data as any)?.error ?? error!.message); return; }
+    if (error || (data as any)?.error) { setError(await fnError(error, data)); return; }
     load();
   }
 
