@@ -11,8 +11,10 @@ Solo cuenta como "funciona" lo que se ve en producción:
 - Panel (negocio + superadmin): https://app.turnigo.es/ (custom domain del Worker `turnigo-panel`). La URL
   antigua `turnigo-panel.lodesiko12.workers.dev` redirige con 301 (ruta y parámetros intactos, salvo `/sw.js`)
   a la nueva: usar siempre `app.turnigo.es`, o `curl -L`. La redirección está en `apps/dashboard/worker/index.js`.
-- Widget: https://turnigo-widget.lodesiko12.workers.dev/?slug=<slug> (**no** se redirige ni se cambia de URL:
-  las webs de los clientes cargan `embed.js` desde ahí).
+- Widget: https://widget.turnigo.es/?slug=<slug> (custom domain del Worker `turnigo-widget`). La URL antigua
+  `turnigo-widget.lodesiko12.workers.dev` **no se redirige y debe seguir viva**: las webs de los clientes ya
+  cargan `embed.js` desde ahí, y `embed.js` deriva la base del iframe de su propia URL (si redirigiera, el
+  iframe cambiaría de origen y dejaría de ajustarse la altura). Webs nuevas: usar `widget.turnigo.es`.
 - Web de marketing: https://turnigo.es/ (repo aparte, `Webs/Turnigo`).
 
 Flujo tras cualquier cambio de código:
