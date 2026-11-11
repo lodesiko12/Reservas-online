@@ -241,6 +241,19 @@ Sin reserva online ni widget; mini-CRM propio, un único usuario por negocio
   tarjetas, notas, agenda, catálogo, perfil fiscal) es CRUD directo protegido por RLS.
 - Alta desde el panel super-admin siembra las 6 etapas por defecto + mapeo inicial
   (`admin-create-business`).
+- **Widget de reservas para autónomos (2026-11-11, caso `turnigo`)**: un autónomo con servicios
+  (`services`) y horario (`business_hours`) ya puede recibir reservas por el widget genérico
+  (servicio → día/hora → formulario; no hace falta código en el widget). Turnigo tiene «Demo de
+  Turnigo» y «Hablar de tu web» (30 min, lun–vie 9–18). Migración `0055`: trigger
+  `trg_booking_to_crm` en `bookings` que, solo para `autonomo`, crea una tarjeta en la primera
+  etapa del Pipeline + una cita en la Agenda (`crm_events.booking_id`) y borra la cita si la
+  reserva se cancela. Migración `0056`: `get_available_slots` no ofrece huecos que choquen con
+  citas manuales de la Agenda (`crm_events` sin `booking_id`). `create-booking` envía además un
+  aviso por email a los miembros del negocio (`buildOwnerBookingNotice`). Verificado en vivo
+  (reserva, tarjeta, cita, bloqueo manual y cancelación), con datos de prueba ya borrados.
+  **Pendiente:** la clave Resend propia de `turnigo` (`business_integrations.resend_api_key`) da
+  401 «API key is invalid», así que NI la confirmación al cliente NI el aviso al dueño se envían
+  todavía; hay que poner una clave válida en `Configuración → Integraciones`.
 
 ---
 

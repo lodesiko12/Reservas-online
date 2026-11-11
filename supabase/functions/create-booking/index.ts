@@ -3,7 +3,7 @@
 // create_public_booking (service_role) y envía el email de confirmación.
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { corsHeaders, json, handleOptions } from "../_shared/cors.ts";
-import { buildConfirmationEmail, sendEmail } from "../_shared/email.ts";
+import { buildConfirmationEmail, buildOwnerBookingNotice, sendEmail } from "../_shared/email.ts";
 import { cleanOptionalText, cleanText, isEmail, isIsoDate, isPhone, isPositiveInt, isUuid } from "../_shared/validation.ts";
 import { getClientIp, rateLimitHit, tooManyRequests } from "../_shared/rateLimit.ts";
 
@@ -115,7 +115,7 @@ Deno.serve(async (req) => {
 
   // 2) Datos para el email y la respuesta (incl. credenciales de email del negocio).
   const [{ data: biz }, { data: svc }, { data: integ }] = await Promise.all([
-    supabase.from("businesses").select("name, timezone, primary_color, slug, confirmation_email_message").eq("id", business_id).single(),
+    supabase.from("businesses").select("name, type, timezone, primary_color, slug, confirmation_email_message").eq("id", business_id).single(),
     isRestaurant
       ? Promise.resolve({ data: null })
       : supabase.from("services").select("name, size_label").eq("id", service_id!).single(),
@@ -152,6 +152,38 @@ Deno.serve(async (req) => {
     await sendEmail(email, mail.subject, mail.html, mail.text, integ?.resend_api_key, integ?.email_from);
   } catch (e) {
     if (email) console.error("Email no enviado:", (e as Error).message);
+  }
+
+  // 3b) Negocios `autonomo` (sin Agenda de reservas): avisar por email a los miembros
+  // del negocio de que ha entrado una reserva. No bloquea el éxito si falla.
+  if (!isRestaurant && biz?.type === "autonomo") {
+    try {
+      const { data: members } = await supabase.from("business_users").select("user_id").eq("business_id", business_id);
+      const emails = new Set<string>();
+      for (const m of members ?? []) {
+        const { data: u } = await supabase.auth.admin.getUserById(m.user_id);
+        if (u.user?.email) emails.add(u.user.email);
+      }
+      if (emails.size > 0) {
+        const notice = buildOwnerBookingNotice({
+          businessName: biz.name,
+          serviceName: serviceLabel,
+          startsAt: booking.starts_at,
+          timezone: biz.timezone ?? "Europe/Madrid",
+          locator: booking.locator,
+          customerName: [name, lastName].filter(Boolean).join(" "),
+          customerPhone: phone,
+          customerEmail: email,
+          notes: notes ?? null,
+          panelUrl: Deno.env.get("DASHBOARD_URL") || undefined,
+        });
+        for (const to of emails) {
+          await sendEmail(to, notice.subject, notice.html, notice.text, integ?.resend_api_key, integ?.email_from);
+        }
+      }
+    } catch (e) {
+      console.error("Aviso al negocio no enviado:", (e as Error).message);
+    }
   }
 
   // 4) Exportar a Google Calendar si el profesional lo tiene conectado

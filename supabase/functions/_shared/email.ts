@@ -116,6 +116,58 @@ ${d.manageUrl ? `Gestiona tu ${thing}: ${d.manageUrl}` : ""}`;
   return { subject, html, text };
 }
 
+export type OwnerBookingNoticeData = {
+  businessName: string;
+  serviceName: string | null;
+  startsAt: string; // ISO
+  timezone: string;
+  locator: string;
+  customerName: string;
+  customerPhone: string;
+  customerEmail: string | null;
+  notes?: string | null;
+  panelUrl?: string;
+};
+
+/** Aviso al dueño/staff de un negocio (p. ej. autónomo) de que ha entrado una reserva por el widget. */
+export function buildOwnerBookingNotice(d: OwnerBookingNoticeData): { subject: string; html: string; text: string } {
+  const date = fmtDate(d.startsAt, d.timezone);
+  const time = fmtTime(d.startsAt, d.timezone);
+  const svc = d.serviceName ?? "Reserva";
+  const subject = `Nueva reserva: ${svc} · ${d.customerName} (${date}, ${time})`;
+  const row = (k: string, v: string) =>
+    `<tr><td style="padding:6px 0;color:#64748b">${k}</td><td style="padding:6px 0;text-align:right"><strong>${escapeHtml(v)}</strong></td></tr>`;
+  const html = `<!doctype html><html><body style="margin:0;background:#f1f5f9;padding:24px;font-family:system-ui,Segoe UI,Arial,sans-serif;color:#0f172a">
+  <div style="max-width:520px;margin:0 auto;background:#fff;border-radius:14px;overflow:hidden;border:1px solid #e2e8f0">
+    <div style="background:#4f46e5;color:#fff;padding:20px 24px">
+      <h1 style="margin:0;font-size:20px">${escapeHtml(d.businessName)}</h1>
+      <p style="margin:4px 0 0;opacity:.9">Nueva reserva desde el widget</p>
+    </div>
+    <div style="padding:24px">
+      <table style="width:100%;border-collapse:collapse;font-size:15px">
+        ${row("Servicio", svc)}
+        ${row("Fecha", date)}
+        ${row("Hora", time)}
+        ${row("Cliente", d.customerName)}
+        ${row("Teléfono", d.customerPhone)}
+        ${d.customerEmail ? row("Email", d.customerEmail) : ""}
+        ${d.notes ? row("Notas", d.notes) : ""}
+        ${row("Localizador", d.locator)}
+      </table>
+      ${d.panelUrl ? `<p style="margin:18px 0 0"><a href="${d.panelUrl}" style="color:#4f46e5">Abrir el panel</a></p>` : ""}
+    </div>
+  </div></body></html>`;
+  const text = `Nueva reserva en ${d.businessName}
+Servicio: ${svc}
+Fecha: ${date}
+Hora: ${time}
+Cliente: ${d.customerName}
+Teléfono: ${d.customerPhone}
+${d.customerEmail ? `Email: ${d.customerEmail}\n` : ""}${d.notes ? `Notas: ${d.notes}\n` : ""}Localizador: ${d.locator}
+${d.panelUrl ? `Panel: ${d.panelUrl}` : ""}`;
+  return { subject, html, text };
+}
+
 export type OrderEmailData = {
   businessName: string;
   customerName: string;
