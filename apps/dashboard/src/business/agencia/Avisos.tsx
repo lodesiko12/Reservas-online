@@ -17,7 +17,8 @@ export function useUnreadCount(): number {
   return (data ?? []).filter((n) => !n.read_at).length;
 }
 
-function PushCard() {
+/** Tarjeta para activar las notificaciones push en este dispositivo (la reutiliza el buzón de WhatsApp). */
+export function PushCard({ offText = "Activa las notificaciones para enterarte al momento de tus tareas, aunque tengas la app cerrada." }: { offText?: string }) {
   const [state, setState] = useState<PushState | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -37,7 +38,7 @@ function PushCard() {
   if (!state) return null;
   const text: Record<PushState, string> = {
     on: "Recibirás las notificaciones en este dispositivo.",
-    off: "Activa las notificaciones para enterarte al momento de tus tareas, aunque tengas la app cerrada.",
+    off: offText,
     denied: "Has bloqueado las notificaciones. Actívalas desde los ajustes del navegador o del móvil para esta app.",
     "needs-install": "En iPhone y iPad hay que añadir primero la app a la pantalla de inicio (Compartir → «Añadir a pantalla de inicio») y abrirla desde ahí para poder activar las notificaciones.",
     unsupported: "Este navegador no admite notificaciones push. Prueba con Chrome, Edge o Safari actualizado.",

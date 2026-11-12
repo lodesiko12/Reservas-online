@@ -6,6 +6,7 @@ import { useBusinessId, useDiningSettings } from "./hooks";
 import { shortTime, businessBrandingSchema, businessReviewSchema, optionalText, BUSINESS_MESSAGE_MAX } from "@reservas/shared";
 import { PageHeader, Spinner } from "../components/ui";
 import { IntegrationsForm } from "../components/IntegrationsForm";
+import { WhatsappInboxForm } from "../components/WhatsappInboxForm";
 import { GoogleBusinessProfileSection } from "../components/GoogleBusinessProfileSection";
 import { GoogleCalendarBusinessSection } from "../components/GoogleCalendarBusinessSection";
 import { GeminiConfigForm } from "../components/GeminiConfigForm";
@@ -294,6 +295,13 @@ export function Configuracion() {
         <h2 className="font-semibold mb-1">Integraciones (email y WhatsApp)</h2>
         <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">Envía desde tu propio remitente y número. Tus claves se guardan del lado del servidor y no se muestran aquí.</p>
         <IntegrationsForm businessId={bid} onToast={flash} isAutonomo={isAutonomo} />
+      </section>
+
+      {/* Buzón de WhatsApp: pestaña «Mensajes» */}
+      <section className="card p-6">
+        <h2 className="font-semibold mb-1">Buzón de WhatsApp (pestaña «Mensajes»)</h2>
+        <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">Recibe y contesta desde el panel los WhatsApp que lleguen al número del negocio, con aviso en el móvil.</p>
+        <WhatsappInboxForm businessId={bid} onToast={flash} />
       </section>
 
       {/* Gemini (informes de IA en la ficha de cliente, solo negocios psicólogo) */}

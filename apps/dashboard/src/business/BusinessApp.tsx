@@ -30,6 +30,8 @@ import { ConfiguracionAsesoria } from "./asesoria/ConfiguracionAsesoria";
 import { AgenciaApp } from "./agencia/AgenciaApp";
 import { Carta } from "./Carta";
 import { Pedidos } from "./Pedidos";
+import { Mensajes } from "./mensajes/Mensajes";
+import { useWhatsappRealtime, useWaUnread } from "./mensajes/hooks";
 import { useNewOrdersCount } from "./hooks";
 import { isOrderSoundOn, playOrderBeep } from "../lib/orderAlert";
 
@@ -49,6 +51,11 @@ export function BusinessApp() {
     if (prevNew.current !== null && newOrders > prevNew.current && isOrderSoundOn()) playOrderBeep();
     prevNew.current = newOrders;
   }, [newOrders, takeaway]);
+  // Buzón de WhatsApp (módulo opcional por negocio): globo de no leídos y actualización en vivo.
+  const inbox = !!business?.whatsapp_inbox_enabled && business?.type !== "agencia";
+  useWhatsappRealtime(inbox);
+  const waUnread = useWaUnread(inbox);
+  const mensajesNav: NavItem[] = inbox ? [{ to: "/app/mensajes", label: "Mensajes", icon: "💬", badge: waUnread }] : [];
   if (business?.type === "agencia") return <AgenciaApp />;
 
   const nav: NavItem[] = isAsesoria
@@ -56,6 +63,7 @@ export function BusinessApp() {
         { to: "/app", label: "Resumen", icon: "📊", end: true },
         { to: "/app/clientes", label: "Clientes", icon: "👤" },
         { to: "/app/sin-clasificar", label: "Sin clasificar", icon: "📥" },
+        ...mensajesNav,
         { to: "/app/config", label: "Configuración", icon: "⚙️" },
       ]
     : isAutonomo
@@ -63,6 +71,7 @@ export function BusinessApp() {
         { to: "/app", label: "Resumen", icon: "📊", end: true },
         { to: "/app/pipeline", label: "Pipeline", icon: "🗂️" },
         { to: "/app/agenda", label: "Agenda", icon: "🗓️" },
+        ...mensajesNav,
         { to: "/app/clientes", label: "Clientes", icon: "👤" },
         { to: "/app/presupuestos", label: "Presupuestos", icon: "📝" },
         { to: "/app/facturas", label: "Facturas", icon: "🧾" },
@@ -73,6 +82,7 @@ export function BusinessApp() {
         ...(isRestaurant ? [{ to: "/app/plano", label: "Plano de sala", icon: "🟢" }] : []),
         ...(takeaway ? [{ to: "/app/pedidos", label: "Pedidos", icon: "🛍️", badge: newOrders }] : []),
         { to: "/app/agenda", label: "Agenda", icon: "🗓️" },
+        ...mensajesNav,
         { to: "/app/nueva", label: isOrder ? "Nuevo encargo" : "Nueva reserva", icon: "➕" },
         ...(isOrder ? [{ to: "/app/produccion", label: "Producción", icon: "🍰" }] : []),
         { to: "/app/clientes", label: "Clientes", icon: "👤" },
@@ -98,6 +108,7 @@ export function BusinessApp() {
             <Route path="clientes" element={<ClientesAsesoria />} />
             <Route path="clientes/:id" element={<FichaCliente />} />
             <Route path="sin-clasificar" element={<SinClasificar />} />
+            {inbox && <Route path="mensajes" element={<Mensajes />} />}
             <Route path="config" element={<ConfiguracionAsesoria />} />
             <Route path="*" element={<Navigate to="/app" replace />} />
           </>
@@ -106,6 +117,7 @@ export function BusinessApp() {
             <Route index element={<ResumenAutonomo />} />
             <Route path="pipeline" element={<Pipeline />} />
             <Route path="agenda" element={<AgendaInterna />} />
+            {inbox && <Route path="mensajes" element={<Mensajes />} />}
             <Route path="clientes" element={<Clientes />} />
             <Route path="presupuestos" element={<Presupuestos />} />
             <Route path="facturas" element={<Facturas />} />
@@ -117,6 +129,7 @@ export function BusinessApp() {
             <Route index element={<Dashboard />} />
             <Route path="plano" element={<PlanoSala />} />
             <Route path="agenda" element={<Agenda />} />
+            {inbox && <Route path="mensajes" element={<Mensajes />} />}
             <Route path="nueva" element={<NuevaReserva />} />
             <Route path="clientes" element={<Clientes />} />
             <Route path="seguimiento" element={<Seguimiento />} />

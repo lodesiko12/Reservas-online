@@ -95,16 +95,19 @@ export function IntegrationsForm({ businessId, onToast, isAutonomo }: { business
         </div>
       </div>
 
-      <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200 mt-6 mb-2">Recordatorios por WhatsApp (Meta Cloud API)</h3>
+      <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200 mt-6 mb-2">WhatsApp (Meta Cloud API): credenciales y recordatorios</h3>
       <label className="flex items-center gap-2 text-sm font-medium mb-3"><input type="checkbox" checked={waEnabled} onChange={(e) => setWaEnabled(e.target.checked)} /> Activar recordatorio 24h antes</label>
-      {waEnabled && (
-        <div className="grid sm:grid-cols-2 gap-4">
-          <div><label className="label">Phone number ID</label><input className="input" value={waPhoneId} onChange={(e) => setWaPhoneId(e.target.value)} placeholder="1234567890" /></div>
-          <div><label className="label">Token permanente {hasWaToken && <span className="text-green-600 text-xs font-normal">· configurado ✓</span>}</label><input className="input" type="password" value={waToken} onChange={(e) => setWaToken(e.target.value)} placeholder={hasWaToken ? "•••••• (dejar vacío para mantener)" : "EAAG..."} /></div>
-          <div><label className="label">Plantilla aprobada</label><input className="input" value={waTemplate} onChange={(e) => setWaTemplate(e.target.value)} placeholder="recordatorio_cita" /></div>
-          <div><label className="label">Idioma de la plantilla</label><input className="input" value={waLang} onChange={(e) => setWaLang(e.target.value)} placeholder="es" /></div>
-        </div>
-      )}
+      {/* Phone number ID y token se usan también para el buzón «Mensajes», por eso se muestran siempre. */}
+      <div className="grid sm:grid-cols-2 gap-4">
+        <div><label className="label">Phone number ID</label><input className="input" value={waPhoneId} onChange={(e) => setWaPhoneId(e.target.value)} placeholder="1234567890" /></div>
+        <div><label className="label">Token permanente {hasWaToken && <span className="text-green-600 text-xs font-normal">· configurado ✓</span>}</label><input className="input" type="password" value={waToken} onChange={(e) => setWaToken(e.target.value)} placeholder={hasWaToken ? "•••••• (dejar vacío para mantener)" : "EAAG..."} /></div>
+        {waEnabled && (
+          <>
+            <div><label className="label">Plantilla aprobada</label><input className="input" value={waTemplate} onChange={(e) => setWaTemplate(e.target.value)} placeholder="recordatorio_cita" /></div>
+            <div><label className="label">Idioma de la plantilla</label><input className="input" value={waLang} onChange={(e) => setWaLang(e.target.value)} placeholder="es" /></div>
+          </>
+        )}
+      </div>
 
       <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200 mt-6 mb-2">Google Calendar y Google Business Profile</h3>
       <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
