@@ -30,6 +30,7 @@ Deno.serve(async (req) => {
     .select("id, business_id, customer_name, customer_email, " +
             "businesses!inner(name, primary_color, google_review_url, review_email_message)")
     .in("status", ["confirmada", "completada", "sentada"])
+    .eq("businesses.is_active", true) // un negocio desactivado no debe seguir enviando correos
     .gte("ends_at", from)
     .lte("ends_at", to);
   if (error) return json({ error: error.message }, 500);

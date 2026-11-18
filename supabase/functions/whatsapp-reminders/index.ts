@@ -37,6 +37,7 @@ Deno.serve(async (req) => {
     .select("id, business_id, starts_at, customer_name, customer_phone, " +
             "businesses!inner(name, timezone, whatsapp_reminders_enabled, reminder_template_name, reminder_lang)")
     .eq("status", "confirmada")
+    .eq("businesses.is_active", true) // un negocio desactivado no debe seguir enviando recordatorios
     .gte("starts_at", from)
     .lte("starts_at", to);
   if (error) return json({ error: error.message }, 500);

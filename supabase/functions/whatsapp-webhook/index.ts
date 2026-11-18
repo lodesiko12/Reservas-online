@@ -6,6 +6,7 @@
 // del negocio (sin el texto del mensaje: son datos sensibles).
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import webpush from "npm:web-push@3.6.7";
+import { isAllowedPushEndpoint } from "../_shared/pushEndpoint.ts";
 
 const VAPID_SUBJECT = "https://app.turnigo.es";
 
@@ -65,6 +66,7 @@ async function pushToStaff(businessId: string, conversationId: string, contactNa
   });
   const dead: string[] = [];
   await Promise.all((subs ?? []).map(async (s) => {
+    if (!isAllowedPushEndpoint(s.endpoint)) { dead.push(s.id); return; } // no se llama a endpoints no legítimos
     try {
       await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, payload, { TTL: 86400 });
     } catch (e) {

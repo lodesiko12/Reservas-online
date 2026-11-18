@@ -1,7 +1,9 @@
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import type { Session } from "@supabase/supabase-js";
 import type { Tables } from "@reservas/shared";
+import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "./supabase";
+import { disablePush } from "../business/agencia/push";
 
 type Business = Tables<"businesses">;
 
@@ -27,6 +29,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Usuario cuyo perfil/negocios ya están cargados: evita recargar (y desmontar todo el panel)
   // cuando supabase-js re-emite SIGNED_IN al volver a la pestaña.
   const loadedUserId = useRef<string | null>(null);
+  // La caché de react-query es global a la pestaña: sin vaciarla, al cerrar sesión o cambiar de
+  // cuenta se podían ver los datos en caché del usuario anterior.
+  const qc = useQueryClient();
 
   async function loadProfile() {
     const { data: sess } = await supabase.auth.getSession();
@@ -59,12 +64,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: sub } = supabase.auth.onAuthStateChange((event, s) => {
       setSession(s);
       if (event === "SIGNED_OUT" || !s) {
+        qc.clear();
         loadedUserId.current = null;
         setIsSuperAdmin(false); setBusinesses([]); setActiveId(null); setLoading(false);
       } else if (event === "SIGNED_IN" || event === "INITIAL_SESSION") {
         // supabase-js emite SIGNED_IN también cada vez que la pestaña vuelve a estar visible.
         // Solo recargamos perfil/negocios si es un usuario distinto al ya cargado.
-        if (loadedUserId.current !== s.user.id) loadProfile();
+        if (loadedUserId.current !== s.user.id) { qc.clear(); loadProfile(); }
       }
     });
     return () => sub.subscription.unsubscribe();
@@ -76,7 +82,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const value: AuthState = {
     session, loading, isSuperAdmin, business, businesses,
     refresh: loadProfile,
-    signOut: async () => { await supabase.auth.signOut(); },
+    signOut: async () => {
+      // Antes de cerrar sesión, se da de baja la suscripción push de este navegador: si no, el
+      // servidor seguiría enviando avisos de la cuenta a un dispositivo compartido.
+      try { await disablePush(); } catch { /* sin push o sin permiso: se sigue cerrando sesión */ }
+      await supabase.auth.signOut();
+      qc.clear();
+    },
     setActiveBusiness: setActiveId,
   };
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

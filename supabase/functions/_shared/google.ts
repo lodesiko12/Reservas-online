@@ -26,9 +26,12 @@ export async function verifyOAuthState(state: string, secret: string): Promise<{
   try { payload = atob(payloadB64); } catch { return null; }
   const expectedSig = await hmac(secret, payload);
   if (expectedSig !== sig) return null;
-  const [businessId, professionalId, expiresAt] = payload.split(".");
-  if (!businessId || !professionalId || !expiresAt) return null;
-  if (Date.now() > Number(expiresAt)) return null;
+  const parts = payload.split(".");
+  // Exactamente 3 segmentos: un state de negocio (2 segmentos) no puede pasar por aquí.
+  if (parts.length !== 3) return null;
+  const [businessId, professionalId, expiresAt] = parts;
+  const exp = Number(expiresAt);
+  if (!businessId || !professionalId || !Number.isFinite(exp) || Date.now() > exp) return null;
   return { businessId, professionalId };
 }
 
@@ -88,7 +91,7 @@ export async function upsertGoogleEvent(
     end: { dateTime: ev.endsAt, timeZone: ev.timezone },
   };
   const base = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events`;
-  const url = existingEventId ? `${base}/${existingEventId}` : base;
+  const url = existingEventId ? `${base}/${encodeURIComponent(existingEventId)}` : base;
   const res = await fetch(url, {
     method: existingEventId ? "PATCH" : "POST",
     headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
@@ -100,7 +103,7 @@ export async function upsertGoogleEvent(
 }
 
 export async function deleteGoogleEvent(accessToken: string, calendarId: string, eventId: string): Promise<void> {
-  const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events/${eventId}`;
+  const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events/${encodeURIComponent(eventId)}`;
   const res = await fetch(url, { method: "DELETE", headers: { Authorization: `Bearer ${accessToken}` } });
   // 410 Gone = ya estaba borrado en Google; no es un error real.
   if (!res.ok && res.status !== 410 && res.status !== 404) {
@@ -143,9 +146,14 @@ export async function verifyBusinessState(state: string, secret: string): Promis
   try { payload = atob(payloadB64); } catch { return null; }
   const expectedSig = await hmac(secret, payload);
   if (expectedSig !== sig) return null;
-  const [businessId, expiresAt] = payload.split(".");
-  if (!businessId || !expiresAt) return null;
-  if (Date.now() > Number(expiresAt)) return null;
+  const parts = payload.split(".");
+  // Exactamente 2 segmentos y expiración numérica finita: antes, un state de profesional
+  // caducado (3 segmentos) se leía aquí con el UUID del profesional como "expiración" (NaN)
+  // y se aceptaba para siempre.
+  if (parts.length !== 2) return null;
+  const [businessId, expiresAt] = parts;
+  const exp = Number(expiresAt);
+  if (!businessId || !Number.isFinite(exp) || Date.now() > exp) return null;
   return { businessId };
 }
 

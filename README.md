@@ -310,6 +310,25 @@ las 8 Edge Functions con datos de usuario (`create-booking`, `send-confirmation-
 - Vite 5→8 (aviso `esbuild` dev-only): pospuesto a propósito, decisión del usuario — solo expone el
   servidor de desarrollo local, no la producción que sirve Cloudflare.
 
+### Auditoría de seguridad (2026-11-17) — arreglos y pendientes
+Informe completo fuera del repo (`~/security-audit-skill/reservas-online/run-1/REPORT.md`; solo lectura de código, sin ejecutar nada).
+Arreglado en `0058_security_audit_fixes.sql` y en las Edge Functions/panel (ver el commit): menú público
+entre negocios, RPC sin comprobación de pertenencia, FKs de reservas/combos entre negocios, contactos de
+asesoría tras quitar a un gestor, ocupación de mesas `sentada`, auto-ascenso de directiva, asignados de
+tareas, claves de Resend solo para propietario, rango de `get_available_days`, índice de localizador,
+zona horaria válida, bucket `logos`, `agency-push` sin secreto, endpoints push, escapado de emails,
+estado OAuth de Google, `sync-google-event`/`sync-google-busy`, CSV, caché/push al cerrar sesión, enlace de contraseña.
+**Pendiente de decisión o de comprobar en producción:**
+- ¿Registro público de Supabase Auth desactivado? (cierra o abre `admin-link-existing-auth-user…`).
+- Cuentas `*.test` y contraseñas de demo del repo en producción: borrar o rotar.
+- `is_business_member` ignora `businesses.is_active` (un negocio desactivado conserva el acceso del personal).
+- Bandeja de WhatsApp de una asesoría visible para todo el personal; `phone_number_id` sin verificar de quién es;
+  `whatsapp_update_message_status` sin filtrar por negocio; recordatorios a teléfonos sin verificar.
+- `password-setup` envía el enlace con la clave de Resend del negocio (global `RESEND_API_KEY` aún sin poner).
+- Hueco de hora de verano en `get_available_slots`; `dining_table_busy` escanea todas las reservas;
+  restricción `bookings_table_no_overlap` sin `sentada`; borrar un negocio deja archivos en Storage;
+  invitaciones de Google ocupan agenda; fallo de límite por IP en abierto.
+
 ### Sin priorizar (el usuario dijo que no hace falta todavía)
 - API pública / webhooks por negocio.
 - Dashboard agregado multi-local (el selector de negocio de `Layout.tsx` ya cubre varios negocios por usuario).

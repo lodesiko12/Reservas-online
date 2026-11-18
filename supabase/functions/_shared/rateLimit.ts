@@ -7,9 +7,14 @@ import { json } from "./cors.ts";
 
 /** IP del llamante a partir de las cabeceras que pone la plataforma delante del edge function. */
 export function getClientIp(req: Request): string {
+  // cf-connecting-ip lo fija el borde de Cloudflare (el cliente no puede falsearlo);
+  // x-forwarded-for solo se usa de reserva y con longitud acotada para que la clave
+  // del contador no pueda ser arbitrariamente larga ni controlada por completo.
+  const cf = req.headers.get("cf-connecting-ip")?.trim();
+  if (cf) return cf.slice(0, 64);
   const fwd = req.headers.get("x-forwarded-for");
-  if (fwd) return fwd.split(",")[0].trim();
-  return req.headers.get("cf-connecting-ip") ?? "unknown";
+  if (fwd) return fwd.split(",")[0].trim().slice(0, 64) || "unknown";
+  return "unknown";
 }
 
 /**

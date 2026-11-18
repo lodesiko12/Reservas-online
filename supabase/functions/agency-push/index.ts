@@ -4,6 +4,7 @@
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import webpush from "npm:web-push@3.6.7";
 import { json, handleOptions } from "../_shared/cors.ts";
+import { isAllowedPushEndpoint } from "../_shared/pushEndpoint.ts";
 
 const VAPID_SUBJECT = "https://turnigo-panel.lodesiko12.workers.dev";
 const BATCH = 100;
@@ -15,7 +16,8 @@ Deno.serve(async (req) => {
   if (req.method !== "POST") return json({ error: "Método no permitido" }, 405);
 
   const secret = Deno.env.get("CRON_SECRET");
-  if (secret && req.headers.get("x-cron-secret") !== secret) return json({ error: "No autorizado" }, 401);
+  // Falla cerrado: sin CRON_SECRET configurado nadie puede lanzar el envío.
+  if (!secret || req.headers.get("x-cron-secret") !== secret) return json({ error: "No autorizado" }, 401);
 
   const pub = Deno.env.get("VAPID_PUBLIC_KEY");
   const priv = Deno.env.get("VAPID_PRIVATE_KEY");
@@ -51,6 +53,7 @@ Deno.serve(async (req) => {
   const dead: string[] = [];
   await Promise.all(claimed.flatMap((n) =>
     (byUser.get(n.user_id) ?? []).map(async (s) => {
+      if (!isAllowedPushEndpoint(s.endpoint)) { dead.push(s.id); return; } // endpoint no legítimo: se descarta sin llamarlo
       const payload = JSON.stringify({
         title: n.title,
         body: n.body ?? "",

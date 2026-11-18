@@ -13,6 +13,7 @@ export function getRecoveryToken(): string | null {
  * abrir la página), así que los antivirus que precargan enlaces no lo gastan.
  */
 export function SetPassword({ tokenHash }: { tokenHash: string }) {
+  const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
   const [pw2, setPw2] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -26,8 +27,20 @@ export function SetPassword({ tokenHash }: { tokenHash: string }) {
     if (pw.length > 72) { setError("La contraseña admite como máximo 72 caracteres."); return; }
     if (pw !== pw2) { setError("Las contraseñas no coinciden."); return; }
     setLoading(true);
-    const { error: vErr } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: "recovery" });
+    // Cierra cualquier sesión previa de este navegador antes de canjear el enlace: así un enlace
+    // ajeno no puede dejarte "dentro" de otra cuenta sin que te des cuenta.
+    await supabase.auth.signOut({ scope: "local" });
+    const { data: vData, error: vErr } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: "recovery" });
     if (vErr) { setLoading(false); setExpired(true); return; }
+    // El enlace solo vale para la cuenta a la que se envió: el correo que escribe la persona
+    // debe coincidir con el del enlace. Si no coincide no se cambia nada y se cierra la sesión.
+    const linkEmail = (vData.user?.email ?? "").trim().toLowerCase();
+    if (!linkEmail || linkEmail !== email.trim().toLowerCase()) {
+      await supabase.auth.signOut({ scope: "local" });
+      setLoading(false);
+      setError("El correo no coincide con el de este enlace. El enlace ya se ha gastado: pide uno nuevo desde la pantalla de acceso.");
+      return;
+    }
     const { error: uErr } = await supabase.auth.updateUser({ password: pw });
     if (uErr) {
       setLoading(false);
@@ -63,8 +76,12 @@ export function SetPassword({ tokenHash }: { tokenHash: string }) {
         ) : (
           <form onSubmit={submit} className="card p-6 space-y-4">
             <div>
+              <label className="label">Tu correo</label>
+              <input className="input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoFocus autoComplete="email" placeholder="el correo al que llegó el enlace" />
+            </div>
+            <div>
               <label className="label">Nueva contraseña</label>
-              <input className="input" type="password" value={pw} onChange={(e) => setPw(e.target.value)} required minLength={8} autoFocus autoComplete="new-password" placeholder="mín. 8 caracteres" />
+              <input className="input" type="password" value={pw} onChange={(e) => setPw(e.target.value)} required minLength={8} autoComplete="new-password" placeholder="mín. 8 caracteres" />
             </div>
             <div>
               <label className="label">Repite la contraseña</label>

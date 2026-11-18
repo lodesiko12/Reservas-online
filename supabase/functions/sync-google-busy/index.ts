@@ -56,20 +56,23 @@ Deno.serve(async (req) => {
 
       const busy = await queryFreeBusy(accessToken, account.calendar_id, timeMin, timeMax);
 
-      // Reemplazo completo (simple e idempotente): borra los bloqueos que
-      // esta sincronización generó antes y vuelve a insertar los actuales.
-      await supabase.from("blocks")
-        .delete()
+      // Reemplazo completo e idempotente, pero sin perder protección si falla a medias: primero se
+      // anotan los bloqueos antiguos, se insertan los actuales (si falla, se aborta y los antiguos
+      // siguen en pie) y solo después se borran los antiguos.
+      const { data: oldBlocks } = await supabase.from("blocks").select("id")
         .eq("professional_id", account.professional_id)
         .eq("source", "google_calendar")
         .gte("starts_at", timeMin);
 
       if (busy.length) {
-        await supabase.from("blocks").insert(busy.map((b) => ({
+        const { error: insErr } = await supabase.from("blocks").insert(busy.map((b) => ({
           business_id: businessId, scope: "professional", professional_id: account.professional_id,
           starts_at: b.start, ends_at: b.end, reason: "Google Calendar", source: "google_calendar",
         })));
+        if (insErr) throw new Error(`No se pudieron guardar los bloqueos: ${insErr.message}`);
       }
+      const oldIds = (oldBlocks ?? []).map((o: { id: string }) => o.id);
+      if (oldIds.length) await supabase.from("blocks").delete().in("id", oldIds);
       synced++; results.push({ professional_id: account.professional_id, busy: busy.length });
     } catch (e) {
       failed++; results.push({ professional_id: account.professional_id, error: (e as Error).message });

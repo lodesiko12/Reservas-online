@@ -33,13 +33,18 @@ function escapeHtml(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
+/** El color lo escribe el negocio (sin CHECK en BD): solo se acepta un hex válido antes de ir a un atributo style. */
+function safeColor(c: string | null | undefined): string {
+  return c && /^#[0-9a-fA-F]{3,8}$/.test(c) ? c : "#4f46e5";
+}
+
 /** Sustituye placeholders tipo {clave} por su valor; deja intacto lo que no reconoce. */
 function applyPlaceholders(template: string, vars: Record<string, string>): string {
   return template.replace(/\{(\w+)\}/g, (m, k) => (k in vars ? vars[k] : m));
 }
 
 export function buildConfirmationEmail(d: ConfirmationData): { subject: string; html: string; text: string } {
-  const color = d.primaryColor || "#4f46e5";
+  const color = safeColor(d.primaryColor);
   const date = fmtDate(d.startsAt, d.timezone);
   const time = fmtTime(d.startsAt, d.timezone);
   const pending = !!d.isPending;
@@ -73,13 +78,13 @@ export function buildConfirmationEmail(d: ConfirmationData): { subject: string; 
 
   const manage = d.manageUrl
     ? `<p style="margin:16px 0 0">Puedes consultar o cancelar tu ${thing} aquí:<br>
-         <a href="${d.manageUrl}" style="color:${color}">${d.manageUrl}</a></p>`
+         <a href="${escapeHtml(d.manageUrl)}" style="color:${color}">${escapeHtml(d.manageUrl)}</a></p>`
     : "";
 
   const html = `<!doctype html><html><body style="margin:0;background:#f1f5f9;padding:24px;font-family:system-ui,Segoe UI,Arial,sans-serif;color:#0f172a">
   <div style="max-width:520px;margin:0 auto;background:#fff;border-radius:14px;overflow:hidden;border:1px solid #e2e8f0">
     <div style="background:${color};color:#fff;padding:20px 24px">
-      <h1 style="margin:0;font-size:20px">${d.businessName}</h1>
+      <h1 style="margin:0;font-size:20px">${escapeHtml(d.businessName)}</h1>
       <p style="margin:4px 0 0;opacity:.9">${heading}</p>
     </div>
     <div style="padding:24px">
@@ -88,13 +93,13 @@ export function buildConfirmationEmail(d: ConfirmationData): { subject: string; 
         ${order
           ? `${d.optionLabel ? `<tr><td style="padding:6px 0;color:#64748b">Sabor</td><td style="padding:6px 0;text-align:right"><strong>${escapeHtml(d.optionLabel)}</strong></td></tr>` : ""}
         ${d.sizeLabel ? `<tr><td style="padding:6px 0;color:#64748b">Tamaño</td><td style="padding:6px 0;text-align:right"><strong>${escapeHtml(d.sizeLabel)}</strong></td></tr>` : ""}`
-          : (d.serviceName ? `<tr><td style="padding:6px 0;color:#64748b">Detalle</td><td style="padding:6px 0;text-align:right"><strong>${d.serviceName}</strong></td></tr>` : "")}
+          : (d.serviceName ? `<tr><td style="padding:6px 0;color:#64748b">Detalle</td><td style="padding:6px 0;text-align:right"><strong>${escapeHtml(d.serviceName)}</strong></td></tr>` : "")}
         <tr><td style="padding:6px 0;color:#64748b">${dateLabel}</td><td style="padding:6px 0;text-align:right"><strong>${date}</strong></td></tr>
         <tr><td style="padding:6px 0;color:#64748b">${timeLabel}</td><td style="padding:6px 0;text-align:right"><strong>${time}</strong></td></tr>
       </table>
       <div style="margin:20px 0;text-align:center;background:#f8fafc;border:1px dashed ${color};border-radius:12px;padding:16px">
         <div style="color:#64748b;font-size:13px">Código localizador</div>
-        <div style="font-size:26px;font-weight:800;letter-spacing:2px;color:${color}">${d.locator}</div>
+        <div style="font-size:26px;font-weight:800;letter-spacing:2px;color:${color}">${escapeHtml(d.locator)}</div>
       </div>
       ${manage}
       <p style="margin:18px 0 0;color:#94a3b8;font-size:12px">Guarda este código para gestionar tu ${thing}.</p>
@@ -154,7 +159,7 @@ export function buildOwnerBookingNotice(d: OwnerBookingNoticeData): { subject: s
         ${d.notes ? row("Notas", d.notes) : ""}
         ${row("Localizador", d.locator)}
       </table>
-      ${d.panelUrl ? `<p style="margin:18px 0 0"><a href="${d.panelUrl}" style="color:#4f46e5">Abrir el panel</a></p>` : ""}
+      ${d.panelUrl ? `<p style="margin:18px 0 0"><a href="${escapeHtml(d.panelUrl)}" style="color:#4f46e5">Abrir el panel</a></p>` : ""}
     </div>
   </div></body></html>`;
   const text = `Nueva reserva en ${d.businessName}
@@ -184,7 +189,7 @@ const eur = (n: number) => new Intl.NumberFormat("es-ES", { style: "currency", c
 
 /** Email de confirmación de un pedido para llevar (recibido; el local lo irá aceptando). */
 export function buildOrderEmail(d: OrderEmailData): { subject: string; html: string; text: string } {
-  const color = d.primaryColor || "#4f46e5";
+  const color = safeColor(d.primaryColor);
   const date = fmtDate(d.pickupAt, d.timezone);
   const time = fmtTime(d.pickupAt, d.timezone);
   const subject = `Pedido recibido · ${d.businessName}`;
@@ -195,7 +200,7 @@ export function buildOrderEmail(d: OrderEmailData): { subject: string; html: str
   }).join("");
   const manage = d.manageUrl
     ? `<p style="margin:16px 0 0">Puedes consultar o cancelar tu pedido (mientras no esté en preparación) aquí:<br>
-         <a href="${d.manageUrl}" style="color:${color}">${d.manageUrl}</a></p>`
+         <a href="${escapeHtml(d.manageUrl)}" style="color:${color}">${escapeHtml(d.manageUrl)}</a></p>`
     : "";
   const html = `<!doctype html><html><body style="margin:0;background:#f1f5f9;padding:24px;font-family:system-ui,Segoe UI,Arial,sans-serif;color:#0f172a">
   <div style="max-width:520px;margin:0 auto;background:#fff;border-radius:14px;overflow:hidden;border:1px solid #e2e8f0">
@@ -211,7 +216,7 @@ export function buildOrderEmail(d: OrderEmailData): { subject: string; html: str
       </table>
       <div style="margin:20px 0;text-align:center;background:#f8fafc;border:1px dashed ${color};border-radius:12px;padding:16px">
         <div style="color:#64748b;font-size:13px">Código localizador</div>
-        <div style="font-size:26px;font-weight:800;letter-spacing:2px;color:${color}">${d.locator}</div>
+        <div style="font-size:26px;font-weight:800;letter-spacing:2px;color:${color}">${escapeHtml(d.locator)}</div>
       </div>
       ${manage}
       <p style="margin:18px 0 0;color:#94a3b8;font-size:12px">Guarda este código para consultar tu pedido.</p>
@@ -238,7 +243,7 @@ export type ReviewRequestData = {
 /** Email post-visita pidiendo una reseña. Solo se construye/envía si el
  * negocio tiene configurado un enlace de reseña (Google/TripAdvisor...). */
 export function buildReviewRequestEmail(d: ReviewRequestData): { subject: string; html: string; text: string } {
-  const color = d.primaryColor || "#4f46e5";
+  const color = safeColor(d.primaryColor);
   const subject = `¿Qué tal tu visita a ${d.businessName}?`;
   const custom = d.customMessage?.trim();
   const defaultIntro = `Hola ${d.customerName}, esperamos que lo hayas pasado genial. Si tienes un minuto, nos ayudaría muchísimo que dejaras tu opinión:`;
@@ -250,7 +255,7 @@ export function buildReviewRequestEmail(d: ReviewRequestData): { subject: string
   const html = `<!doctype html><html><body style="margin:0;background:#f1f5f9;padding:24px;font-family:system-ui,Segoe UI,Arial,sans-serif;color:#0f172a">
   <div style="max-width:520px;margin:0 auto;background:#fff;border-radius:14px;overflow:hidden;border:1px solid #e2e8f0">
     <div style="background:${color};color:#fff;padding:20px 24px">
-      <h1 style="margin:0;font-size:20px">${d.businessName}</h1>
+      <h1 style="margin:0;font-size:20px">${escapeHtml(d.businessName)}</h1>
       <p style="margin:4px 0 0;opacity:.9">Gracias por tu visita</p>
     </div>
     <div style="padding:24px">
@@ -279,7 +284,9 @@ export async function sendEmail(
   businessFrom?: string | null
 ): Promise<string | null> {
   const apiKey = businessApiKey || Deno.env.get("RESEND_API_KEY");
-  const from = businessFrom || Deno.env.get("EMAIL_FROM") || "Turnigo <onboarding@resend.dev>";
+  // El remitente propio del negocio solo vale junto a su propia clave: con la clave de la
+  // plataforma un negocio no puede elegir el From (suplantación bajo el dominio de Turnigo).
+  const from = (businessApiKey ? businessFrom : null) || Deno.env.get("EMAIL_FROM") || "Turnigo <onboarding@resend.dev>";
   if (!apiKey) {
     console.warn("[email] Sin credencial de Resend (ni del negocio ni global); se omite el envío.");
     return null;

@@ -48,6 +48,12 @@ async function syncBooking(asCaller: any, service: any, booking_id: string, acti
   if (!booking) return json({ error: "Reserva no encontrada o sin acceso" }, 404);
   if (!booking.professional_id) return json({ ok: true, skipped: "sin profesional" });
 
+  // bookings.professional_id es editable por cualquier miembro del negocio y la FK no ata el
+  // profesional al negocio: sin esta comprobación, el token de Google de OTRO negocio se
+  // usaría (con service role) para escribir en su calendario.
+  const { data: prof } = await service.from("professionals").select("business_id").eq("id", booking.professional_id).maybeSingle();
+  if (!prof || prof.business_id !== booking.business_id) return json({ ok: true, skipped: "profesional de otro negocio" });
+
   const [{ data: account }, { data: business }, { data: integ }] = await Promise.all([
     service.from("professional_google_accounts").select("*").eq("professional_id", booking.professional_id).maybeSingle(),
     service.from("businesses").select("timezone").eq("id", booking.business_id).single(),

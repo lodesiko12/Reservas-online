@@ -150,6 +150,16 @@ Deno.serve(async (req) => {
     const { error } = await admin.from("agency_members").update({ is_active: body.is_active })
       .eq("business_id", businessId).eq("user_id", body.user_id);
     if (error) return json({ error: error.message }, 400);
+    // El acceso genérico al negocio (is_business_member) sale de business_users, no de
+    // agency_members: sin esto, un miembro desactivado conservaba acceso a los ajustes del
+    // negocio, a los secretos de integraciones y al directorio de emails.
+    if (body.is_active) {
+      await admin.from("business_users")
+        .upsert({ business_id: businessId, user_id: body.user_id, role: "staff" }, { onConflict: "business_id,user_id", ignoreDuplicates: true });
+    } else {
+      await admin.from("business_users").delete()
+        .eq("business_id", businessId).eq("user_id", body.user_id).eq("role", "staff");
+    }
     // Al desactivar se bloquea también el login, salvo que la cuenta sirva a otro negocio
     // (el bloqueo es global y le quitaría el acceso a lo demás).
     const { count } = await admin.from("business_users").select("user_id", { count: "exact", head: true })

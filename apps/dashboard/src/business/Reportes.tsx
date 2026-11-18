@@ -88,11 +88,19 @@ export function Reportes() {
     };
   }, [rows, days, startYmd, tz]);
 
+  /** Celda CSV segura: duplica comillas, quita saltos de línea y neutraliza fórmulas (= + - @ tab CR)
+   *  para que un nombre escrito por un visitante en el widget no se ejecute al abrirlo en Excel. */
+  function csvCell(v: unknown): string {
+    let s = String(v ?? "").replace(/[\r\n]+/g, " ");
+    if (/^[=+\-@\t]/.test(s)) s = "'" + s;
+    return `"${s.replace(/"/g, '""')}"`;
+  }
+
   function exportCsv() {
     if (!rows) return;
     const header = "fecha,estado,canal,cliente,servicio\n";
     const body = rows.map((r) =>
-      [formatDateTime(r.starts_at, tz), r.status, r.channel, `"${r.customer_name}"`, `"${r.option_label ? `${r.option_label} · ${r.services?.size_label ?? ""}` : (r.services?.name ?? "")}"`].join(",")
+      [formatDateTime(r.starts_at, tz), r.status, r.channel, csvCell(r.customer_name), csvCell(r.option_label ? `${r.option_label} · ${r.services?.size_label ?? ""}` : (r.services?.name ?? ""))].join(",")
     ).join("\n");
     const blob = new Blob([header + body], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
