@@ -45,7 +45,7 @@ export function Seguimiento() {
 
   return (
     <div>
-      <PageHeader title="Seguimiento" subtitle="La cita en curso y la siguiente" />
+      <PageHeader title="Sesión de hoy" subtitle="La cita en curso y la siguiente" />
       {isLoading ? (
         <div className="grid place-items-center py-20"><Spinner /></div>
       ) : !inProgress.length && !next ? (

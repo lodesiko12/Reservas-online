@@ -181,7 +181,7 @@ function NuevaReservaCitas() {
 
   return (
     <div className="max-w-2xl">
-      <PageHeader title="Nueva reserva" subtitle="Carga manual desde el panel" />
+      <PageHeader title={business?.type === "psicologo" ? "Nueva cita" : "Nueva reserva"} subtitle="Carga manual desde el panel" />
       <form onSubmit={submit} className="space-y-5">
         <div className="card p-5">
           <label className="label">Servicio</label>

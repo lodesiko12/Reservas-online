@@ -77,6 +77,20 @@ export function BusinessApp() {
         { to: "/app/facturas", label: "Facturas", icon: "🧾" },
         { to: "/app/config", label: "Configuración", icon: "⚙️" },
       ]
+    : isPsicologo
+    ? [
+        // Menú agrupado por frecuencia de uso; «Nueva cita» va como botón fijo (ver `action`).
+        { to: "/app", label: "Resumen", icon: "📊", end: true, group: "Día a día" },
+        { to: "/app/agenda", label: "Agenda", icon: "🗓️", group: "Día a día" },
+        { to: "/app/seguimiento", label: "Sesión de hoy", icon: "🩺", group: "Día a día" },
+        ...mensajesNav.map((m) => ({ ...m, group: "Día a día" })),
+        { to: "/app/clientes", label: "Clientes", icon: "👤", group: "Día a día" },
+        { to: "/app/pagos", label: "Pagos", icon: "💶", group: "Cobros" },
+        { to: "/app/servicios", label: "Servicios y equipo", icon: "✂️", group: "Gestión" },
+        { to: "/app/bloqueos", label: "Bloqueos", icon: "🚫", group: "Gestión" },
+        { to: "/app/reportes", label: "Reportes", icon: "📈", group: "Gestión" },
+        { to: "/app/config", label: "Configuración", icon: "⚙️", group: "Gestión" },
+      ]
     : [
         { to: "/app", label: "Resumen", icon: "📊", end: true },
         ...(isRestaurant ? [{ to: "/app/plano", label: "Plano de sala", icon: "🟢" }] : []),
@@ -101,7 +115,7 @@ export function BusinessApp() {
 
   return (
     <Routes>
-      <Route element={<Layout nav={nav} brandLabel={business?.name ?? "Panel"} />}>
+      <Route element={<Layout nav={nav} brandLabel={business?.name ?? "Panel"} action={isPsicologo ? { to: "/app/nueva", label: "Nueva cita", icon: "➕" } : undefined} />}>
         {isAsesoria ? (
           <>
             <Route index element={<ResumenAsesoria />} />

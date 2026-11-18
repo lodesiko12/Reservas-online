@@ -4,12 +4,16 @@ import { useAuth } from "../lib/auth";
 import { useTheme } from "../lib/theme";
 import { InstallAppButton } from "./InstallAppButton";
 
-export type NavItem = { to: string; label: string; icon: string; end?: boolean; badge?: number };
+/** `group`: título de sección; se muestra cuando cambia respecto al elemento anterior. */
+export type NavItem = { to: string; label: string; icon: string; end?: boolean; badge?: number; group?: string };
 
 const COLLAPSE_KEY = "turnigo:sidebar-collapsed";
 
-/** `mobileTabs`: barra inferior fija en móvil (para uso con el pulgar); el resto va en el menú «Más». */
-export function Layout({ nav, brandLabel, mobileTabs }: { nav: NavItem[]; brandLabel: string; mobileTabs?: NavItem[] }) {
+/**
+ * `mobileTabs`: barra inferior fija en móvil (para uso con el pulgar); el resto va en el menú «Más».
+ * `action`: botón destacado fijo encima del menú (p. ej. «+ Nueva cita»).
+ */
+export function Layout({ nav, brandLabel, mobileTabs, action }: { nav: NavItem[]; brandLabel: string; mobileTabs?: NavItem[]; action?: NavItem }) {
   const { signOut, session, business, businesses, setActiveBusiness } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const location = useLocation();
@@ -56,30 +60,51 @@ export function Layout({ nav, brandLabel, mobileTabs }: { nav: NavItem[]; brandL
           </div>
         )}
 
-        <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-          {nav.map((n) => (
+        {action && (
+          <div className="px-3 pt-3">
             <NavLink
-              key={n.to}
-              to={n.to}
-              end={n.end}
-              title={isCollapsed ? n.label : undefined}
+              to={action.to}
               onClick={onNavigate}
-              className={({ isActive }) =>
-                `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition ${isCollapsed ? "justify-center" : ""} ${
-                  isActive
-                    ? "bg-brand-50 text-brand-700 dark:bg-brand-500/15 dark:text-brand-300"
-                    : "text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"
-                }`
-              }
+              title={isCollapsed ? action.label : undefined}
+              className={`btn-primary w-full ${isCollapsed ? "px-0 justify-center" : ""}`}
             >
-              <span className="text-base w-5 text-center shrink-0 relative">
-                {n.icon}
-                {!!n.badge && isCollapsed && <span className="absolute -top-1 -right-2 h-2.5 w-2.5 rounded-full bg-coral-500" />}
-              </span>
-              {!isCollapsed && n.label}
-              {!isCollapsed && !!n.badge && <span className="ml-auto badge bg-coral-500 text-white">{n.badge > 99 ? "99+" : n.badge}</span>}
+              <span>{action.icon}</span>
+              {!isCollapsed && action.label}
             </NavLink>
-          ))}
+          </div>
+        )}
+
+        <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
+          {nav.map((n, i) => {
+            const newGroup = !!n.group && n.group !== nav[i - 1]?.group;
+            return (
+              <div key={n.to}>
+                {newGroup && (isCollapsed
+                  ? (i > 0 && <div className="my-2 border-t border-slate-200 dark:border-slate-800" />)
+                  : <div className={`px-3 pb-1 text-[11px] font-bold uppercase tracking-wide text-slate-400 dark:text-slate-500 ${i > 0 ? "pt-4" : "pt-1"}`}>{n.group}</div>)}
+                <NavLink
+                  to={n.to}
+                  end={n.end}
+                  title={isCollapsed ? n.label : undefined}
+                  onClick={onNavigate}
+                  className={({ isActive }) =>
+                    `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition ${isCollapsed ? "justify-center" : ""} ${
+                      isActive
+                        ? "bg-brand-50 text-brand-700 dark:bg-brand-500/15 dark:text-brand-300"
+                        : "text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"
+                    }`
+                  }
+                >
+                  <span className="text-base w-5 text-center shrink-0 relative">
+                    {n.icon}
+                    {!!n.badge && isCollapsed && <span className="absolute -top-1 -right-2 h-2.5 w-2.5 rounded-full bg-coral-500" />}
+                  </span>
+                  {!isCollapsed && n.label}
+                  {!isCollapsed && !!n.badge && <span className="ml-auto badge bg-coral-500 text-white">{n.badge > 99 ? "99+" : n.badge}</span>}
+                </NavLink>
+              </div>
+            );
+          })}
         </nav>
 
         <div className={`border-t border-slate-200 dark:border-slate-800 p-3 space-y-2 ${isCollapsed ? "flex flex-col items-center" : ""}`}>
