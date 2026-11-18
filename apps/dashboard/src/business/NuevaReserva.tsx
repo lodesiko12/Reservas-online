@@ -104,6 +104,74 @@ export function CustomerFields({ form, setForm }: { form: any; setForm: (f: any)
   );
 }
 
+type FoundCustomer = { id: string; full_name: string; last_name: string | null; phone: string | null; email: string | null };
+
+/**
+ * Buscador de pacientes/clientes ya registrados: al elegir uno se rellenan nombre, apellidos,
+ * teléfono y email del formulario. Busca por nombre, apellidos, teléfono o email (todas las
+ * palabras escritas deben aparecer en alguno de esos campos).
+ */
+function CustomerSearch({ bid, onPick }: { bid: string; onPick: (c: FoundCustomer) => void }) {
+  const [q, setQ] = useState("");
+  const [results, setResults] = useState<FoundCustomer[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [picked, setPicked] = useState<FoundCustomer | null>(null);
+
+  useEffect(() => {
+    // Quita caracteres con significado en los filtros de PostgREST (comas, paréntesis, comodines…).
+    const words = q.split(/\s+/).map((w) => w.replace(/[^\p{L}\p{N}@.+_-]/gu, "")).filter(Boolean);
+    if (picked || q.trim().length < 2 || words.length === 0) { setResults([]); setLoading(false); return; }
+    let cancelled = false;
+    setLoading(true);
+    const t = setTimeout(async () => {
+      let query = supabase.from("customers").select("id, full_name, last_name, phone, email").eq("business_id", bid);
+      for (const w of words) {
+        query = query.or(`full_name.ilike.%${w}%,last_name.ilike.%${w}%,phone.ilike.%${w}%,email.ilike.%${w}%`);
+      }
+      const { data } = await query.order("full_name").limit(8);
+      if (!cancelled) { setResults((data as FoundCustomer[]) ?? []); setLoading(false); }
+    }, 250);
+    return () => { cancelled = true; clearTimeout(t); };
+  }, [q, bid, picked]);
+
+  function pick(c: FoundCustomer) { setPicked(c); setQ(""); setResults([]); onPick(c); }
+
+  return (
+    <div className="card p-5">
+      <label className="label">Buscar paciente ya registrado</label>
+      {picked ? (
+        <div className="flex items-center gap-2 text-sm">
+          <span className="badge bg-brand-50 text-brand-700 dark:bg-brand-500/15 dark:text-brand-300">
+            {picked.full_name} {picked.last_name ?? ""}{picked.phone ? ` · ${picked.phone}` : ""}
+          </span>
+          <button type="button" className="btn-ghost text-xs" onClick={() => setPicked(null)}>Cambiar</button>
+        </div>
+      ) : (
+        <>
+          <input className="input" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Nombre, apellidos, teléfono o email…" autoComplete="off" />
+          {loading && <p className="text-xs text-slate-400 dark:text-slate-500 mt-2">Buscando…</p>}
+          {!loading && q.trim().length >= 2 && results.length === 0 && (
+            <p className="text-xs text-slate-400 dark:text-slate-500 mt-2">Sin resultados: rellena los datos abajo para crear un paciente nuevo.</p>
+          )}
+          {results.length > 0 && (
+            <ul className="mt-2 divide-y divide-slate-100 dark:divide-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+              {results.map((c) => (
+                <li key={c.id}>
+                  <button type="button" onClick={() => pick(c)} className="w-full text-left px-3 py-2 text-sm hover:bg-slate-50 dark:hover:bg-slate-800">
+                    <span className="font-medium">{c.full_name} {c.last_name ?? ""}</span>
+                    <span className="text-slate-500 dark:text-slate-400"> · {c.phone ?? "sin teléfono"}{c.email ? ` · ${c.email}` : ""}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </>
+      )}
+      <p className="text-xs text-slate-400 dark:text-slate-500 mt-2">Opcional. Si es un paciente nuevo, rellena los datos directamente.</p>
+    </div>
+  );
+}
+
 export function Done({ locator }: { locator: string }) {
   return (
     <div className="grid place-items-center py-20 text-center">
@@ -137,6 +205,9 @@ function NuevaReservaCitas() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [ok, setOk] = useState<string | null>(null);
+  // Consentimiento de confidencialidad (negocios que lo exigen): la psicóloga confirma que el paciente lo aceptó.
+  const needsConsent = !!business?.consent_required;
+  const [consentOk, setConsentOk] = useState(false);
 
   const serviceProfessionals = (pros ?? []).filter((p) =>
     (links ?? []).some((l) => l.service_id === serviceId && l.professional_id === p.id)
@@ -170,13 +241,25 @@ function NuevaReservaCitas() {
       p_notes: form.notes.trim() || undefined, p_channel: "manual",
       p_professional_id: professionalId || undefined,
     });
+    if (error) { setSaving(false); setError(error.message); return; }
+    if (needsConsent) {
+      const { error: cErr } = await supabase.from("bookings").update({
+        consent_accepted_at: new Date().toISOString(),
+        consent_text: business?.consent_text ?? null,
+        consent_source: "panel",
+      }).eq("id", (data as any).id);
+      if (cErr) {
+        setSaving(false);
+        setError(`La cita se ha creado (${(data as any).locator}) pero no se pudo guardar la aceptación: ${cErr.message}. Márcala desde la Agenda, en la propia cita.`);
+        return;
+      }
+    }
     setSaving(false);
-    if (error) { setError(error.message); return; }
     setOk((data as any).locator);
     setTimeout(() => nav("/app/agenda"), 1200);
   }
 
-  const valid = serviceId && slot && form.name.trim() && form.phone.trim();
+  const valid = serviceId && slot && form.name.trim() && form.phone.trim() && (!needsConsent || consentOk);
   if (ok) return <Done locator={ok} />;
 
   return (
@@ -216,9 +299,21 @@ function NuevaReservaCitas() {
             </>
           )}
         </div>
+        <CustomerSearch bid={bid} onPick={(c) => setForm((f: typeof form) => ({
+          ...f, name: c.full_name, last_name: c.last_name ?? "", phone: c.phone ?? "", email: c.email ?? "",
+        }))} />
         <CustomerFields form={form} setForm={setForm} />
+        {needsConsent && (
+          <label className="card p-5 flex items-start gap-3 text-sm cursor-pointer">
+            <input type="checkbox" className="mt-0.5 h-4 w-4" checked={consentOk} onChange={(e) => setConsentOk(e.target.checked)} />
+            <span>
+              <span className="font-semibold">El paciente ha aceptado el consentimiento de confidencialidad *</span>
+              {business?.consent_text && <span className="block text-slate-500 dark:text-slate-400 mt-1">{business.consent_text}</span>}
+            </span>
+          </label>
+        )}
         {error && <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</div>}
-        <button className="btn-primary" disabled={!valid || saving}>{saving ? "Guardando…" : "Crear reserva"}</button>
+        <button className="btn-primary" disabled={!valid || saving}>{saving ? "Guardando…" : business?.type === "psicologo" ? "Crear cita" : "Crear reserva"}</button>
       </form>
     </div>
   );

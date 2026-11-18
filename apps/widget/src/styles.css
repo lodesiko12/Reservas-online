@@ -87,6 +87,11 @@ body {
 .field input:focus, .field textarea:focus { outline: 2px solid color-mix(in srgb, var(--primary) 40%, transparent); border-color: var(--primary); }
 .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
+/* Consentimiento de confidencialidad (casilla obligatoria) */
+.consent { display: flex; align-items: flex-start; gap: 10px; margin: 4px 0 14px; font-size: 13px; line-height: 1.45; cursor: pointer; }
+.consent input { margin-top: 3px; width: 18px; height: 18px; flex-shrink: 0; accent-color: var(--primary); }
+.consent a { color: var(--primary); text-decoration: underline; }
+
 .btn {
   width: 100%; border: none; border-radius: var(--radius-ctl, 10px); padding: 12px 16px; cursor: pointer;
   font: inherit; font-weight: 700; font-size: 15px; background: var(--primary); color: var(--primary-ink);

@@ -23,6 +23,8 @@ type Body = {
   phone?: string;
   email?: string;
   notes?: string;
+  // consentimiento de confidencialidad (negocios con consent_required): true = marcó la casilla.
+  consent?: boolean;
 };
 
 Deno.serve(async (req) => {
@@ -54,8 +56,15 @@ Deno.serve(async (req) => {
   if (!isIsoDate(starts_at)) return json({ error: "Fecha/hora no válida." }, 400);
 
   // Modo encargo: el email es opcional (el canal habitual es el teléfono/WhatsApp).
-  const { data: bizRow } = await supabase.from("businesses").select("order_mode").eq("id", business_id).maybeSingle();
+  const { data: bizRow } = await supabase.from("businesses")
+    .select("order_mode, consent_required, consent_text").eq("id", business_id).maybeSingle();
   const orderMode = !!bizRow?.order_mode;
+  // Consentimiento de confidencialidad: se exige en el servidor (no solo en la casilla del widget)
+  // y se guarda con el texto vigente, para tener constancia de qué aceptó y cuándo.
+  const needsConsent = !!bizRow?.consent_required && !isRestaurant && !orderMode;
+  if (needsConsent && body.consent !== true) {
+    return json({ error: "Para reservar debes aceptar el consentimiento de confidencialidad." }, 400);
+  }
 
   const name = cleanText(body.name, 100);
   const phone = body.phone && isPhone(body.phone, 30) ? body.phone.trim() : null;
@@ -111,6 +120,21 @@ Deno.serve(async (req) => {
   if (error) {
     console.error("create booking error:", error.message);
     return json({ error: error.message || "No se pudo crear la reserva." }, 409);
+  }
+
+  // 1b) Registrar la aceptación. Si no se puede guardar, se deshace la reserva: sin constancia
+  // no debe quedar una cita de un negocio que exige el consentimiento.
+  if (needsConsent) {
+    const { error: consentErr } = await supabase.from("bookings").update({
+      consent_accepted_at: new Date().toISOString(),
+      consent_text: bizRow?.consent_text ?? null,
+      consent_source: "widget",
+    }).eq("id", booking.id);
+    if (consentErr) {
+      console.error("consent save error:", consentErr.message);
+      await supabase.from("bookings").delete().eq("id", booking.id);
+      return json({ error: "No se pudo registrar la aceptación. Inténtalo de nuevo." }, 500);
+    }
   }
 
   // 2) Datos para el email y la respuesta (incl. credenciales de email del negocio).

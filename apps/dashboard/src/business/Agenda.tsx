@@ -543,6 +543,17 @@ function BookingModal({ booking, tz, trackPayments, onClose, onChanged }: {
     if (error) { alert(error.message); return; }
     qc.invalidateQueries(); onChanged();
   }
+  // Consentimiento de confidencialidad: constancia en la cita; se puede marcar a mano si faltó.
+  const consentActive = !!business?.consent_required && booking.type === "citas";
+  async function markConsent() {
+    setBusy(true);
+    const { error } = await supabase.from("bookings").update({
+      consent_accepted_at: new Date().toISOString(), consent_text: business?.consent_text ?? null, consent_source: "panel",
+    }).eq("id", booking.id);
+    setBusy(false);
+    if (error) { alert(error.message); return; }
+    qc.invalidateQueries(); onChanged();
+  }
   async function remove() {
     setConfirmingDelete(false);
     setBusy(true);
@@ -588,6 +599,23 @@ function BookingModal({ booking, tz, trackPayments, onClose, onChanged }: {
               {booking.paid_at ? <span className="badge bg-emerald-100 text-emerald-700">Pagada{booking.payment_method ? ` · ${PAYMENT_METHOD_LABEL[booking.payment_method as PaymentMethod]}` : ""}</span> : <span className="badge bg-amber-100 text-amber-700">Sin pagar</span>}
               {booking.services?.price != null && <span className="text-slate-500 dark:text-slate-400">{booking.services.price} €</span>}
             </span>
+          } />
+        )}
+        {booking.type === "citas" && (booking.consent_accepted_at || consentActive) && (
+          <Row k="Confidencialidad" v={
+            booking.consent_accepted_at ? (
+              <span className="flex flex-wrap items-center gap-2">
+                <span className="badge bg-emerald-100 text-emerald-700">Aceptada</span>
+                <span className="text-slate-500 dark:text-slate-400">
+                  {formatDate(booking.consent_accepted_at, tz)} {formatTime(booking.consent_accepted_at, tz)} · {booking.consent_source === "widget" ? "al reservar online" : "confirmada en el panel"}
+                </span>
+              </span>
+            ) : (
+              <span className="flex items-center gap-2">
+                <span className="badge bg-amber-100 text-amber-700">Sin registrar</span>
+                <button className="btn-ghost text-xs" onClick={markConsent} disabled={busy}>Marcar como aceptada</button>
+              </span>
+            )
           } />
         )}
         {booking.notes && <Row k={orderMode ? "Dedicatoria / alergias" : "Notas"} v={booking.notes} />}

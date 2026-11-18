@@ -16,6 +16,10 @@ export type PublicBusiness = {
   slot_interval_min: number;
   order_mode: boolean;
   online_orders: boolean;
+  // Consentimiento de confidencialidad (casilla obligatoria antes de reservar).
+  consent_required: boolean;
+  consent_text: string | null;
+  consent_url: string | null;
 };
 
 export type PublicProfessional = { id: string; name: string; color: string };
@@ -153,6 +157,8 @@ export type BookingInput = {
   phone: string;
   email: string;
   notes?: string;
+  /** true = aceptó el consentimiento de confidencialidad (negocios que lo exigen). */
+  consent?: boolean;
 };
 
 export type BookingResult = {

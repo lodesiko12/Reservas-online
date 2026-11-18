@@ -922,6 +922,9 @@ export type Database = {
           notes: string | null
           option_id: string | null
           option_label: string | null
+          consent_accepted_at: string | null
+          consent_source: string | null
+          consent_text: string | null
           paid_at: string | null
           party_size: number | null
           payment_method: string | null
@@ -951,6 +954,9 @@ export type Database = {
           notes?: string | null
           option_id?: string | null
           option_label?: string | null
+          consent_accepted_at?: string | null
+          consent_source?: string | null
+          consent_text?: string | null
           paid_at?: string | null
           party_size?: number | null
           payment_method?: string | null
@@ -980,6 +986,9 @@ export type Database = {
           notes?: string | null
           option_id?: string | null
           option_label?: string | null
+          consent_accepted_at?: string | null
+          consent_source?: string | null
+          consent_text?: string | null
           paid_at?: string | null
           party_size?: number | null
           payment_method?: string | null
@@ -1252,6 +1261,9 @@ export type Database = {
       businesses: {
         Row: {
           confirmation_email_message: string | null
+          consent_required: boolean
+          consent_text: string | null
+          consent_url: string | null
           created_at: string
           default_capacity: number
           google_review_url: string | null
@@ -1278,6 +1290,9 @@ export type Database = {
         }
         Insert: {
           confirmation_email_message?: string | null
+          consent_required?: boolean
+          consent_text?: string | null
+          consent_url?: string | null
           created_at?: string
           default_capacity?: number
           google_review_url?: string | null
@@ -1304,6 +1319,9 @@ export type Database = {
         }
         Update: {
           confirmation_email_message?: string | null
+          consent_required?: boolean
+          consent_text?: string | null
+          consent_url?: string | null
           created_at?: string
           default_capacity?: number
           google_review_url?: string | null
@@ -4150,6 +4168,9 @@ export type Database = {
       get_public_business: {
         Args: { p_slug: string }
         Returns: {
+          consent_required: boolean
+          consent_text: string
+          consent_url: string
           id: string
           logo_url: string
           name: string

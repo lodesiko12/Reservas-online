@@ -340,15 +340,22 @@ function FormStep({
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [notes, setNotes] = useState("");
+  const [consent, setConsent] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  // Solo en reservas de citas (no restaurante ni encargos, que tienen su propio formulario).
+  const needsConsent = business.consent_required && !business.order_mode;
   const validation = validateBookingContact({ name, lastName, phone, email, notes });
-  const valid = validation.success;
+  const valid = validation.success && (!needsConsent || consent);
 
   async function submit() {
     onError(null);
     if (!validation.success) {
       onError(validation.error.issues[0]?.message ?? "Revisa los datos del formulario.");
+      return;
+    }
+    if (needsConsent && !consent) {
+      onError("Para reservar debes aceptar el consentimiento de confidencialidad.");
       return;
     }
     setSaving(true);
@@ -364,6 +371,7 @@ function FormStep({
         phone: c.phone,
         email: c.email,
         notes: c.notes || undefined,
+        consent: needsConsent ? true : undefined,
       });
       onDone(r);
     } catch (e: any) {
@@ -408,6 +416,19 @@ function FormStep({
         <label>Notas (opcional)</label>
         <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} placeholder="Algo que debamos saber" maxLength={NOTES_MAX} />
       </div>
+
+      {needsConsent && (
+        <label className="consent">
+          <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
+          <span>
+            {business.consent_text || "He leído y acepto el compromiso de confidencialidad y el tratamiento de mis datos."}
+            {business.consent_url && /^https?:\/\//i.test(business.consent_url) && (
+              <> <a href={business.consent_url} target="_blank" rel="noreferrer">Más información</a></>
+            )}
+            {" *"}
+          </span>
+        </label>
+      )}
 
       <button className="btn" disabled={!valid || saving} onClick={submit}>
         {saving ? "Confirmando…" : "Confirmar reserva"}

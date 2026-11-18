@@ -36,6 +36,10 @@ export function Configuracion() {
   const [savingReview, setSavingReview] = useState(false);
   const [confirmationMessage, setConfirmationMessage] = useState(business?.confirmation_email_message ?? "");
   const [savingConfirmation, setSavingConfirmation] = useState(false);
+  const [consentRequired, setConsentRequired] = useState(!!business?.consent_required);
+  const [consentText, setConsentText] = useState(business?.consent_text ?? "");
+  const [consentUrl, setConsentUrl] = useState(business?.consent_url ?? "");
+  const [savingConsent, setSavingConsent] = useState(false);
 
   const [hours, setHours] = useState<Win[] | null>(null);
   const [savingBranding, setSavingBranding] = useState(false);
@@ -107,6 +111,21 @@ export function Configuracion() {
     await supabase.from("businesses").update({ confirmation_email_message: result.data ?? null }).eq("id", bid);
     await refresh();
     setSavingConfirmation(false); flash("Mensaje de confirmación guardado");
+  }
+
+  async function saveConsent() {
+    const text = optionalText(BUSINESS_MESSAGE_MAX).safeParse(consentText);
+    if (!text.success) { flash(text.error.issues[0]?.message ?? "Texto demasiado largo."); return; }
+    if (consentRequired && !text.data) { flash("Escribe el texto que verá el paciente antes de activar la casilla."); return; }
+    const url = consentUrl.trim();
+    if (url && !/^https?:\/\/\S+$/i.test(url)) { flash("El enlace debe empezar por http:// o https://"); return; }
+    setSavingConsent(true);
+    const { error } = await supabase.from("businesses").update({
+      consent_required: consentRequired, consent_text: text.data ?? null, consent_url: url || null,
+    }).eq("id", bid);
+    await refresh();
+    setSavingConsent(false);
+    flash(error ? error.message : consentRequired ? "Consentimiento activado" : "Consentimiento desactivado");
   }
 
   async function saveHours() {
@@ -267,6 +286,33 @@ export function Configuracion() {
 
       {/* Datos fiscales, catálogo de conceptos y mapeo de etapas (solo autónomo) */}
       {isAutonomo && <ConfiguracionFiscalSection flash={flash} />}
+
+      {/* Consentimiento de confidencialidad (psicólogos) */}
+      {isPsicologo && (
+        <section className="card p-6">
+          <h2 className="font-semibold mb-1">Consentimiento de confidencialidad</h2>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
+            Si lo activas, quien reserve desde el widget debe marcar una casilla con este texto antes de confirmar. Queda
+            registrado en la cita (cuándo y qué texto aceptó). En «Nueva cita» del panel, la psicóloga marca que el paciente
+            ya lo ha aceptado. Las citas que ya existen no se ven afectadas.
+          </p>
+          <label className="flex items-center gap-2 text-sm font-medium">
+            <input type="checkbox" checked={consentRequired} onChange={(e) => setConsentRequired(e.target.checked)} />
+            Exigir el consentimiento al reservar
+          </label>
+          <label className="label mt-4">Texto de la casilla</label>
+          <textarea
+            className="input min-h-[110px]"
+            value={consentText}
+            onChange={(e) => setConsentText(e.target.value)}
+            placeholder="He leído y acepto el compromiso de confidencialidad y el tratamiento de mis datos de salud, que serán usados solo para la atención psicológica."
+          />
+          <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Redáctalo con tu asesor legal: son datos de salud.</p>
+          <label className="label mt-4">Enlace a la política de privacidad (opcional)</label>
+          <input className="input" value={consentUrl} onChange={(e) => setConsentUrl(e.target.value)} placeholder="https://tuweb.es/privacidad" />
+          <button className="btn-primary mt-4" onClick={saveConsent} disabled={savingConsent}>{savingConsent ? "Guardando…" : "Guardar"}</button>
+        </section>
+      )}
 
       {/* Petición de reseña post-visita */}
       {!isAutonomo && (
