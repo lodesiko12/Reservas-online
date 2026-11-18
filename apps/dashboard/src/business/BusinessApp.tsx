@@ -36,9 +36,11 @@ import { useNewOrdersCount } from "./hooks";
 import { isOrderSoundOn, playOrderBeep } from "../lib/orderAlert";
 
 export function BusinessApp() {
-  const { business } = useAuth();
+  const { business, canManage } = useAuth();
   const isRestaurant = business?.type === "restaurante";
   const isPsicologo = business?.type === "psicologo";
+  // En psicología, el staff (psicólogas sin rol de propietario) solo ve «Día a día»: sin Pagos ni Gestión.
+  const staffLimited = isPsicologo && !canManage;
   const isAutonomo = business?.type === "autonomo";
   const isAsesoria = business?.type === "asesoria";
   const isOrder = !!business?.order_mode && !isRestaurant && !isPsicologo;
@@ -85,11 +87,13 @@ export function BusinessApp() {
         { to: "/app/seguimiento", label: "Sesión de hoy", icon: "🩺", group: "Día a día" },
         ...mensajesNav.map((m) => ({ ...m, group: "Día a día" })),
         { to: "/app/clientes", label: "Clientes", icon: "👤", group: "Día a día" },
-        { to: "/app/pagos", label: "Pagos", icon: "💶", group: "Cobros" },
-        { to: "/app/servicios", label: "Servicios y equipo", icon: "✂️", group: "Gestión" },
-        { to: "/app/bloqueos", label: "Bloqueos", icon: "🚫", group: "Gestión" },
-        { to: "/app/reportes", label: "Reportes", icon: "📈", group: "Gestión" },
-        { to: "/app/config", label: "Configuración", icon: "⚙️", group: "Gestión" },
+        ...(staffLimited ? [] : [
+          { to: "/app/pagos", label: "Pagos", icon: "💶", group: "Cobros" },
+          { to: "/app/servicios", label: "Servicios y equipo", icon: "✂️", group: "Gestión" },
+          { to: "/app/bloqueos", label: "Bloqueos", icon: "🚫", group: "Gestión" },
+          { to: "/app/reportes", label: "Reportes", icon: "📈", group: "Gestión" },
+          { to: "/app/config", label: "Configuración", icon: "⚙️", group: "Gestión" },
+        ]),
       ]
     : [
         { to: "/app", label: "Resumen", icon: "📊", end: true },
@@ -147,17 +151,17 @@ export function BusinessApp() {
             <Route path="nueva" element={<NuevaReserva />} />
             <Route path="clientes" element={<Clientes />} />
             <Route path="seguimiento" element={<Seguimiento />} />
-            {isPsicologo && <Route path="pagos" element={<Pagos />} />}
-            <Route path="servicios" element={<Servicios />} />
+            {isPsicologo && !staffLimited && <Route path="pagos" element={<Pagos />} />}
+            {!staffLimited && <Route path="servicios" element={<Servicios />} />}
             <Route path="catalogo" element={<Catalogo />} />
             <Route path="produccion" element={<Produccion />} />
             <Route path="franjas" element={<Franjas />} />
             <Route path="mesas" element={<Mesas />} />
             {takeaway && <Route path="pedidos" element={<Pedidos />} />}
             {takeaway && <Route path="carta" element={<Carta />} />}
-            <Route path="bloqueos" element={<Bloqueos />} />
-            <Route path="reportes" element={<Reportes />} />
-            <Route path="config" element={<Configuracion />} />
+            {!staffLimited && <Route path="bloqueos" element={<Bloqueos />} />}
+            {!staffLimited && <Route path="reportes" element={<Reportes />} />}
+            {!staffLimited && <Route path="config" element={<Configuracion />} />}
             <Route path="*" element={<Navigate to="/app" replace />} />
           </>
         )}

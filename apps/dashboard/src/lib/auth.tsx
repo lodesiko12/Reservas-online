@@ -13,6 +13,10 @@ type AuthState = {
   isSuperAdmin: boolean;
   business: Business | null;      // negocio activo del staff (primero si hay varios)
   businesses: Business[];         // negocios a los que pertenece el usuario
+  /** Rol del usuario en el negocio activo ("owner" | "staff"); null si no pertenece (p. ej. super-admin sin membresía). */
+  role: string | null;
+  /** Puede gestionar el negocio (Gestión, Pagos…): propietario o super-admin. El staff, no. */
+  canManage: boolean;
   refresh: () => Promise<void>;
   signOut: () => Promise<void>;
   setActiveBusiness: (id: string) => void;
@@ -26,6 +30,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [roles, setRoles] = useState<Record<string, string>>({});
   // Usuario cuyo perfil/negocios ya están cargados: evita recargar (y desmontar todo el panel)
   // cuando supabase-js re-emite SIGNED_IN al volver a la pestaña.
   const loadedUserId = useRef<string | null>(null);
@@ -43,9 +48,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const [{ data: profile }, { data: memberships }] = await Promise.all([
       supabase.from("profiles").select("is_super_admin").eq("id", sess.session.user.id).maybeSingle(),
-      supabase.from("business_users").select("business_id").eq("user_id", sess.session.user.id),
+      supabase.from("business_users").select("business_id, role").eq("user_id", sess.session.user.id),
     ]);
     setIsSuperAdmin(!!profile?.is_super_admin);
+    setRoles(Object.fromEntries((memberships ?? []).map((m) => [m.business_id, m.role as string])));
 
     const ids = (memberships ?? []).map((m) => m.business_id);
     if (ids.length) {
@@ -66,7 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (event === "SIGNED_OUT" || !s) {
         qc.clear();
         loadedUserId.current = null;
-        setIsSuperAdmin(false); setBusinesses([]); setActiveId(null); setLoading(false);
+        setIsSuperAdmin(false); setBusinesses([]); setActiveId(null); setRoles({}); setLoading(false);
       } else if (event === "SIGNED_IN" || event === "INITIAL_SESSION") {
         // supabase-js emite SIGNED_IN también cada vez que la pestaña vuelve a estar visible.
         // Solo recargamos perfil/negocios si es un usuario distinto al ya cargado.
@@ -79,8 +85,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const business = businesses.find((b) => b.id === activeId) ?? businesses[0] ?? null;
 
+  const role = business ? roles[business.id] ?? null : null;
   const value: AuthState = {
-    session, loading, isSuperAdmin, business, businesses,
+    session, loading, isSuperAdmin, business, businesses, role,
+    canManage: isSuperAdmin || role === "owner",
     refresh: loadProfile,
     signOut: async () => {
       // Antes de cerrar sesión, se da de baja la suscripción push de este navegador: si no, el
