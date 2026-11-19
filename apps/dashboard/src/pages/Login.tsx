@@ -45,14 +45,19 @@ export function Login() {
   );
 
   return (
-    <div className="min-h-screen grid place-items-center p-4 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-950 dark:to-slate-900">
-      <div className="w-full max-w-sm">
-        <div className="text-center mb-6">
-          <img src="/brand/turnigo-logo-principal.svg" alt="Turnigo" className="mx-auto h-12 w-auto dark:hidden" />
-          <img src="/brand/turnigo-logo-negativo.svg" alt="Turnigo" className="mx-auto h-12 w-auto hidden dark:block" />
-          <h1 className="sr-only">Turnigo</h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400">
-            {mode === "login" ? "Accede con tu cuenta" : "Crea o cambia tu contraseña"}
+    <div
+      className="min-h-screen grid place-items-center p-4 bg-slate-50 dark:bg-slate-950"
+      style={{ backgroundImage: "radial-gradient(60rem 36rem at 15% -10%, rgba(11,110,106,.10), transparent 60%), radial-gradient(40rem 28rem at 100% 100%, rgba(255,107,74,.10), transparent 60%)" }}
+    >
+      <div className="w-full max-w-sm tg-rise">
+        <div className="text-center mb-8">
+          <img src="/brand/turnigo-logo-principal.svg" alt="Turnigo" className="mx-auto h-11 w-auto dark:hidden" />
+          <img src="/brand/turnigo-logo-negativo.svg" alt="Turnigo" className="mx-auto h-11 w-auto hidden dark:block" />
+          <h1 className="mt-8 text-[2rem] leading-[1.1] text-slate-900 dark:text-slate-50">
+            {mode === "login" ? <>Tu agenda,<br />en calma.</> : <>Elige tu<br />contraseña.</>}
+          </h1>
+          <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
+            {mode === "login" ? "Entra para ver las reservas de hoy." : "Te enviamos un enlace para crearla o cambiarla."}
           </p>
         </div>
 
@@ -76,8 +81,7 @@ export function Login() {
           </form>
         ) : resetSent ? (
           <div className="card p-6 space-y-4 text-center">
-            <div className="text-4xl">📧</div>
-            <p className="font-semibold">Revisa tu correo</p>
+            <p className="tg-display text-xl">Revisa tu correo</p>
             <p className="text-sm text-slate-500 dark:text-slate-400">
               Hemos enviado a <strong>{email.trim()}</strong> un enlace para elegir tu contraseña. Caduca en 1 hora; mira también en spam.
             </p>

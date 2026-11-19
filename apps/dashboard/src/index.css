@@ -12,7 +12,7 @@
 }
 
 @layer components {
-  .btn { @apply inline-flex items-center justify-center gap-2 rounded-[12px] px-4 py-2 text-sm font-bold transition disabled:opacity-50 disabled:cursor-not-allowed; }
+  .btn { @apply inline-flex items-center justify-center gap-2 rounded-[12px] px-4 py-2 text-sm font-bold transition duration-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed; }
   .btn-primary { @apply btn bg-brand-500 text-white hover:bg-brand-600; }
   .btn-ghost { @apply btn bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 dark:hover:bg-slate-700; }
   .btn-danger { @apply btn bg-[var(--tg-danger)] text-white hover:brightness-90; }
@@ -25,5 +25,5 @@
 /* Gráficos (recharts): serie principal teal y secundaria coral; en oscuro se aclaran y se atenúan ejes/rejilla. */
 :root { --chart-1: #0B6E6A; --chart-2: #FF6B4A; }
 .dark { --chart-1: #3F9A93; --chart-2: #FF8A6F; }
-.dark .recharts-cartesian-axis-tick-value, .dark .recharts-legend-item-text { fill: #8CA3A1 !important; color: #8CA3A1 !important; }
-.dark .recharts-cartesian-grid line { stroke: #1A3535; }
+.dark .recharts-cartesian-axis-tick-value, .dark .recharts-legend-item-text { fill: #9A9082 !important; color: #9A9082 !important; }
+.dark .recharts-cartesian-grid line { stroke: #26221E; }

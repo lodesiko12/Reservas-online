@@ -17,11 +17,11 @@
   --tg-coral-50:  #FFEFEA;
 
   /* Neutros */
-  --tg-bg:        #F3F7F6;  /* fondo del panel */
+  --tg-bg:        #F8F4EC;  /* fondo del panel (crema) */
   --tg-surface:   #FFFFFF;  /* tarjetas, tablas, modales */
-  --tg-border:    #D9E4E2;
-  --tg-text:      #0F2A2A;  /* texto principal */
-  --tg-text-muted:#4A6362;  /* texto secundario */
+  --tg-border:    #E3DBCC;
+  --tg-text:      #201C18;  /* texto principal */
+  --tg-text-muted:#554D43;  /* texto secundario */
 
   /* Estados (distintos de la marca para no confundirse) */
   --tg-success:   #1F8A4C;
@@ -41,6 +41,7 @@
   --tg-fw-strong: 700;
   --tg-fw-heading: 800;
   --tg-fw-display: 900;     /* wordmark y cifras grandes */
+  --tg-font-display: "Fraunces", Georgia, "Times New Roman", serif;  /* solo titulares h1/h2 y cifras grandes */
 
   /* Formas (el icono tiene esquinas muy redondeadas, ~23 %) */
   --tg-radius-sm:  8px;
@@ -52,8 +53,12 @@
   --tg-space-1: 4px;  --tg-space-2: 8px;  --tg-space-3: 12px;
   --tg-space-4: 16px; --tg-space-6: 24px; --tg-space-8: 32px;
 
-  /* Sombras suaves, teñidas de verde */
-  --tg-shadow-card: 0 1px 2px rgba(15, 42, 42, .06), 0 4px 16px rgba(15, 42, 42, .05);
+  /* Sombras suaves, teñidas de cálido */
+  --tg-shadow-card: 0 1px 2px rgba(60, 44, 24, .06), 0 6px 20px rgba(60, 44, 24, .06);
+
+  /* Movimiento */
+  --tg-ease: cubic-bezier(.22, .8, .3, 1);
+  --tg-dur: 240ms;
 
   /* Foco accesible */
   --tg-focus-ring: 0 0 0 3px #fff, 0 0 0 5px var(--tg-teal-600);
@@ -64,5 +69,11 @@ body {
   font-weight: var(--tg-fw-body);
 }
 h1, h2, h3 { font-weight: var(--tg-fw-heading); letter-spacing: -0.01em; }
+h1, h2 { font-family: var(--tg-font-display); font-weight: 600; letter-spacing: -0.02em; }
+.tg-display { font-family: var(--tg-font-display); font-weight: 600; letter-spacing: -0.02em; }
+
+@keyframes tg-rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+.tg-rise { animation: tg-rise 520ms var(--tg-ease) both; }
+@media (prefers-reduced-motion: reduce) { .tg-rise { animation: none; } }
 .tg-num { font-variant-numeric: tabular-nums; }   /* horas y cifras alineadas */
 :focus-visible { outline: none; box-shadow: var(--tg-focus-ring); }
