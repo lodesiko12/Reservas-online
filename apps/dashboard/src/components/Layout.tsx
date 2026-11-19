@@ -69,7 +69,7 @@ export function Layout({ nav, brandLabel, mobileTabs, action }: { nav: NavItem[]
               to={action.to}
               onClick={onNavigate}
               title={isCollapsed ? action.label : undefined}
-              className={`btn w-full bg-white text-brand-600 hover:bg-brand-50 ${isCollapsed ? "px-0 justify-center" : ""}`}
+              className={`btn w-full bg-white text-brand-600 hover:bg-brand-50 dark:bg-brand-500 dark:text-white dark:hover:bg-brand-400 dark:ring-1 dark:ring-white/15 ${isCollapsed ? "px-0 justify-center" : ""}`}
             >
               <NavIcon icon={action.icon} size={16} />
               {!isCollapsed && action.label}
@@ -77,7 +77,7 @@ export function Layout({ nav, brandLabel, mobileTabs, action }: { nav: NavItem[]
           </div>
         )}
 
-        <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
+        <nav className="sidebar-scroll flex-1 p-3 space-y-1 overflow-y-auto">
           {nav.map((n, i) => {
             const newGroup = !!n.group && n.group !== nav[i - 1]?.group;
             return (

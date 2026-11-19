@@ -31,3 +31,10 @@
 /* Red de seguridad en oscuro: enlaces/acentos en teal de marca sin variante `dark:` propia usan el teal claro (contraste ~7:1). */
 .dark .text-brand-600:not([class*="dark:text-"]),
 .dark .text-brand-700:not([class*="dark:text-"]) { color: #6FB5AE; }
+
+/* Barras de desplazamiento finas y de la paleta: en oscuro, color-scheme oscuro + pulgar verde-teal. */
+* { scrollbar-width: thin; scrollbar-color: #A7C5C0 transparent; }
+.dark { color-scheme: dark; }
+.dark * { scrollbar-color: #2F4F4A transparent; }
+.sidebar-scroll { scrollbar-color: rgba(255, 255, 255, .28) transparent; }
+.dark .sidebar-scroll { scrollbar-color: rgba(255, 255, 255, .18) transparent; }
