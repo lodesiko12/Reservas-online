@@ -46,8 +46,7 @@ export function Login() {
 
   return (
     <div
-      className="min-h-screen grid place-items-center p-4 bg-slate-50 dark:bg-slate-950"
-      style={{ backgroundImage: "radial-gradient(60rem 36rem at 15% -10%, rgba(255,255,255,.55), transparent 60%), radial-gradient(40rem 28rem at 100% 100%, rgba(11,110,106,.16), transparent 60%)" }}
+      className="login-bg min-h-screen grid place-items-center p-4 bg-slate-50 dark:bg-slate-950"
     >
       <div className="w-full max-w-sm tg-rise">
         <div className="text-center mb-8">

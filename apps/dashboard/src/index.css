@@ -38,3 +38,7 @@
 .dark * { scrollbar-color: #2F4F4A transparent; }
 .sidebar-scroll { scrollbar-color: rgba(255, 255, 255, .28) transparent; }
 .dark .sidebar-scroll { scrollbar-color: rgba(255, 255, 255, .18) transparent; }
+
+/* Fondo del login: halo claro arriba-izquierda y teal abajo-derecha; en oscuro, solo halos teal. */
+.login-bg { background-image: radial-gradient(60rem 36rem at 15% -10%, rgba(255, 255, 255, .55), transparent 60%), radial-gradient(40rem 28rem at 100% 100%, rgba(11, 110, 106, .16), transparent 60%); }
+.dark .login-bg { background-image: radial-gradient(60rem 36rem at 15% -10%, rgba(11, 110, 106, .22), transparent 60%), radial-gradient(40rem 28rem at 100% 100%, rgba(11, 110, 106, .12), transparent 60%); }
