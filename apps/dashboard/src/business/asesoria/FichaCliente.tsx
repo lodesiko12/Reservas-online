@@ -11,6 +11,7 @@ import {
 } from "./hooks";
 import { UploadModal, DocumentModal, DocumentTable } from "./DocComponents";
 import { ClientFormModal } from "./Clientes";
+import { Mail, Phone } from "lucide-react";
 
 export function FichaCliente() {
   const { id = "" } = useParams();
@@ -157,7 +158,7 @@ function Contacts({ clientId }: { clientId: string }) {
       <div className="flex flex-wrap gap-2 mb-3">
         {(contacts ?? []).map((c) => (
           <span key={c.id} className="badge bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200 gap-1.5">
-            {c.kind === "phone" ? "📱" : "✉️"} {c.value}
+            {c.kind === "phone" ? <Phone size={13} strokeWidth={1.75} aria-hidden="true" /> : <Mail size={13} strokeWidth={1.75} aria-hidden="true" />} {c.value}
             <button className="text-slate-400 hover:text-red-600" onClick={() => remove(c.id)}>×</button>
           </span>
         ))}

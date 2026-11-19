@@ -9,6 +9,7 @@ import {
 } from "./hooks";
 import { AvatarStack, DoneCheck, DueBadge, TeamChip } from "./components";
 import { TaskModal } from "./TaskModal";
+import { CalendarDays } from "lucide-react";
 
 function TaskRow({ task, teamName, onOpen, people }: {
   task: AgencyTask; teamName: string; onOpen: () => void; people?: { user_id: string; full_name: string }[];
@@ -86,7 +87,7 @@ export function MiPanel() {
           <div className="card divide-y divide-slate-100 dark:divide-slate-800">
             {events.map((e) => (
               <Link to="/app/calendario" key={e.id} className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/60">
-                <span className="text-xl">📅</span>
+                <CalendarDays size={20} strokeWidth={1.75} className="shrink-0 text-brand-600 dark:text-brand-300" aria-hidden="true" />
                 <div className="min-w-0 flex-1">
                   <div className="font-semibold truncate">{e.title}</div>
                   <div className="text-xs text-slate-500 dark:text-slate-400">{e.all_day ? ymdInTz(new Date(e.starts_at), tz) : formatDateTime(e.starts_at, tz)}</div>
@@ -161,7 +162,7 @@ export function PanelGlobal() {
 
       <h2 className="text-sm font-extrabold uppercase tracking-wide mb-2 text-red-600">Tareas atrasadas · {overdueTasks.length}</h2>
       {!overdueTasks.length ? (
-        <EmptyState title="Ninguna tarea atrasada 🎉" />
+        <EmptyState title="Ninguna tarea atrasada" />
       ) : (
         <div className="card divide-y divide-slate-100 dark:divide-slate-800">
           {overdueTasks.map((t) => <TaskRow key={t.id} task={t} teamName={teamName(t.team_id)} people={peopleOf(t.id)} onOpen={() => setOpen(t)} />)}

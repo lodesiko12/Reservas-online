@@ -11,7 +11,7 @@ import {
 import { Avatar } from "./components";
 import { TareasEquipo } from "./TareasEquipo";
 import { DocumentosEquipo } from "./DocumentosEquipo";
-import { Pencil } from "lucide-react";
+import { Archive, Pencil, RotateCcw } from "lucide-react";
 
 /** Lista de equipos (los del usuario, o todos si es directiva) con su estado de un vistazo. */
 export function Equipos() {
@@ -90,7 +90,7 @@ export function Equipos() {
                 {isDirectiva && (
                   <div className="absolute top-3 right-3 flex gap-1">
                     <button className="text-slate-400 hover:text-brand-600 px-1" title="Renombrar" onClick={() => setEditing(t)}><Pencil size={15} strokeWidth={1.75} aria-hidden="true" /><span className="sr-only">Renombrar</span></button>
-                    <button className="text-slate-400 hover:text-brand-600 px-1" title={t.is_archived ? "Restaurar" : "Archivar"} onClick={() => toggleArchive(t)}>{t.is_archived ? "↺" : "🗄"}</button>
+                    <button className="text-slate-400 hover:text-brand-600 px-1" title={t.is_archived ? "Restaurar" : "Archivar"} onClick={() => toggleArchive(t)}>{t.is_archived ? <RotateCcw size={15} strokeWidth={1.75} aria-hidden="true" /> : <Archive size={15} strokeWidth={1.75} aria-hidden="true" />}</button>
                   </div>
                 )}
               </div>

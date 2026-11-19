@@ -6,7 +6,7 @@ import { useBusinessId } from "../hooks";
 import { formatDate } from "@reservas/shared";
 import { Spinner, EmptyState, ConfirmDialog } from "../../components/ui";
 import { formatBytes, memberName, useAgencyDocuments, useAgencyMembers, type AgencyDocument } from "./hooks";
-import { Trash2 } from "lucide-react";
+import { File, FileImage, FileSpreadsheet, FileText, Trash2, type LucideIcon } from "lucide-react";
 
 const BUCKET = "agencia-docs";
 const MAX_BYTES = 20 * 1024 * 1024;
@@ -17,12 +17,12 @@ const MIME_BY_EXT: Record<string, string> = {
   xls: "application/vnd.ms-excel", xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
 };
 
-function icon(mime: string): string {
-  if (mime.startsWith("image/")) return "🖼️";
-  if (mime === "application/pdf") return "📕";
-  if (mime.includes("word")) return "📘";
-  if (mime.includes("sheet") || mime.includes("excel")) return "📗";
-  return "📄";
+function icon(mime: string): LucideIcon {
+  if (mime.startsWith("image/")) return FileImage;
+  if (mime === "application/pdf") return FileText;
+  if (mime.includes("word")) return FileText;
+  if (mime.includes("sheet") || mime.includes("excel")) return FileSpreadsheet;
+  return File;
 }
 
 /** Documentos de un equipo: subida a Storage (bucket privado), descarga con URL firmada y borrado. */
@@ -97,7 +97,7 @@ export function DocumentosEquipo({ teamId }: { teamId: string }) {
           <div className="card divide-y divide-slate-100 dark:divide-slate-800">
             {docs.map((d) => (
               <div key={d.id} className="flex items-center gap-3 px-4 py-3">
-                <span className="text-2xl">{icon(d.mime_type)}</span>
+                {(() => { const FileIcon = icon(d.mime_type); return <FileIcon size={26} strokeWidth={1.5} className="shrink-0 text-brand-600 dark:text-brand-300" aria-hidden="true" />; })()}
                 <div className="min-w-0 flex-1">
                   <div className="font-semibold truncate">{d.name}</div>
                   <div className="text-xs text-slate-500 dark:text-slate-400">

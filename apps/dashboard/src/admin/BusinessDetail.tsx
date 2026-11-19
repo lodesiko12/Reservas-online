@@ -10,6 +10,7 @@ import { PageHeader, StatCard, Spinner, StatusBadge, ConfirmDialog } from "../co
 import { IntegrationsForm } from "../components/IntegrationsForm";
 import { DeleteBusinessModal, BUSINESS_TYPE_LABELS } from "./Businesses";
 import { MembersManager } from "../business/agencia/Miembros";
+import { AlertTriangle } from "lucide-react";
 
 type Business = Tables<"businesses">;
 const WIDGET_URL = ((import.meta.env.VITE_WIDGET_URL as string) || "").replace(/\/+$/, "");
@@ -313,7 +314,7 @@ function EditBusiness({ business, onSaved }: { business: Business; onSaved: () =
         <div>
           <label className="label">Slug (URL del widget)</label>
           <input className="input" value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} />
-          <p className="text-xs text-amber-600 mt-1">⚠ Cambiar el slug rompe los widgets ya insertados.</p>
+          <p className="text-xs text-amber-600 mt-1"><AlertTriangle size={13} strokeWidth={1.75} aria-hidden="true" className="inline -mt-0.5" /> Cambiar el slug rompe los widgets ya insertados.</p>
         </div>
         <div>
           <label className="label">Tipo</label>
@@ -325,7 +326,7 @@ function EditBusiness({ business, onSaved }: { business: Business; onSaved: () =
             <option value="asesoria">Asesoría</option>
             <option value="agencia">Agencia (equipos y tareas)</option>
           </select>
-          <p className="text-xs text-amber-600 mt-1">⚠ Cambiar el tipo cambia qué secciones ve el negocio en su panel. Solo el super-admin puede hacerlo.</p>
+          <p className="text-xs text-amber-600 mt-1"><AlertTriangle size={13} strokeWidth={1.75} aria-hidden="true" className="inline -mt-0.5" /> Cambiar el tipo cambia qué secciones ve el negocio en su panel. Solo el super-admin puede hacerlo.</p>
         </div>
         <div><label className="label">Color primario</label><input type="color" className="input h-[42px] p-1" value={form.primary_color} onChange={(e) => setForm({ ...form, primary_color: e.target.value })} /></div>
         <div><label className="label">Timezone</label><input className="input" value={form.timezone} onChange={(e) => setForm({ ...form, timezone: e.target.value })} placeholder="Europe/Madrid" /></div>

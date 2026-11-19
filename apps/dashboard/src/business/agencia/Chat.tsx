@@ -10,6 +10,7 @@ import {
   type AgencyChatMessage,
 } from "./hooks";
 import { Avatar } from "./components";
+import { Megaphone, Users } from "lucide-react";
 
 type Group = { scope: string; name: string; general: boolean };
 
@@ -61,7 +62,7 @@ export function Chat() {
                 className={`flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/60 ${active ? "lg:bg-brand-50 lg:dark:bg-brand-500/10" : ""}`}
               >
                 <span className={`h-10 w-10 shrink-0 rounded-full grid place-items-center text-lg ${g.general ? "bg-coral-500 text-white" : "bg-brand-100 text-brand-700 dark:bg-brand-500/25 dark:text-brand-200"}`}>
-                  {g.general ? "📣" : "👥"}
+                  {g.general ? <Megaphone size={18} strokeWidth={1.75} aria-hidden="true" /> : <Users size={18} strokeWidth={1.75} aria-hidden="true" />}
                 </span>
                 <div className="min-w-0 flex-1">
                   <div className={`truncate ${n ? "font-extrabold" : "font-semibold"}`}>{g.name}</div>
@@ -158,7 +159,7 @@ function Conversation({ group }: { group: Group }) {
     <>
       <header className="flex items-center gap-3 px-4 py-3 border-b border-slate-200 dark:border-slate-800">
         <Link to="/app/chat" className="lg:hidden text-xl px-1 -ml-1" aria-label="Volver a los grupos">←</Link>
-        <span className={`h-9 w-9 rounded-full grid place-items-center ${group.general ? "bg-coral-500 text-white" : "bg-brand-100 text-brand-700 dark:bg-brand-500/25 dark:text-brand-200"}`}>{group.general ? "📣" : "👥"}</span>
+        <span className={`h-9 w-9 rounded-full grid place-items-center ${group.general ? "bg-coral-500 text-white" : "bg-brand-100 text-brand-700 dark:bg-brand-500/25 dark:text-brand-200"}`}>{group.general ? <Megaphone size={18} strokeWidth={1.75} aria-hidden="true" /> : <Users size={18} strokeWidth={1.75} aria-hidden="true" />}</span>
         <div className="min-w-0">
           <div className="font-extrabold truncate">{group.name}</div>
           <div className="text-xs text-slate-500 dark:text-slate-400">{group.general ? "Toda la agrupación" : "Solo el equipo y la directiva"}</div>

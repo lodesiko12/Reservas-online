@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Modal } from "./ui";
+import { Smartphone } from "lucide-react";
 
 type InstallPromptEvent = Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: string }> };
 
@@ -53,7 +54,7 @@ export function InstallAppButton({ className = "btn-ghost w-full justify-start" 
   return (
     <>
       <button className={className} onClick={install}>
-        <span>📲</span> Instalar app
+        <Smartphone size={16} strokeWidth={1.75} aria-hidden="true" /> Instalar app
       </button>
       <Modal open={showIos} onClose={() => setShowIos(false)} title="Instalar Turnigo en tu iPhone">
         <ol className="list-decimal pl-5 space-y-2 text-sm text-slate-700 dark:text-slate-300">

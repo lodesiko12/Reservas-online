@@ -8,8 +8,9 @@ import { formatDateTime } from "@reservas/shared";
 import { PageHeader, Spinner, EmptyState } from "../../components/ui";
 import { useAgencyNotifications, type AgencyNotification } from "./hooks";
 import { disablePush, enablePush, getPushState, type PushState } from "./push";
+import { AlertTriangle, Bell, CheckCircle2, Clock, MessageCircle, Pin, type LucideIcon } from "lucide-react";
 
-const KIND_ICON: Record<string, string> = { asignada: "📌", mencion: "💬", vence_pronto: "⏰", vence_hoy: "🔔", atrasada: "⚠️" };
+const KIND_ICON: Record<string, LucideIcon> = { asignada: Pin, mencion: MessageCircle, vence_pronto: Clock, vence_hoy: Bell, atrasada: AlertTriangle };
 
 /** Número de avisos sin leer (para el badge de la navegación). */
 export function useUnreadCount(): number {
@@ -45,7 +46,7 @@ export function PushCard({ offText = "Activa las notificaciones para enterarte a
   };
   return (
     <div className={`card p-4 mb-5 flex items-center gap-3 flex-wrap ${state === "on" ? "" : "border-coral-500/40"}`}>
-      <span className="text-2xl">{state === "on" ? "✅" : "🔔"}</span>
+      {state === "on" ? <CheckCircle2 size={26} strokeWidth={1.5} className="shrink-0 text-green-600" aria-hidden="true" /> : <Bell size={26} strokeWidth={1.5} className="shrink-0 text-coral-500" aria-hidden="true" />}
       <div className="flex-1 min-w-[14rem] text-sm">
         <div className="font-bold">Notificaciones en el móvil {state === "on" && "activadas"}</div>
         <div className="text-slate-500 dark:text-slate-400">{text[state]}</div>
@@ -94,7 +95,7 @@ export function Avisos() {
           <div className="card divide-y divide-slate-100 dark:divide-slate-800">
             {data.map((n) => (
               <button key={n.id} onClick={() => open(n)} className={`w-full flex items-start gap-3 px-4 py-3 text-left hover:bg-slate-50 dark:hover:bg-slate-800/60 ${n.read_at ? "" : "bg-brand-50/60 dark:bg-brand-500/10"}`}>
-                <span className="text-xl">{KIND_ICON[n.kind] ?? "🔔"}</span>
+                {(() => { const KindIcon = KIND_ICON[n.kind] ?? Bell; return <KindIcon size={20} strokeWidth={1.75} className="mt-0.5 shrink-0 text-brand-600 dark:text-brand-300" aria-hidden="true" />; })()}
                 <div className="min-w-0 flex-1">
                   <div className={`text-sm ${n.read_at ? "font-semibold" : "font-extrabold"}`}>{n.title}</div>
                   {n.body && <div className="text-sm text-slate-600 dark:text-slate-300 break-words">{n.body}</div>}

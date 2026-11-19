@@ -9,6 +9,7 @@ import { formatCurrency, formatDateTime, formatDate } from "@reservas/shared";
 import { Spinner, Modal, ConfirmDialog } from "../../components/ui";
 import { BudgetEditorModal } from "./Presupuestos";
 import { EventModal } from "./AgendaInterna";
+import { Phone } from "lucide-react";
 
 const STATUS_LABEL: Record<string, string> = { borrador: "Borrador", enviado: "Enviado", aceptado: "Aceptado", rechazado: "Rechazado" };
 const INV_STATUS_LABEL: Record<string, string> = { emitida: "Emitida", pagada: "Pagada", anulada: "Anulada" };
@@ -145,7 +146,7 @@ export function CardDetail({ cardId, onClose }: { cardId: string; onClose: () =>
           <label className="label">Descripción</label>
           <textarea className="input" rows={2} defaultValue={card.description ?? ""} onBlur={(e) => updateField({ description: e.target.value.trim() || null })} />
         </div>
-        {card.customers?.phone && <div className="text-sm text-slate-500 dark:text-slate-400">📞 {card.customers.phone}</div>}
+        {card.customers?.phone && <div className="text-sm text-slate-500 dark:text-slate-400"><Phone size={13} strokeWidth={1.75} aria-hidden="true" className="inline -mt-0.5" /> {card.customers.phone}</div>}
 
         {/* Accesos rápidos */}
         <div className="flex gap-2 flex-wrap border-t pt-3">

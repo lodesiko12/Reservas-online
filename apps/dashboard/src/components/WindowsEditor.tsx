@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { WEEKDAYS_ES } from "@reservas/shared";
 import { ConfirmDialog } from "./ui";
+import { Zap } from "lucide-react";
 
 export type Win = { weekday: number; start_time: string; end_time: string };
 
@@ -60,7 +61,7 @@ export function WindowsEditor({ wins, onChange }: { wins: Win[]; onChange: (w: W
       <div className="flex items-center gap-3">
         <button type="button" className="btn-ghost text-xs" onClick={add}>+ Añadir franja</button>
         <button type="button" className="text-xs text-brand-600 hover:underline" onClick={() => setQuickOpen((v) => !v)}>
-          {quickOpen ? "Ocultar relleno rápido" : "⚡ Rellenar rápido"}
+          {quickOpen ? "Ocultar relleno rápido" : <><Zap size={13} strokeWidth={1.75} aria-hidden="true" className="inline -mt-0.5" /> Rellenar rápido</>}
         </button>
       </div>
       {quickOpen && <QuickFill wins={wins} onChange={onChange} onDone={() => setQuickOpen(false)} />}

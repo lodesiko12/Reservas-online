@@ -7,11 +7,12 @@ import { fnError } from "../../lib/functionError";
 import { PageHeader, Spinner, EmptyState } from "../../components/ui";
 import { PushCard } from "../agencia/Avisos";
 import { useWaConversations, useWaMessages, type WaConversation, type WaMessage } from "./hooks";
+import { AlertTriangle } from "lucide-react";
 
 const WINDOW_MS = 24 * 3600 * 1000;
 const TYPE_LABEL: Record<string, string> = {
-  image: "📷 Imagen", audio: "🎤 Audio", video: "🎬 Vídeo", document: "📄 Documento",
-  sticker: "Sticker", location: "📍 Ubicación", other: "Mensaje no compatible",
+  image: "Imagen", audio: "Audio", video: "Vídeo", document: "Documento",
+  sticker: "Sticker", location: "Ubicación", other: "Mensaje no compatible",
 };
 
 function convTitle(c: WaConversation): string {
@@ -33,7 +34,7 @@ function fmtFull(iso: string, tz: string): string {
 
 function StatusMark({ m }: { m: WaMessage }) {
   if (m.direction !== "out") return null;
-  if (m.status === "failed") return <span className="text-red-200" title={m.error ?? ""}>⚠ No enviado</span>;
+  if (m.status === "failed") return <span className="text-red-200" title={m.error ?? ""}><AlertTriangle size={12} strokeWidth={1.75} aria-hidden="true" className="inline -mt-0.5" /> No enviado</span>;
   if (m.status === "sending") return <span>…</span>;
   if (m.status === "sent") return <span title="Enviado">✓</span>;
   if (m.status === "delivered") return <span title="Entregado">✓✓</span>;

@@ -6,7 +6,7 @@ import { ymdInTz, addDaysYmd, zonedDayRange, formatTime, formatCurrency } from "
 import { useOrders, useTakeawaySettings, type OrderRow } from "./hooks";
 import { PageHeader, Spinner, ConfirmDialog, EmptyState } from "../components/ui";
 import { isOrderSoundOn, setOrderSoundOn, playOrderBeep } from "../lib/orderAlert";
-import { Printer } from "lucide-react";
+import { Bell, BellOff, MessageSquareText, Phone, Printer } from "lucide-react";
 
 type Status = OrderRow["status"];
 type Range = "hoy" | "proximos" | "dia";
@@ -98,7 +98,7 @@ export function Pedidos() {
             <div className="text-lg font-extrabold tabular-nums">{whenLabel(o)}</div>
             <div className="font-semibold">{o.customer_name} {o.customer_last_name ?? ""}</div>
             <div className="text-xs text-slate-500 dark:text-slate-400 flex gap-3 flex-wrap">
-              <a className="hover:underline" href={`tel:${o.customer_phone}`}>📞 {o.customer_phone}</a>
+              <a className="hover:underline" href={`tel:${o.customer_phone}`}><Phone size={13} strokeWidth={1.75} aria-hidden="true" className="inline -mt-0.5" /> {o.customer_phone}</a>
               {wa && <a className="hover:underline" href={wa} target="_blank" rel="noreferrer">WhatsApp</a>}
               <span>{o.locator}</span>
             </div>
@@ -121,7 +121,7 @@ export function Pedidos() {
             );
           })}
         </ul>
-        {o.notes && <div className="text-sm rounded-lg bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-200 px-3 py-1.5">💬 {o.notes}</div>}
+        {o.notes && <div className="text-sm rounded-lg bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-200 px-3 py-1.5"><MessageSquareText size={14} strokeWidth={1.75} aria-hidden="true" className="inline -mt-0.5" /> {o.notes}</div>}
 
         <div className="flex items-center justify-between gap-2 flex-wrap">
           <div className="font-bold">Total {formatCurrency(o.total)} <span className="text-xs font-normal text-slate-400">· pago en el local</span></div>
@@ -164,7 +164,7 @@ export function Pedidos() {
               onClick={() => { const v = !sound; setSound(v); setOrderSoundOn(v); if (v) playOrderBeep(); }}
               title="Aviso sonoro al llegar un pedido nuevo"
             >
-              {sound ? "🔔 Sonido activado" : "🔕 Sonido apagado"}
+              {sound ? <><Bell size={15} strokeWidth={1.75} aria-hidden="true" /> Sonido activado</> : <><BellOff size={15} strokeWidth={1.75} aria-hidden="true" /> Sonido apagado</>}
             </button>
             {settings && (
               <label className="flex items-center gap-2 text-sm font-medium">

@@ -6,6 +6,7 @@ import { useProfessionals, useBusinessId } from "./hooks";
 import { fromLocalInput } from "../lib/datetime";
 import { formatDateTime, blockReasonSchema, firstIssue } from "@reservas/shared";
 import { PageHeader, Spinner, Modal, EmptyState, ConfirmDialog } from "../components/ui";
+import { Ban } from "lucide-react";
 
 export function Bloqueos() {
   const bid = useBusinessId();
@@ -117,7 +118,7 @@ function BlockModal({ bid, tz, onClose, onSaved }: { bid: string; tz: string; on
   return (
     <Modal open onClose={onClose} title="Nuevo bloqueo">
       {summary ? (
-        <div className="text-center py-4"><div className="text-3xl">🚫</div><p className="mt-2 font-medium">{summary}</p></div>
+        <div className="text-center py-4"><Ban size={36} strokeWidth={1.5} className="mx-auto text-slate-400" aria-hidden="true" /><p className="mt-2 font-medium">{summary}</p></div>
       ) : (
         <div className="space-y-4">
           <div>
