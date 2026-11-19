@@ -17,11 +17,11 @@
   --tg-coral-50:  #FFEFEA;
 
   /* Neutros */
-  --tg-bg:        #F8F4EC;  /* fondo del panel (crema) */
+  --tg-bg:        #E9F3EB;  /* fondo del panel (verde claro) */
   --tg-surface:   #FFFFFF;  /* tarjetas, tablas, modales */
-  --tg-border:    #E3DBCC;
-  --tg-text:      #201C18;  /* texto principal */
-  --tg-text-muted:#554D43;  /* texto secundario */
+  --tg-border:    #CBDECF;
+  --tg-text:      #11221A;  /* texto principal */
+  --tg-text-muted:#41574A;  /* texto secundario */
 
   /* Estados (distintos de la marca para no confundirse) */
   --tg-success:   #1F8A4C;
@@ -53,8 +53,8 @@
   --tg-space-1: 4px;  --tg-space-2: 8px;  --tg-space-3: 12px;
   --tg-space-4: 16px; --tg-space-6: 24px; --tg-space-8: 32px;
 
-  /* Sombras suaves, teñidas de cálido */
-  --tg-shadow-card: 0 1px 2px rgba(60, 44, 24, .06), 0 6px 20px rgba(60, 44, 24, .06);
+  /* Sombras suaves, teñidas de verde */
+  --tg-shadow-card: 0 1px 2px rgba(17, 34, 26, .06), 0 6px 20px rgba(17, 34, 26, .07);
 
   /* Movimiento */
   --tg-ease: cubic-bezier(.22, .8, .3, 1);

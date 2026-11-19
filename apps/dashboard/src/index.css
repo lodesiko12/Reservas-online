@@ -25,5 +25,5 @@
 /* Gráficos (recharts): serie principal teal y secundaria coral; en oscuro se aclaran y se atenúan ejes/rejilla. */
 :root { --chart-1: #0B6E6A; --chart-2: #FF6B4A; }
 .dark { --chart-1: #3F9A93; --chart-2: #FF8A6F; }
-.dark .recharts-cartesian-axis-tick-value, .dark .recharts-legend-item-text { fill: #9A9082 !important; color: #9A9082 !important; }
-.dark .recharts-cartesian-grid line { stroke: #26221E; }
+.dark .recharts-cartesian-axis-tick-value, .dark .recharts-legend-item-text { fill: #84A08C !important; color: #84A08C !important; }
+.dark .recharts-cartesian-grid line { stroke: #1B2E24; }
