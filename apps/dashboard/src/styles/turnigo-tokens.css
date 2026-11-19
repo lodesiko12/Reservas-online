@@ -77,3 +77,9 @@ h1, h2 { font-family: var(--tg-font-display); font-weight: 600; letter-spacing: 
 @media (prefers-reduced-motion: reduce) { .tg-rise { animation: none; } }
 .tg-num { font-variant-numeric: tabular-nums; }   /* horas y cifras alineadas */
 :focus-visible { outline: none; box-shadow: var(--tg-focus-ring); }
+
+/* Transición suave al cambiar de pantalla. Solo opacidad + desplazamiento, sin fill-mode final,
+   para no dejar un transform activo (rompería position: sticky/fixed dentro de la página). */
+@keyframes tg-page { from { opacity: 0; transform: translateY(6px); } }
+.tg-page { animation: tg-page 260ms var(--tg-ease) backwards; }
+@media (prefers-reduced-motion: reduce) { .tg-page { animation: none; } }

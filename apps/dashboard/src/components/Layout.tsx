@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import { useAuth } from "../lib/auth";
 import { useTheme } from "../lib/theme";
 import { InstallAppButton } from "./InstallAppButton";
+import { NavIcon } from "./NavIcon";
+import { ChevronsLeft, ChevronsRight, LogOut, Menu, Moon, Sun } from "lucide-react";
 
 /** `group`: título de sección; se muestra cuando cambia respecto al elemento anterior. */
 export type NavItem = { to: string; label: string; icon: string; end?: boolean; badge?: number; group?: string };
@@ -43,9 +45,9 @@ export function Layout({ nav, brandLabel, mobileTabs, action }: { nav: NavItem[]
   function SidebarContent({ isCollapsed, onNavigate }: { isCollapsed: boolean; onNavigate?: () => void }) {
     return (
       <>
-        <div className={`h-16 shrink-0 flex items-center border-b border-slate-200 dark:border-slate-800 ${isCollapsed ? "justify-center px-2" : "gap-2 px-5"}`}>
+        <div className={`h-16 shrink-0 flex items-center ${isCollapsed ? "justify-center px-2" : "gap-3 px-5"}`}>
           <img src="/brand/turnigo-icono.svg" alt="" className="h-8 w-8 shrink-0" />
-          {!isCollapsed && <span className="font-bold text-slate-800 dark:text-slate-100 truncate">{brandLabel}</span>}
+          {!isCollapsed && <span className="tg-display text-[17px] text-slate-800 dark:text-slate-100 truncate">{brandLabel}</span>}
         </div>
 
         {!isCollapsed && businesses.length > 1 && business && (
@@ -68,7 +70,7 @@ export function Layout({ nav, brandLabel, mobileTabs, action }: { nav: NavItem[]
               title={isCollapsed ? action.label : undefined}
               className={`btn-primary w-full ${isCollapsed ? "px-0 justify-center" : ""}`}
             >
-              <span>{action.icon}</span>
+              <NavIcon icon={action.icon} size={16} />
               {!isCollapsed && action.label}
             </NavLink>
           </div>
@@ -81,22 +83,22 @@ export function Layout({ nav, brandLabel, mobileTabs, action }: { nav: NavItem[]
               <div key={n.to}>
                 {newGroup && (isCollapsed
                   ? (i > 0 && <div className="my-2 border-t border-slate-200 dark:border-slate-800" />)
-                  : <div className={`px-3 pb-1 text-[11px] font-bold uppercase tracking-wide text-slate-400 dark:text-slate-500 ${i > 0 ? "pt-4" : "pt-1"}`}>{n.group}</div>)}
+                  : <div className={`px-3 pb-1 text-[10.5px] font-bold uppercase tracking-[0.12em] text-slate-400 dark:text-slate-500 ${i > 0 ? "pt-5" : "pt-1"}`}>{n.group}</div>)}
                 <NavLink
                   to={n.to}
                   end={n.end}
                   title={isCollapsed ? n.label : undefined}
                   onClick={onNavigate}
                   className={({ isActive }) =>
-                    `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition ${isCollapsed ? "justify-center" : ""} ${
+                    `group relative flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold transition-colors duration-200 ${isCollapsed ? "justify-center" : ""} ${
                       isActive
-                        ? "bg-brand-50 text-brand-700 dark:bg-brand-500/15 dark:text-brand-300"
-                        : "text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"
+                        ? "bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-300 before:absolute before:left-0 before:top-2 before:bottom-2 before:w-[3px] before:rounded-full before:bg-coral-500"
+                        : "text-slate-500 hover:bg-slate-100 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
                     }`
                   }
                 >
-                  <span className="text-base w-5 text-center shrink-0 relative">
-                    {n.icon}
+                  <span className="w-5 shrink-0 grid place-items-center relative">
+                    <NavIcon icon={n.icon} />
                     {!!n.badge && isCollapsed && <span className="absolute -top-1 -right-2 h-2.5 w-2.5 rounded-full bg-coral-500" />}
                   </span>
                   {!isCollapsed && n.label}
@@ -107,13 +109,13 @@ export function Layout({ nav, brandLabel, mobileTabs, action }: { nav: NavItem[]
           })}
         </nav>
 
-        <div className={`border-t border-slate-200 dark:border-slate-800 p-3 space-y-2 ${isCollapsed ? "flex flex-col items-center" : ""}`}>
+        <div className={`border-t border-slate-200 dark:border-slate-800 p-3 space-y-1 ${isCollapsed ? "flex flex-col items-center" : ""}`}>
           <button
-            className={`btn-ghost ${isCollapsed ? "w-auto px-2.5" : "w-full justify-start"}`}
+            className={`flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition-colors duration-200 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100 ${isCollapsed ? "justify-center px-2.5" : "w-full"}`}
             onClick={toggleTheme}
             title={theme === "dark" ? "Modo claro" : "Modo oscuro"}
           >
-            <span>{theme === "dark" ? "☀️" : "🌙"}</span>
+            {theme === "dark" ? <Sun size={18} strokeWidth={1.75} /> : <Moon size={18} strokeWidth={1.75} />}
             {!isCollapsed && (theme === "dark" ? "Modo claro" : "Modo oscuro")}
           </button>
 
@@ -123,11 +125,11 @@ export function Layout({ nav, brandLabel, mobileTabs, action }: { nav: NavItem[]
             <div className="px-2 pt-1 text-xs text-slate-400 dark:text-slate-500 truncate">{session?.user.email}</div>
           )}
           <button
-            className={`btn-ghost ${isCollapsed ? "w-auto px-2.5" : "w-full justify-start"}`}
+            className={`flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition-colors duration-200 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100 ${isCollapsed ? "justify-center px-2.5" : "w-full"}`}
             onClick={signOut}
             title="Cerrar sesión"
           >
-            <span>↩</span> {!isCollapsed && "Cerrar sesión"}
+            <LogOut size={18} strokeWidth={1.75} /> {!isCollapsed && "Cerrar sesión"}
           </button>
         </div>
       </>
@@ -138,17 +140,17 @@ export function Layout({ nav, brandLabel, mobileTabs, action }: { nav: NavItem[]
     <div className="min-h-screen flex bg-slate-50 dark:bg-slate-950">
       {/* Sidebar de escritorio: fija a la ventana, plegable */}
       <aside
-        className={`hidden lg:flex flex-col shrink-0 sticky top-0 h-screen bg-white border-r border-slate-200 dark:bg-slate-900 dark:border-slate-800 transition-[width] duration-200 relative ${
+        className={`hidden lg:flex flex-col shrink-0 sticky top-0 h-screen bg-white border-r border-slate-200 dark:bg-slate-900 dark:border-slate-800 transition-[width] duration-300 ease-[cubic-bezier(.22,.8,.3,1)] relative ${
           collapsed ? "w-[76px]" : "w-60"
         }`}
       >
         <SidebarContent isCollapsed={collapsed} />
         <button
-          className="absolute -right-3 top-[52px] h-6 w-6 rounded-full border border-slate-200 bg-white text-slate-500 shadow grid place-items-center text-xs hover:text-brand-600 hover:border-brand-300 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300"
+          className="absolute -right-3 top-[52px] h-6 w-6 rounded-full border border-slate-200 bg-white text-slate-500 shadow-card grid place-items-center hover:text-brand-600 hover:border-brand-300 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300"
           onClick={() => setCollapsed((c) => !c)}
           title={collapsed ? "Expandir menú" : "Plegar menú"}
         >
-          {collapsed ? "»" : "«"}
+          {collapsed ? <ChevronsRight size={14} /> : <ChevronsLeft size={14} />}
         </button>
       </aside>
 
@@ -170,21 +172,21 @@ export function Layout({ nav, brandLabel, mobileTabs, action }: { nav: NavItem[]
             onClick={() => setMobileOpen(true)}
             aria-label="Abrir menú"
           >
-            ☰
+            <Menu size={18} />
           </button>
           <img src="/brand/turnigo-icono.svg" alt="" className="h-7 w-7 shrink-0" />
-          <span className="font-bold text-slate-800 dark:text-slate-100 truncate">{brandLabel}</span>
+          <span className="tg-display text-[17px] text-slate-800 dark:text-slate-100 truncate">{brandLabel}</span>
           <button
             className="ml-auto h-9 w-9 grid place-items-center rounded-lg border border-slate-200 text-slate-600 dark:border-slate-700 dark:text-slate-300"
             onClick={toggleTheme}
             aria-label="Cambiar tema"
           >
-            {theme === "dark" ? "☀️" : "🌙"}
+            {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
           </button>
         </header>
 
         <main className={`flex-1 min-w-0 p-4 sm:p-6 lg:p-8 max-w-[1400px] w-full ${mobileTabs ? "pb-28 lg:pb-8" : ""}`}>
-          <Outlet />
+          <div key={location.pathname} className="tg-page"><Outlet /></div>
         </main>
       </div>
 
@@ -196,15 +198,15 @@ export function Layout({ nav, brandLabel, mobileTabs, action }: { nav: NavItem[]
               key={n.to} to={n.to} end={n.end}
               className={({ isActive }) => `flex flex-col items-center justify-center gap-0.5 py-2 text-[11px] font-bold relative ${isActive ? "text-brand-600 dark:text-brand-300" : "text-slate-500 dark:text-slate-400"}`}
             >
-              <span className="text-xl leading-none relative">
-                {n.icon}
+              <span className="leading-none relative">
+                <NavIcon icon={n.icon} size={22} />
                 {!!n.badge && <span className="absolute -top-1.5 -right-3 min-w-[16px] h-4 px-1 rounded-full bg-coral-500 text-white text-[10px] grid place-items-center">{n.badge > 99 ? "99+" : n.badge}</span>}
               </span>
               {n.label}
             </NavLink>
           ))}
           <button className="flex flex-col items-center justify-center gap-0.5 py-2 text-[11px] font-bold text-slate-500 dark:text-slate-400" onClick={() => setMobileOpen(true)}>
-            <span className="text-xl leading-none">☰</span>Más
+            <span className="leading-none"><Menu size={22} strokeWidth={1.75} /></span>Más
           </button>
         </nav>
       )}
