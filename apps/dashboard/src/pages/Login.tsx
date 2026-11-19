@@ -54,7 +54,7 @@ export function Login() {
           <img src="/brand/turnigo-logo-principal.svg" alt="Turnigo" className="mx-auto h-11 w-auto dark:hidden" />
           <img src="/brand/turnigo-logo-negativo.svg" alt="Turnigo" className="mx-auto h-11 w-auto hidden dark:block" />
           <h1 className="mt-8 text-[2rem] leading-[1.1] text-slate-900 dark:text-slate-50">
-            {mode === "login" ? <>Tu agenda,<br />en calma.</> : <>Elige tu<br />contraseña.</>}
+            {mode === "login" ? <>Cada hueco,<br />bien aprovechado.</> : <>Elige tu<br />contraseña.</>}
           </h1>
           <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
             {mode === "login" ? "Entra para ver las reservas de hoy." : "Te enviamos un enlace para crearla o cambiarla."}
