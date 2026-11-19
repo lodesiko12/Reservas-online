@@ -6,6 +6,7 @@ import { Spinner, ConfirmDialog } from "../../components/ui";
 import { formatDateTime } from "@reservas/shared";
 import { generateClientReportPdf } from "./InformePdf";
 import type { Customer } from "../hooks";
+import { FileDown, Pencil, Trash2 } from "lucide-react";
 
 export function InformeTab({ customer }: { customer: Customer }) {
   const { business } = useAuth();
@@ -100,14 +101,14 @@ export function InformeTab({ customer }: { customer: Customer }) {
                 <span className="text-xs text-slate-400 dark:text-slate-500">{formatDateTime(r.created_at, tz)} · basado en {r.sessions_count} sesión{r.sessions_count === 1 ? "" : "es"}</span>
                 {editingId !== r.id && (
                   <div className="flex gap-2">
-                    <button className="btn-ghost text-xs" onClick={() => startEditing(r.id, r.content)}>✏️ Editar</button>
+                    <button className="btn-ghost text-xs" onClick={() => startEditing(r.id, r.content)}><Pencil size={15} strokeWidth={1.75} aria-hidden="true" /> Editar</button>
                     <button
                       className="btn-ghost text-xs"
                       onClick={() => generateClientReportPdf(customer, r.content, tz)}
                     >
-                      📄 Descargar PDF
+                      <FileDown size={15} strokeWidth={1.75} aria-hidden="true" /> Descargar PDF
                     </button>
-                    <button className="btn-ghost text-xs text-red-600" onClick={() => setRemovingId(r.id)}>🗑 Eliminar</button>
+                    <button className="btn-ghost text-xs text-red-600" onClick={() => setRemovingId(r.id)}><Trash2 size={15} strokeWidth={1.75} aria-hidden="true" /> Eliminar</button>
                   </div>
                 )}
               </div>

@@ -6,6 +6,7 @@ import { ymdInTz, addDaysYmd, zonedDayRange, formatTime, formatCurrency } from "
 import { useOrders, useTakeawaySettings, type OrderRow } from "./hooks";
 import { PageHeader, Spinner, ConfirmDialog, EmptyState } from "../components/ui";
 import { isOrderSoundOn, setOrderSoundOn, playOrderBeep } from "../lib/orderAlert";
+import { Printer } from "lucide-react";
 
 type Status = OrderRow["status"];
 type Range = "hoy" | "proximos" | "dia";
@@ -125,7 +126,7 @@ export function Pedidos() {
         <div className="flex items-center justify-between gap-2 flex-wrap">
           <div className="font-bold">Total {formatCurrency(o.total)} <span className="text-xs font-normal text-slate-400">· pago en el local</span></div>
           <div className="flex gap-2 flex-wrap">
-            <button className="btn-ghost text-xs py-1" onClick={() => setPrinting(o)}>🖨 Comanda</button>
+            <button className="btn-ghost text-xs py-1" onClick={() => setPrinting(o)}><Printer size={15} strokeWidth={1.75} aria-hidden="true" /> Comanda</button>
             {o.status === "nuevo" && (
               <>
                 <button className="btn-ghost text-xs py-1" onClick={() => setRejecting(o)}>Rechazar</button>

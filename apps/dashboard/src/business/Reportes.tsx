@@ -6,6 +6,7 @@ import { useAuth } from "../lib/auth";
 import { useBusinessId } from "./hooks";
 import { ymdInTz, addDaysYmd, zonedDayRange, formatDateTime } from "@reservas/shared";
 import { PageHeader, StatCard, Spinner, StatusBadge } from "../components/ui";
+import { Download } from "lucide-react";
 
 const COLORS = { web: "var(--chart-1)", manual: "var(--chart-2)", walkin: "#2563A8", pendiente: "#B7791F", confirmada: "var(--chart-1)", sentada: "#2563A8", listo: "#7E3FB5", completada: "#1F8A4C", no_show: "#C0392B", cancelada: "#8CA3A1" };
 
@@ -117,7 +118,7 @@ export function Reportes() {
             <select className="input w-auto" value={days} onChange={(e) => setDays(+e.target.value)}>
               <option value={7}>7 días</option><option value={30}>30 días</option><option value={90}>90 días</option>
             </select>
-            <button className="btn-ghost" onClick={exportCsv}>⬇ Exportar CSV</button>
+            <button className="btn-ghost" onClick={exportCsv}><Download size={15} strokeWidth={1.75} aria-hidden="true" /> Exportar CSV</button>
           </div>
         } />
 

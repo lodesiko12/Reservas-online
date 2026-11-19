@@ -3,6 +3,7 @@ import { useAuth } from "../lib/auth";
 import { useBookings } from "./hooks";
 import { ymdInTz, addDaysYmd, zonedDayRange, formatDate, formatTime } from "@reservas/shared";
 import { PageHeader, Spinner, StatusBadge, EmptyState } from "../components/ui";
+import { Printer } from "lucide-react";
 
 // Estados que cuentan para producir. Los cancelados y los "no recogidos" se excluyen.
 const COUNTED = new Set(["pendiente", "confirmada", "listo", "completada"]);
@@ -89,7 +90,7 @@ export function Produccion() {
               <button className="btn-ghost" onClick={() => setAnchor(addDaysYmd(anchor, -step))}>←</button>
               <button className="btn-ghost" onClick={() => setAnchor(ymdInTz(new Date(), tz))}>Hoy</button>
               <button className="btn-ghost" onClick={() => setAnchor(addDaysYmd(anchor, step))}>→</button>
-              <button className="btn-primary" onClick={() => window.print()}>🖨 Imprimir</button>
+              <button className="btn-primary" onClick={() => window.print()}><Printer size={15} strokeWidth={1.75} aria-hidden="true" /> Imprimir</button>
             </div>
           }
         />

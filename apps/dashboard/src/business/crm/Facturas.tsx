@@ -7,6 +7,7 @@ import { useFiscalProfile, useBudgetConcepts, customerLabel } from "./hooks";
 import { documentTotals, lineTotals, type BudgetLineInput, type CrmInvoice } from "./types";
 import { formatCurrency, formatDate } from "@reservas/shared";
 import { PageHeader, Spinner, Modal, EmptyState, ConfirmDialog } from "../../components/ui";
+import { Printer } from "lucide-react";
 
 const STATUS_LABEL: Record<string, string> = { emitida: "Emitida", pagada: "Pagada", anulada: "Anulada" };
 const STATUS_STYLE: Record<string, string> = {
@@ -113,7 +114,7 @@ export function FacturasList({ customerId }: { customerId?: string }) {
                   </div>
                   <div className="font-bold">{formatCurrency(totalWithIrpf)}</div>
                   <div className="flex gap-1.5 flex-wrap">
-                    <button className="btn-ghost text-xs" onClick={() => setPrinting(inv)}>🖨 Ver / imprimir</button>
+                    <button className="btn-ghost text-xs" onClick={() => setPrinting(inv)}><Printer size={15} strokeWidth={1.75} aria-hidden="true" /> Ver / imprimir</button>
                     {inv.status === "emitida" && <button className="btn-primary text-xs" onClick={() => markPaid(inv.id)}>Marcar pagada</button>}
                     {inv.status !== "anulada" && <button className="btn-ghost text-xs text-red-600" onClick={() => setVoiding(inv)}>Anular</button>}
                   </div>
@@ -314,7 +315,7 @@ function PrintableInvoice({ invoice, onClose }: { invoice: InvoiceRow; onClose: 
 
       <div className="no-print flex justify-end gap-2 mt-5">
         <button className="btn-ghost" onClick={onClose}>Cerrar</button>
-        <button className="btn-primary" onClick={() => window.print()}>🖨 Imprimir</button>
+        <button className="btn-primary" onClick={() => window.print()}><Printer size={15} strokeWidth={1.75} aria-hidden="true" /> Imprimir</button>
       </div>
     </Modal>
   );

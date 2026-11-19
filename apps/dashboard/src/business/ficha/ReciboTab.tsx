@@ -6,6 +6,7 @@ import { Spinner, StatusBadge } from "../../components/ui";
 import { formatDateTime, formatCurrency } from "@reservas/shared";
 import { generateClientReceiptPdf } from "./ReciboPdf";
 import type { Customer } from "../hooks";
+import { FileDown } from "lucide-react";
 
 type HistoryRow = {
   id: string;
@@ -51,7 +52,7 @@ export function ReciboTab({ customer }: { customer: Customer }) {
           disabled={!business || !completed.length || !invoiceNumber.trim()}
           onClick={() => business && generateClientReceiptPdf(business, customer, history ?? [], tz, invoiceNumber.trim())}
         >
-          📄 Generar factura PDF
+          <FileDown size={15} strokeWidth={1.75} aria-hidden="true" /> Generar factura PDF
         </button>
       </div>
       {isLoading ? <Spinner /> : !history?.length ? (

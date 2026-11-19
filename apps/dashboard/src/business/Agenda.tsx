@@ -1,5 +1,6 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../lib/auth";
 import { useBookings, useProfessionals, type Booking } from "./hooks";
@@ -22,13 +23,13 @@ const ENCARGO_ACTION: Record<string, string> = {
 
 // Color de fondo/borde del bloque de reserva según estado.
 const BLOCK_STYLE: Record<string, { bg: string; border: string; text: string }> = {
-  pendiente: { bg: "#FBF3E3", border: "#B7791F", text: "#4A310D" },
-  confirmada: { bg: "#E8F4F3", border: "#0B6E6A", text: "#07403E" },
-  sentada: { bg: "#EAF1F9", border: "#2563A8", text: "#0F2744" },
-  listo: { bg: "#F3EAFB", border: "#7E3FB5", text: "#2E1747" },
-  completada: { bg: "#EAF6EF", border: "#1F8A4C", text: "#0D3A20" },
-  no_show: { bg: "#FBEDEB", border: "#C0392B", text: "#4F1812" },
-  cancelada: { bg: "#F3F7F6", border: "#8CA3A1", text: "#4A6362" },
+  pendiente: { bg: "light-dark(#FBF3E3, rgba(183, 121, 31, .22))", border: "light-dark(#B7791F, #CC9232)", text: "light-dark(#4A310D, #F6E5BF)" },
+  confirmada: { bg: "light-dark(#E1F0EE, rgba(63, 154, 147, .22))", border: "light-dark(#0B6E6A, #3F9A93)", text: "light-dark(#07403E, #CFE6E3)" },
+  sentada: { bg: "light-dark(#EAF1F9, rgba(47, 112, 181, .26))", border: "light-dark(#2563A8, #4783C3)", text: "light-dark(#0F2744, #D2E2F3)" },
+  listo: { bg: "light-dark(#F3EAFB, rgba(126, 63, 181, .28))", border: "light-dark(#7E3FB5, #A66FDB)", text: "light-dark(#2E1747, #E5D2F6)" },
+  completada: { bg: "light-dark(#EAF6EF, rgba(42, 154, 91, .24))", border: "light-dark(#1F8A4C, #3FA66D)", text: "light-dark(#0D3A20, #D3EDDF)" },
+  no_show: { bg: "light-dark(#FBEDEB, rgba(201, 74, 59, .26))", border: "light-dark(#C0392B, #D4584A)", text: "light-dark(#4F1812, #F6D6D2)" },
+  cancelada: { bg: "light-dark(#E7F2F0, rgba(255, 255, 255, .06))", border: "light-dark(#6A8884, #6A8884)", text: "light-dark(#4A6764, #A7C5C0)" },
 };
 
 // Convierte "#rrggbb" a rgba con la opacidad dada (para teñir el fondo del bloque).
@@ -149,14 +150,14 @@ export function Agenda() {
         subtitle={title}
         actions={
           <div className="flex items-center gap-2">
-            <div className="inline-flex rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
-              <button className={`px-3 py-1.5 text-sm font-medium ${view === "day" ? "bg-brand-500 text-white" : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300"}`} onClick={() => setView("day")}>Día</button>
-              <button className={`px-3 py-1.5 text-sm font-medium ${view === "week" ? "bg-brand-500 text-white" : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300"}`} onClick={() => setView("week")}>Semana</button>
-              <button className={`px-3 py-1.5 text-sm font-medium ${view === "month" ? "bg-brand-500 text-white" : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300"}`} onClick={() => setView("month")}>Mes</button>
+            <div className="inline-flex rounded-xl border border-slate-200 bg-white p-0.5 dark:border-slate-700 dark:bg-slate-800">
+              <button className={`rounded-[9px] px-3 py-1.5 text-sm font-semibold transition-colors duration-200 ${view === "day" ? "bg-brand-500 text-white shadow-sm" : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700"}`} onClick={() => setView("day")}>Día</button>
+              <button className={`rounded-[9px] px-3 py-1.5 text-sm font-semibold transition-colors duration-200 ${view === "week" ? "bg-brand-500 text-white shadow-sm" : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700"}`} onClick={() => setView("week")}>Semana</button>
+              <button className={`rounded-[9px] px-3 py-1.5 text-sm font-semibold transition-colors duration-200 ${view === "month" ? "bg-brand-500 text-white shadow-sm" : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700"}`} onClick={() => setView("month")}>Mes</button>
             </div>
-            <button className="btn-ghost" onClick={goBack}>←</button>
+            <button className="btn-ghost !px-2.5" onClick={goBack} aria-label="Anterior"><ChevronLeft size={18} strokeWidth={1.75} /></button>
             <button className="btn-ghost" onClick={() => setAnchor(ymdInTz(new Date(), tz))}>Hoy</button>
-            <button className="btn-ghost" onClick={goForward}>→</button>
+            <button className="btn-ghost !px-2.5" onClick={goForward} aria-label="Siguiente"><ChevronRight size={18} strokeWidth={1.75} /></button>
           </div>
         }
       />
@@ -278,7 +279,7 @@ function OrderWeek({ weekDays, tz, bookings, today, onSelect }: {
           <div key={d} className={`card p-2 min-h-[120px] ${d === today ? "ring-2 ring-brand-300" : ""}`}>
             <div className="flex items-baseline justify-between px-1 pb-1.5 border-b border-slate-100 dark:border-slate-800 mb-2">
               <span className="text-[11px] uppercase text-slate-400 dark:text-slate-500">{WEEKDAYS_SHORT_ES[dow]} <span className={`text-sm font-bold ${d === today ? "text-brand-600" : "text-slate-700 dark:text-slate-200"}`}>{d.slice(8)}</span></span>
-              <span className="text-[11px] text-slate-400 dark:text-slate-500">{active ? `${active} 🍰` : ""}</span>
+              <span className="text-[11px] text-slate-400 dark:text-slate-500">{active ? `${active} enc.` : ""}</span>
             </div>
             <div className="space-y-1.5">
               {list.length === 0 && <p className="text-[11px] text-slate-300 dark:text-slate-600 px-1">—</p>}
@@ -326,6 +327,13 @@ function WeekGrid({ weekDays, tz, bookings, today, onSelect, trackPayments }: {
   const hours = Array.from({ length: endH - startH }, (_, i) => startH + i);
   const gridHeight = (endH - startH) * HOUR;
 
+  // Hora actual (en la zona del negocio) para la línea de «ahora» de la columna de hoy; se refresca cada minuto.
+  const [nowMin, setNowMin] = useState(() => minutesOfDayInTz(new Date().toISOString(), tz));
+  useEffect(() => {
+    const t = setInterval(() => setNowMin(minutesOfDayInTz(new Date().toISOString(), tz)), 60000);
+    return () => clearInterval(t);
+  }, [tz]);
+
   // Agrupa reservas por día (ymd en tz).
   const byDay = useMemo(() => {
     const map: Record<string, any[]> = {};
@@ -347,9 +355,9 @@ function WeekGrid({ weekDays, tz, bookings, today, onSelect, trackPayments }: {
             const dow = new Date(d + "T00:00:00Z").getUTCDay();
             const isToday = d === today;
             return (
-              <div key={d} className={`border-b border-l border-slate-200 dark:border-slate-700 py-2 text-center ${isToday ? "bg-brand-50 dark:bg-brand-500/15" : ""}`}>
-                <div className="text-[11px] uppercase text-slate-400 dark:text-slate-500">{WEEKDAYS_SHORT_ES[dow]}</div>
-                <div className={`text-sm font-bold ${isToday ? "text-brand-600 dark:text-brand-300" : "text-slate-700 dark:text-slate-200"}`}>{d.slice(8)}</div>
+              <div key={d} className={`border-b border-l border-slate-200 dark:border-slate-700 py-2 text-center ${isToday ? "bg-brand-50/60 dark:bg-brand-500/10" : ""}`}>
+                <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-400 dark:text-slate-500">{WEEKDAYS_SHORT_ES[dow]}</div>
+                <div className={`tg-display tg-num mx-auto mt-0.5 grid h-8 w-8 place-items-center rounded-full text-[17px] ${isToday ? "bg-brand-500 text-white" : "text-slate-700 dark:text-slate-200"}`}>{d.slice(8)}</div>
               </div>
             );
           })}
@@ -360,7 +368,7 @@ function WeekGrid({ weekDays, tz, bookings, today, onSelect, trackPayments }: {
           {/* Eje de horas */}
           <div className="relative" style={{ height: gridHeight }}>
             {hours.map((h, i) => (
-              <div key={h} className="absolute right-1 text-[10px] text-slate-400 dark:text-slate-500" style={{ top: i * HOUR - 6 }}>
+              <div key={h} className="tg-num absolute right-1.5 text-[11px] text-slate-400 dark:text-slate-500" style={{ top: i * HOUR - 6 }}>
                 {String(h).padStart(2, "0")}:00
               </div>
             ))}
@@ -368,11 +376,18 @@ function WeekGrid({ weekDays, tz, bookings, today, onSelect, trackPayments }: {
 
           {/* Columnas por día */}
           {weekDays.map((d) => (
-            <div key={d} className="relative border-l border-slate-200 dark:border-slate-700" style={{ height: gridHeight }}>
+            <div key={d} className={`relative border-l border-slate-200 dark:border-slate-700 ${d === today ? "bg-brand-50/30 dark:bg-brand-500/[.04]" : ""}`} style={{ height: gridHeight }}>
               {/* Líneas de hora */}
               {hours.map((_, i) => (
                 <div key={i} className="absolute left-0 right-0 border-b border-slate-100 dark:border-slate-800" style={{ top: i * HOUR }} />
               ))}
+              {/* Línea de «ahora» */}
+              {d === today && nowMin >= startH * 60 && nowMin <= endH * 60 && (
+                <div className="pointer-events-none absolute left-0 right-0 z-[5]" style={{ top: ((nowMin - startH * 60) / 60) * HOUR }} aria-hidden="true">
+                  <div className="h-px bg-coral-500" />
+                  <div className="absolute -left-[3px] -top-[3px] h-[7px] w-[7px] rounded-full bg-coral-500" />
+                </div>
+              )}
               {/* Bloques de reserva */}
               {byDay[d].map((b) => {
                 const s = minutesOfDayInTz(b.starts_at, tz);
@@ -386,7 +401,7 @@ function WeekGrid({ weekDays, tz, bookings, today, onSelect, trackPayments }: {
                     key={b.id}
                     onClick={() => onSelect(b)}
                     title={`${b.customer_name} · ${detail(b)}`}
-                    className={`absolute left-0.5 right-0.5 rounded-md px-1.5 py-1 text-left overflow-hidden hover:z-10 hover:shadow-md transition ${bs.className}`}
+                    className={`absolute left-1 right-1 rounded-lg px-2 py-1 text-left overflow-hidden shadow-sm hover:z-10 hover:shadow-md transition ${bs.className}`}
                     style={{ top, height, ...bs.style }}
                   >
                     <div className="text-[11px] font-semibold leading-tight">{formatTime(b.starts_at, tz)}{trackPayments && payState(b) && <span className={payState(b) === "paid" ? "text-emerald-700 dark:text-emerald-400" : "text-amber-700 dark:text-amber-400"}> {payState(b) === "paid" ? "€✓" : "€?"}</span>}</div>

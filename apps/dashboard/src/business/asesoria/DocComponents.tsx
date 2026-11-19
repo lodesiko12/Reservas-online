@@ -4,6 +4,7 @@ import { supabase } from "../../lib/supabase";
 import { useBusinessId } from "../hooks";
 import { formatDateTime } from "@reservas/shared";
 import { Modal, ConfirmDialog, Spinner } from "../../components/ui";
+import { Trash2 } from "lucide-react";
 import {
   useAdvClients, useAdvDocTypes, functionError, formatBytes, quarterOf,
   DOC_STATUS_LABEL, DOC_STATUS_STYLE, type AdvDocument,
@@ -300,7 +301,7 @@ export function DocumentTable({ docs, showClient = false, onOpen }: {
                   </td>
                   <td className="px-4 py-2.5 whitespace-nowrap text-slate-500">{formatDateTime(d.created_at, "Europe/Madrid")}</td>
                   <td className="px-4 py-2.5 text-right" onClick={(e) => e.stopPropagation()}>
-                    <button className="text-slate-400 hover:text-red-600" title="Borrar" onClick={() => setDeleting(d)}>🗑</button>
+                    <button className="text-slate-400 hover:text-red-600" title="Borrar" onClick={() => setDeleting(d)}><Trash2 size={15} strokeWidth={1.75} aria-hidden="true" /><span className="sr-only">Eliminar</span></button>
                   </td>
                 </tr>
               ))}

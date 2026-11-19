@@ -5,6 +5,7 @@ import { useBusinessId } from "./hooks";
 import type { Tables } from "@reservas/shared";
 import { WEEKDAYS_SHORT_ES, shortTime, diningShiftSchema, diningDurationRuleSchema, firstIssue } from "@reservas/shared";
 import { PageHeader, Spinner, Modal, EmptyState, ConfirmDialog } from "../components/ui";
+import { Trash2 } from "lucide-react";
 
 type Shift = Tables<"dining_shifts">;
 
@@ -72,7 +73,7 @@ export function Franjas() {
                 </div>
                 <div className="mt-4 flex gap-2">
                   <button className="btn-ghost text-xs" onClick={() => setEditing(s)}>Editar</button>
-                  <button className="btn-ghost text-xs" onClick={() => setRemoving(s)}>🗑 Eliminar</button>
+                  <button className="btn-ghost text-xs" onClick={() => setRemoving(s)}><Trash2 size={15} strokeWidth={1.75} aria-hidden="true" /> Eliminar</button>
                 </div>
               </div>
             ))}
@@ -129,7 +130,7 @@ function DurationRules({ shiftId }: { shiftId: string }) {
           {rules.map((r) => (
             <div key={r.id} className="flex items-center justify-between text-sm bg-slate-50 dark:bg-slate-800/60 rounded-lg px-3 py-1.5">
               <span>{r.pax_min === r.pax_max ? `${r.pax_min} pax` : `${r.pax_min}–${r.pax_max} pax`} → {r.duration_min} min</span>
-              <button className="text-slate-400 dark:text-slate-500 hover:text-red-600" onClick={() => remove(r.id)}>🗑</button>
+              <button className="text-slate-400 dark:text-slate-500 hover:text-red-600" onClick={() => remove(r.id)}><Trash2 size={15} strokeWidth={1.75} aria-hidden="true" /><span className="sr-only">Eliminar</span></button>
             </div>
           ))}
         </div>

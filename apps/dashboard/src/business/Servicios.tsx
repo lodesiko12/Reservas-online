@@ -6,6 +6,7 @@ import { useServices, useProfessionals, useServiceProfessionals, useBusinessId, 
 import { formatDuration, formatCurrency, shortTime, professionalSchema, serviceSchema, firstIssue } from "@reservas/shared";
 import { PageHeader, Spinner, Modal, EmptyState, ConfirmDialog } from "../components/ui";
 import { WindowsEditor, type Win } from "../components/WindowsEditor";
+import { Trash2 } from "lucide-react";
 
 const DEFAULT_COLORS = [
   "#3b82f6", "#ef4444", "#22c55e", "#f59e0b", "#a855f7",
@@ -17,7 +18,7 @@ export function Servicios() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get("google") === "connected") setToast("Google Calendar conectado ✅");
+    if (params.get("google") === "connected") setToast("Google Calendar conectado");
     else if (params.get("google_error")) setToast("No se pudo conectar Google Calendar: " + params.get("google_error"));
     if (params.has("google") || params.has("google_error")) {
       window.history.replaceState({}, "", window.location.pathname);
@@ -73,7 +74,7 @@ function ProfessionalsSection() {
               </div>
               <div className="flex gap-1">
                 <button className="btn-ghost text-xs" onClick={() => setEditing(p)}>Editar</button>
-                <button className="btn-ghost text-xs" onClick={() => setRemoving(p)}>🗑</button>
+                <button className="btn-ghost text-xs" onClick={() => setRemoving(p)}><Trash2 size={15} strokeWidth={1.75} aria-hidden="true" /><span className="sr-only">Eliminar</span></button>
               </div>
             </div>
           ))}
@@ -319,7 +320,7 @@ function ServicesSection() {
                   <td className="px-5 py-3"><button onClick={() => toggle(s)} className={`badge ${s.is_active ? "bg-green-100 text-green-700" : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400"}`}>{s.is_active ? "Activo" : "Inactivo"}</button></td>
                   <td className="px-5 py-3 text-right whitespace-nowrap">
                     <button className="btn-ghost text-xs" onClick={() => setEditing(s)}>Editar</button>
-                    <button className="btn-ghost text-xs ml-1" onClick={() => setRemoving(s)}>🗑</button>
+                    <button className="btn-ghost text-xs ml-1" onClick={() => setRemoving(s)}><Trash2 size={15} strokeWidth={1.75} aria-hidden="true" /><span className="sr-only">Eliminar</span></button>
                   </td>
                 </tr>
               ))}

@@ -12,6 +12,7 @@ import { ReciboTab } from "./ficha/ReciboTab";
 import { PresupuestosTab } from "./ficha/PresupuestosTab";
 import { FacturasTab } from "./ficha/FacturasTab";
 import { CitasTab } from "./ficha/CitasTab";
+import { CheckCircle2, Trash2, Upload } from "lucide-react";
 
 /** Parser CSV mínimo: soporta comillas, comas y saltos de línea dentro de campos. */
 function parseCsv(text: string): string[][] {
@@ -86,7 +87,7 @@ export function Clientes() {
       <PageHeader title="Clientes" subtitle="Histórico y ficha de cada cliente"
         actions={
           <div className="flex gap-2">
-            <button className="btn-ghost" onClick={() => setImporting(true)}>⬆ Importar CSV</button>
+            <button className="btn-ghost" onClick={() => setImporting(true)}><Upload size={15} strokeWidth={1.75} aria-hidden="true" /> Importar CSV</button>
             <button className="btn-primary" onClick={() => setCreating(true)}>+ Nuevo cliente</button>
           </div>
         } />
@@ -117,7 +118,7 @@ export function Clientes() {
                     <td className="px-5 py-3 cursor-pointer" onClick={() => setSel(c)}>{c.bookings_count}</td>
                     <td className="px-5 py-3 cursor-pointer" onClick={() => setSel(c)}>{c.no_show_count > 0 ? <span className="text-red-600 font-semibold">{c.no_show_count}</span> : 0}</td>
                     <td className="px-5 py-3 text-right">
-                      <button className="btn-ghost text-xs" onClick={() => setToDelete(c)}>🗑</button>
+                      <button className="btn-ghost text-xs" onClick={() => setToDelete(c)}><Trash2 size={15} strokeWidth={1.75} aria-hidden="true" /><span className="sr-only">Eliminar</span></button>
                     </td>
                   </tr>
                 ))}
@@ -254,7 +255,7 @@ function ImportCsvModal({ bid, onClose }: { bid: string; onClose: () => void }) 
 
         {done && (
           <div className="text-center py-4">
-            <div className="text-3xl">✅</div>
+            <CheckCircle2 size={36} strokeWidth={1.5} className="mx-auto text-green-600" aria-hidden="true" />
             <p className="mt-2 font-medium">{done.ok} importados{done.failed > 0 ? `, ${done.failed} con error` : ""}</p>
             <button className="btn-primary mt-4" onClick={onClose}>Cerrar</button>
           </div>

@@ -5,6 +5,7 @@ import { supabase } from "../lib/supabase";
 import type { Tables } from "@reservas/shared";
 import { ymdInTz, addDaysYmd, zonedDayRange, adminNewBusinessSchema, firstIssue } from "@reservas/shared";
 import { PageHeader, StatCard, Spinner, Modal, EmptyState } from "../components/ui";
+import { CheckCircle2 } from "lucide-react";
 
 type Business = Tables<"businesses">;
 
@@ -242,7 +243,7 @@ function NewBusinessModal({ open, onClose, onCreated }: { open: boolean; onClose
     <Modal open={open} onClose={close} title="Nuevo negocio">
       {done ? (
         <div className="text-center py-4">
-          <div className="text-4xl">✅</div>
+          <CheckCircle2 size={44} strokeWidth={1.5} className="mx-auto text-green-600" aria-hidden="true" />
           <p className="font-semibold mt-2">Negocio creado</p>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
             {invite === "sent"

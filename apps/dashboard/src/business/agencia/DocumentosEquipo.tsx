@@ -6,6 +6,7 @@ import { useBusinessId } from "../hooks";
 import { formatDate } from "@reservas/shared";
 import { Spinner, EmptyState, ConfirmDialog } from "../../components/ui";
 import { formatBytes, memberName, useAgencyDocuments, useAgencyMembers, type AgencyDocument } from "./hooks";
+import { Trash2 } from "lucide-react";
 
 const BUCKET = "agencia-docs";
 const MAX_BYTES = 20 * 1024 * 1024;
@@ -104,7 +105,7 @@ export function DocumentosEquipo({ teamId }: { teamId: string }) {
                   </div>
                 </div>
                 <button className="btn-ghost" onClick={() => download(d)}>Descargar</button>
-                <button className="btn-ghost text-red-600" onClick={() => setDeleting(d)} aria-label="Borrar documento">🗑</button>
+                <button className="btn-ghost text-red-600" onClick={() => setDeleting(d)} aria-label="Borrar documento"><Trash2 size={15} strokeWidth={1.75} aria-hidden="true" /><span className="sr-only">Eliminar</span></button>
               </div>
             ))}
           </div>

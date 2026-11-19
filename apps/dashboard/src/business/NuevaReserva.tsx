@@ -6,6 +6,7 @@ import { useServices, useProfessionals, useServiceProfessionals } from "./hooks"
 import { ymdInTz, addDaysYmd, weekdayInTz, WEEKDAYS_SHORT_ES, formatTime, formatDuration, PARTY_SIZE_OPTIONS } from "@reservas/shared";
 import { PageHeader, Spinner } from "../components/ui";
 import { NuevoEncargo } from "./NuevoEncargo";
+import { CheckCircle2 } from "lucide-react";
 
 const PARTY_OPTIONS = PARTY_SIZE_OPTIONS;
 
@@ -176,7 +177,7 @@ export function Done({ locator }: { locator: string }) {
   return (
     <div className="grid place-items-center py-20 text-center">
       <div className="card p-8">
-        <div className="text-4xl">✅</div>
+        <CheckCircle2 size={44} strokeWidth={1.5} className="mx-auto text-green-600" aria-hidden="true" />
         <p className="font-semibold mt-2">Reserva creada</p>
         <p className="text-brand-600 font-bold text-xl mt-1">{locator}</p>
         <p className="text-sm text-slate-400 dark:text-slate-500 mt-2">Redirigiendo a la agenda…</p>

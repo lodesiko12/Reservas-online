@@ -4,6 +4,7 @@ import { supabase } from "../lib/supabase";
 import { useBusinessId, useDiningZones, useDiningTables, useDiningTableCombos, type DiningZone, type DiningTable, type DiningTableCombo } from "./hooks";
 import { diningZoneSchema, diningTableSchema, diningComboSchema, firstIssue } from "@reservas/shared";
 import { PageHeader, Spinner, Modal, EmptyState, ConfirmDialog } from "../components/ui";
+import { Trash2 } from "lucide-react";
 
 export function Mesas() {
   const bid = useBusinessId();
@@ -86,7 +87,7 @@ export function Mesas() {
                 <div className="flex items-center gap-2">
                   <span className={`badge ${z.is_active ? "bg-green-100 text-green-700" : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400"}`}>{z.is_active ? "Activa" : "Inactiva"}</span>
                   <button className="btn-ghost text-xs" onClick={() => setEditingZone(z)}>Editar</button>
-                  <button className="btn-ghost text-xs" onClick={() => setPendingDelete({ kind: "zone", item: z })}>🗑</button>
+                  <button className="btn-ghost text-xs" onClick={() => setPendingDelete({ kind: "zone", item: z })}><Trash2 size={15} strokeWidth={1.75} aria-hidden="true" /><span className="sr-only">Eliminar</span></button>
                 </div>
               </div>
               <TableGrid tables={tablesByZone.get(z.id) ?? []} onEdit={setEditingTable} onRemove={(t) => setPendingDelete({ kind: "table", item: t })} onToggle={toggleTable} />
@@ -126,7 +127,7 @@ export function Mesas() {
                 <div className="text-xs text-slate-500 dark:text-slate-400 mt-2">{c.cap_min}–{c.cap_max} comensales{c.priority > 0 ? ` · prioridad ${c.priority}` : ""}</div>
                 <div className="mt-2 flex gap-2">
                   <button className="btn-ghost text-xs" onClick={() => setEditingCombo(c)}>Editar</button>
-                  <button className="btn-ghost text-xs" onClick={() => setPendingDelete({ kind: "combo", item: c })}>🗑</button>
+                  <button className="btn-ghost text-xs" onClick={() => setPendingDelete({ kind: "combo", item: c })}><Trash2 size={15} strokeWidth={1.75} aria-hidden="true" /><span className="sr-only">Eliminar</span></button>
                 </div>
               </div>
             ))}
@@ -183,7 +184,7 @@ function TableGrid({ tables, onEdit, onRemove, onToggle }: {
           {t.priority > 0 && <div className="text-xs text-brand-600">prioridad {t.priority}</div>}
           <div className="mt-2 flex gap-2">
             <button className="btn-ghost text-xs" onClick={() => onEdit(t)}>Editar</button>
-            <button className="btn-ghost text-xs" onClick={() => onRemove(t)}>🗑</button>
+            <button className="btn-ghost text-xs" onClick={() => onRemove(t)}><Trash2 size={15} strokeWidth={1.75} aria-hidden="true" /><span className="sr-only">Eliminar</span></button>
           </div>
         </div>
       ))}

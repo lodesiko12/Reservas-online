@@ -13,6 +13,7 @@ import { GeminiConfigForm } from "../components/GeminiConfigForm";
 import { WindowsEditor, type Win } from "../components/WindowsEditor";
 import { ConfiguracionFiscalSection } from "./crm/ConfiguracionFiscal";
 import { OrderSettingsSection, DayOverridesSection } from "./OrderSettings";
+import { Copy } from "lucide-react";
 
 const WIDGET_URL = ((import.meta.env.VITE_WIDGET_URL as string) || "").replace(/\/+$/, "");
 
@@ -55,9 +56,9 @@ export function Configuracion() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get("google_business") === "connected") setToast("Google Business Profile conectado ✅");
+    if (params.get("google_business") === "connected") setToast("Google Business Profile conectado");
     else if (params.get("google_business_error")) setToast("No se pudo conectar: " + params.get("google_business_error"));
-    else if (params.get("google") === "connected") setToast("Google Calendar conectado ✅");
+    else if (params.get("google") === "connected") setToast("Google Calendar conectado");
     else if (params.get("google_error")) setToast("No se pudo conectar Google Calendar: " + params.get("google_error"));
     if (params.has("google_business") || params.has("google_business_error") || params.has("google") || params.has("google_error")) {
       window.history.replaceState({}, "", window.location.pathname);
@@ -363,7 +364,7 @@ export function Configuracion() {
           <h2 className="font-semibold mb-1">Insertar el widget en tu web</h2>
           <p className="text-sm text-slate-500 dark:text-slate-400 mb-3">Pega este código donde quieras que aparezca el formulario de reservas.</p>
           <pre className="bg-slate-900 text-slate-100 text-xs rounded-lg p-4 overflow-x-auto">{embedSnippet}</pre>
-          <button className="btn-ghost mt-3" onClick={() => { navigator.clipboard.writeText(embedSnippet); flash("Snippet copiado"); }}>📋 Copiar snippet</button>
+          <button className="btn-ghost mt-3" onClick={() => { navigator.clipboard.writeText(embedSnippet); flash("Snippet copiado"); }}><Copy size={15} strokeWidth={1.75} aria-hidden="true" /> Copiar snippet</button>
           <a className="btn-ghost mt-3 ml-2" href={`${WIDGET_URL}/?slug=${business?.slug}`} target="_blank" rel="noreferrer">Previsualizar widget ↗</a>
         </section>
       )}
