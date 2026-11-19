@@ -17,11 +17,11 @@
   --tg-coral-50:  #FFEFEA;
 
   /* Neutros */
-  --tg-bg:        #E9F3EB;  /* fondo del panel (verde claro) */
+  --tg-bg:        #E7F2F0;  /* fondo del panel (menta, mismo matiz que el logo) */
   --tg-surface:   #FFFFFF;  /* tarjetas, tablas, modales */
-  --tg-border:    #CBDECF;
-  --tg-text:      #11221A;  /* texto principal */
-  --tg-text-muted:#41574A;  /* texto secundario */
+  --tg-border:    #C8DDD9;
+  --tg-text:      #122825;  /* texto principal */
+  --tg-text-muted:#4A6764;  /* texto secundario */
 
   /* Estados (distintos de la marca para no confundirse) */
   --tg-success:   #1F8A4C;
@@ -54,7 +54,7 @@
   --tg-space-4: 16px; --tg-space-6: 24px; --tg-space-8: 32px;
 
   /* Sombras suaves, teñidas de verde */
-  --tg-shadow-card: 0 1px 2px rgba(17, 34, 26, .06), 0 6px 20px rgba(17, 34, 26, .07);
+  --tg-shadow-card: 0 1px 2px rgba(7, 64, 62, .06), 0 6px 20px rgba(7, 64, 62, .08);
 
   /* Movimiento */
   --tg-ease: cubic-bezier(.22, .8, .3, 1);

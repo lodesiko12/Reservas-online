@@ -347,9 +347,9 @@ function WeekGrid({ weekDays, tz, bookings, today, onSelect, trackPayments }: {
             const dow = new Date(d + "T00:00:00Z").getUTCDay();
             const isToday = d === today;
             return (
-              <div key={d} className={`border-b border-l border-slate-200 dark:border-slate-700 py-2 text-center ${isToday ? "bg-brand-50" : ""}`}>
+              <div key={d} className={`border-b border-l border-slate-200 dark:border-slate-700 py-2 text-center ${isToday ? "bg-brand-50 dark:bg-brand-500/15" : ""}`}>
                 <div className="text-[11px] uppercase text-slate-400 dark:text-slate-500">{WEEKDAYS_SHORT_ES[dow]}</div>
-                <div className={`text-sm font-bold ${isToday ? "text-brand-600" : "text-slate-700 dark:text-slate-200"}`}>{d.slice(8)}</div>
+                <div className={`text-sm font-bold ${isToday ? "text-brand-600 dark:text-brand-300" : "text-slate-700 dark:text-slate-200"}`}>{d.slice(8)}</div>
               </div>
             );
           })}

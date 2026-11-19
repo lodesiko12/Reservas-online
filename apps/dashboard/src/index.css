@@ -25,5 +25,9 @@
 /* Gráficos (recharts): serie principal teal y secundaria coral; en oscuro se aclaran y se atenúan ejes/rejilla. */
 :root { --chart-1: #0B6E6A; --chart-2: #FF6B4A; }
 .dark { --chart-1: #3F9A93; --chart-2: #FF8A6F; }
-.dark .recharts-cartesian-axis-tick-value, .dark .recharts-legend-item-text { fill: #84A08C !important; color: #84A08C !important; }
-.dark .recharts-cartesian-grid line { stroke: #1B2E24; }
+.dark .recharts-cartesian-axis-tick-value, .dark .recharts-legend-item-text { fill: #8FB0AB !important; color: #8FB0AB !important; }
+.dark .recharts-cartesian-grid line { stroke: #1B3733; }
+
+/* Red de seguridad en oscuro: enlaces/acentos en teal de marca sin variante `dark:` propia usan el teal claro (contraste ~7:1). */
+.dark .text-brand-600:not([class*="dark:text-"]),
+.dark .text-brand-700:not([class*="dark:text-"]) { color: #6FB5AE; }

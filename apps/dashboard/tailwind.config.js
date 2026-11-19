@@ -20,11 +20,13 @@ export default {
         rose: { 50: "#FBEDEB", 100: "#F6D6D2", 200: "#EDADA5", 300: "#E17F73", 400: "#D4584A", 500: "#C94A3B", 600: "#C0392B", 700: "#992E22", 800: "#73231A", 900: "#4F1812", 950: "#330F0B" },
         sky: { 50: "#EAF1F9", 100: "#D2E2F3", 200: "#A5C5E6", 300: "#73A3D5", 400: "#4783C3", 500: "#2F70B5", 600: "#2563A8", 700: "#1D4F86", 800: "#153A63", 900: "#0F2744", 950: "#09182B" },
         blue: { 50: "#EAF1F9", 100: "#D2E2F3", 200: "#A5C5E6", 300: "#73A3D5", 400: "#4783C3", 500: "#2F70B5", 600: "#2563A8", 700: "#1D4F86", 800: "#153A63", 900: "#0F2744", 950: "#09182B" },
-        // Neutros verdes (verde claro en modo claro, verde oscuro en modo oscuro): --tg-bg, --tg-border, --tg-text-muted, --tg-text
+        // Neutros teñidos con el matiz del logo (teal #0B6E6A, ~177°): fondo menta-azulado en claro,
+        // verde-teal profundo en oscuro. Los textos 400/500 cumplen ~4:1 sobre tarjeta en ambos modos.
         slate: {
-          50: "#E9F3EB", 100: "#DCEADF", 200: "#CBDECF", 300: "#B0CBB6", 400: "#84A08C",
-          500: "#587360", 600: "#41574A", 700: "#2D3F35", 800: "#1B2E24", 900: "#11221A", 950: "#0A1611",
+          50: "#E7F2F0", 100: "#DAEAE7", 200: "#C8DDD9", 300: "#A7C5C0", 400: "#6A8884",
+          500: "#4A6764", 600: "#365250", 700: "#263E3C", 800: "#1B3733", 900: "#122825", 950: "#0B1A18",
         },
+        ink: "#061110",  // menú lateral en modo oscuro
       },
       fontFamily: {
         sans: ["Nunito", "system-ui", "-apple-system", "Segoe UI", "Roboto", "sans-serif"],

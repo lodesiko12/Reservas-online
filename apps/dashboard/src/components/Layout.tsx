@@ -46,18 +46,19 @@ export function Layout({ nav, brandLabel, mobileTabs, action }: { nav: NavItem[]
     return (
       <>
         <div className={`h-16 shrink-0 flex items-center ${isCollapsed ? "justify-center px-2" : "gap-3 px-5"}`}>
-          <img src="/brand/turnigo-icono.svg" alt="" className="h-8 w-8 shrink-0" />
-          {!isCollapsed && <span className="tg-display text-[17px] text-slate-800 dark:text-slate-100 truncate">{brandLabel}</span>}
+          <img src="/brand/turnigo-icono-negativo.svg" alt="" className="h-8 w-8 shrink-0 dark:hidden" />
+          <img src="/brand/turnigo-icono.svg" alt="" className="h-8 w-8 shrink-0 hidden dark:block" />
+          {!isCollapsed && <span className="tg-display text-[17px] text-white truncate">{brandLabel}</span>}
         </div>
 
         {!isCollapsed && businesses.length > 1 && business && (
           <div className="px-3 pt-3">
             <select
-              className="input text-sm"
+              className="input text-sm !bg-white/10 !border-white/20 !text-white focus:!border-white/50"
               value={business.id}
               onChange={(e) => setActiveBusiness(e.target.value)}
             >
-              {businesses.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
+              {businesses.map((b) => <option key={b.id} value={b.id} className="text-slate-900">{b.name}</option>)}
             </select>
           </div>
         )}
@@ -68,7 +69,7 @@ export function Layout({ nav, brandLabel, mobileTabs, action }: { nav: NavItem[]
               to={action.to}
               onClick={onNavigate}
               title={isCollapsed ? action.label : undefined}
-              className={`btn-primary w-full ${isCollapsed ? "px-0 justify-center" : ""}`}
+              className={`btn w-full bg-white text-brand-600 hover:bg-brand-50 ${isCollapsed ? "px-0 justify-center" : ""}`}
             >
               <NavIcon icon={action.icon} size={16} />
               {!isCollapsed && action.label}
@@ -82,8 +83,8 @@ export function Layout({ nav, brandLabel, mobileTabs, action }: { nav: NavItem[]
             return (
               <div key={n.to}>
                 {newGroup && (isCollapsed
-                  ? (i > 0 && <div className="my-2 border-t border-slate-200 dark:border-slate-800" />)
-                  : <div className={`px-3 pb-1 text-[10.5px] font-bold uppercase tracking-[0.12em] text-slate-400 dark:text-slate-500 ${i > 0 ? "pt-5" : "pt-1"}`}>{n.group}</div>)}
+                  ? (i > 0 && <div className="my-2 border-t border-white/10" />)
+                  : <div className={`px-3 pb-1 text-[10.5px] font-bold uppercase tracking-[0.12em] text-white/55 ${i > 0 ? "pt-5" : "pt-1"}`}>{n.group}</div>)}
                 <NavLink
                   to={n.to}
                   end={n.end}
@@ -92,8 +93,8 @@ export function Layout({ nav, brandLabel, mobileTabs, action }: { nav: NavItem[]
                   className={({ isActive }) =>
                     `group relative flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold transition-colors duration-200 ${isCollapsed ? "justify-center" : ""} ${
                       isActive
-                        ? "bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-300 before:absolute before:left-0 before:top-2 before:bottom-2 before:w-[3px] before:rounded-full before:bg-coral-500"
-                        : "text-slate-500 hover:bg-slate-100 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
+                        ? "bg-white/[.13] text-white before:absolute before:left-0 before:top-2 before:bottom-2 before:w-[3px] before:rounded-full before:bg-coral-500"
+                        : "text-white/70 hover:bg-white/[.08] hover:text-white"
                     }`
                   }
                 >
@@ -109,9 +110,9 @@ export function Layout({ nav, brandLabel, mobileTabs, action }: { nav: NavItem[]
           })}
         </nav>
 
-        <div className={`border-t border-slate-200 dark:border-slate-800 p-3 space-y-1 ${isCollapsed ? "flex flex-col items-center" : ""}`}>
+        <div className={`border-t border-white/10 p-3 space-y-1 ${isCollapsed ? "flex flex-col items-center" : ""}`}>
           <button
-            className={`flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition-colors duration-200 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100 ${isCollapsed ? "justify-center px-2.5" : "w-full"}`}
+            className={`flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold text-white/70 hover:bg-white/[.08] hover:text-white transition-colors duration-200 ${isCollapsed ? "justify-center px-2.5" : "w-full"}`}
             onClick={toggleTheme}
             title={theme === "dark" ? "Modo claro" : "Modo oscuro"}
           >
@@ -119,13 +120,13 @@ export function Layout({ nav, brandLabel, mobileTabs, action }: { nav: NavItem[]
             {!isCollapsed && (theme === "dark" ? "Modo claro" : "Modo oscuro")}
           </button>
 
-          {!isCollapsed && <InstallAppButton />}
+          {!isCollapsed && <InstallAppButton className="btn w-full justify-start !bg-transparent !text-white/70 hover:!bg-white/[.08] hover:!text-white" />}
 
           {!isCollapsed && (
-            <div className="px-2 pt-1 text-xs text-slate-400 dark:text-slate-500 truncate">{session?.user.email}</div>
+            <div className="px-2 pt-1 text-xs text-white/55 truncate">{session?.user.email}</div>
           )}
           <button
-            className={`flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition-colors duration-200 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100 ${isCollapsed ? "justify-center px-2.5" : "w-full"}`}
+            className={`flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold text-white/70 hover:bg-white/[.08] hover:text-white transition-colors duration-200 ${isCollapsed ? "justify-center px-2.5" : "w-full"}`}
             onClick={signOut}
             title="Cerrar sesión"
           >
@@ -140,7 +141,7 @@ export function Layout({ nav, brandLabel, mobileTabs, action }: { nav: NavItem[]
     <div className="min-h-screen flex bg-slate-50 dark:bg-slate-950">
       {/* Sidebar de escritorio: fija a la ventana, plegable */}
       <aside
-        className={`hidden lg:flex flex-col shrink-0 sticky top-0 h-screen bg-white border-r border-slate-200 dark:bg-slate-900 dark:border-slate-800 transition-[width] duration-300 ease-[cubic-bezier(.22,.8,.3,1)] relative ${
+        className={`hidden lg:flex flex-col shrink-0 sticky top-0 h-screen bg-brand-700 dark:bg-ink border-r border-black/10 dark:border-white/5 transition-[width] duration-300 ease-[cubic-bezier(.22,.8,.3,1)] relative ${
           collapsed ? "w-[76px]" : "w-60"
         }`}
       >
@@ -158,7 +159,7 @@ export function Layout({ nav, brandLabel, mobileTabs, action }: { nav: NavItem[]
       {mobileOpen && (
         <div className="lg:hidden fixed inset-0 z-50 flex">
           <div className="absolute inset-0 bg-slate-900/50" onClick={() => setMobileOpen(false)} />
-          <aside className="relative z-10 w-72 max-w-[82vw] h-full flex flex-col bg-white dark:bg-slate-900 shadow-xl">
+          <aside className="relative z-10 w-72 max-w-[82vw] h-full flex flex-col bg-brand-700 dark:bg-ink shadow-xl">
             <SidebarContent isCollapsed={false} onNavigate={() => setMobileOpen(false)} />
           </aside>
         </div>
