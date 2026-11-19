@@ -9,16 +9,19 @@
     @apply bg-slate-50 text-slate-900 antialiased dark:bg-slate-950 dark:text-slate-100;
     font-family: var(--tg-font);
   }
+  /* Tablas: cabecera compacta en versalitas y fila con realce al pasar el ratón (afecta a todas las tablas del panel). */
+  thead th { @apply text-[11.5px] font-bold uppercase tracking-[0.06em]; }
+  tbody tr { @apply transition-colors hover:bg-slate-50/70 dark:hover:bg-white/[.03]; }
 }
 
 @layer components {
   .btn { @apply inline-flex items-center justify-center gap-2 rounded-[12px] px-4 py-2 text-sm font-bold transition duration-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed; }
-  .btn-primary { @apply btn bg-brand-500 text-white hover:bg-brand-600; }
-  .btn-ghost { @apply btn bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 dark:hover:bg-slate-700; }
+  .btn-primary { @apply btn bg-brand-500 text-white shadow-sm hover:bg-brand-600; }
+  .btn-ghost { @apply btn bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 hover:border-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 dark:hover:bg-slate-700; }
   .btn-danger { @apply btn bg-[var(--tg-danger)] text-white hover:brightness-90; }
   .card { @apply bg-white rounded-[20px] border border-slate-200 shadow-card dark:bg-slate-900 dark:border-slate-800; }
-  .input { @apply w-full rounded-[12px] border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/40 focus:border-brand-500 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:placeholder-slate-500; }
-  .label { @apply block text-sm font-medium text-slate-700 mb-1 dark:text-slate-300; }
+  .input { @apply w-full rounded-[12px] border border-slate-300 bg-white px-3 py-2 text-sm placeholder:text-slate-400 transition-colors hover:border-slate-400 dark:hover:border-slate-600 focus:outline-none focus:ring-2 focus:ring-brand-500/40 focus:border-brand-500 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:placeholder-slate-500; }
+  .label { @apply block text-[13px] font-semibold text-slate-600 mb-1.5 dark:text-slate-300; }
   .badge { @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold; }
 }
 
@@ -42,3 +45,12 @@
 /* Fondo del login: halo claro arriba-izquierda y teal abajo-derecha; en oscuro, solo halos teal. */
 .login-bg { background-image: radial-gradient(60rem 36rem at 15% -10%, rgba(255, 255, 255, .55), transparent 60%), radial-gradient(40rem 28rem at 100% 100%, rgba(11, 110, 106, .16), transparent 60%); }
 .dark .login-bg { background-image: radial-gradient(60rem 36rem at 15% -10%, rgba(11, 110, 106, .22), transparent 60%), radial-gradient(40rem 28rem at 100% 100%, rgba(11, 110, 106, .12), transparent 60%); }
+
+/* Badges de estado en oscuro: tintes translúcidos en lugar de los pasteles de modo claro (solo si el badge no trae su propia variante `dark:bg`). */
+.dark .badge[class~="bg-amber-100"]:not([class*="dark:bg"]) { background: rgba(245, 158, 11, .16); color: #EBCB85; }
+.dark .badge[class~="bg-green-100"]:not([class*="dark:bg"]) { background: rgba(42, 154, 91, .2); color: #74C198; }
+.dark .badge[class~="bg-sky-100"]:not([class*="dark:bg"]) { background: rgba(47, 112, 181, .24); color: #A5C5E6; }
+.dark .badge[class~="bg-red-100"]:not([class*="dark:bg"]) { background: rgba(201, 74, 59, .22); color: #EDADA5; }
+.dark .badge[class~="bg-purple-100"]:not([class*="dark:bg"]) { background: rgba(168, 85, 247, .2); color: #D8B4FE; }
+.dark .badge[class~="bg-brand-100"]:not([class*="dark:bg"]) { background: rgba(63, 154, 147, .22); color: #9FCFC9; }
+.dark .badge[class~="bg-slate-100"]:not([class*="dark:bg"]) { background: rgba(255, 255, 255, .08); color: #A7C5C0; }

@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { X } from "lucide-react";
 
 export function Spinner({ className = "" }: { className?: string }) {
   return (
@@ -10,8 +11,8 @@ export function PageHeader({ title, subtitle, actions }: { title: string; subtit
   return (
     <div className="flex items-start justify-between gap-4 mb-6 flex-wrap">
       <div>
-        <h1 className="text-xl font-bold text-slate-900 dark:text-slate-50">{title}</h1>
-        {subtitle && <p className="text-sm text-slate-500 mt-0.5 dark:text-slate-400">{subtitle}</p>}
+        <h1 className="text-[1.75rem] leading-tight text-slate-900 dark:text-slate-50">{title}</h1>
+        {subtitle && <p className="text-sm text-slate-500 mt-1 dark:text-slate-400">{subtitle}</p>}
       </div>
       {actions && <div className="flex items-center gap-2 flex-wrap">{actions}</div>}
     </div>
@@ -21,8 +22,8 @@ export function PageHeader({ title, subtitle, actions }: { title: string; subtit
 export function StatCard({ label, value, hint, accent }: { label: string; value: ReactNode; hint?: string; accent?: string }) {
   return (
     <div className="card p-5">
-      <div className="text-sm text-slate-500 dark:text-slate-400">{label}</div>
-      <div className="mt-1 text-2xl font-extrabold dark:text-slate-50" style={accent ? { color: accent } : undefined}>{value}</div>
+      <div className="text-[13px] font-semibold text-slate-500 dark:text-slate-400">{label}</div>
+      <div className="tg-display tg-num mt-2 text-[2rem] leading-none dark:text-slate-50" style={accent ? { color: accent } : undefined}>{value}</div>
       {hint && <div className="text-xs text-slate-400 mt-1 dark:text-slate-500">{hint}</div>}
     </div>
   );
@@ -31,7 +32,7 @@ export function StatCard({ label, value, hint, accent }: { label: string; value:
 export function EmptyState({ title, hint, action }: { title: string; hint?: string; action?: ReactNode }) {
   return (
     <div className="card p-10 text-center">
-      <p className="font-semibold text-slate-700 dark:text-slate-200">{title}</p>
+      <p className="tg-display text-xl text-slate-700 dark:text-slate-200">{title}</p>
       {hint && <p className="text-sm text-slate-500 mt-1 dark:text-slate-400">{hint}</p>}
       {action && <div className="mt-4">{action}</div>}
     </div>
@@ -43,11 +44,11 @@ export function Modal({ open, onClose, title, children, width = "max-w-lg" }: {
 }) {
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center p-4 bg-slate-900/40" onClick={onClose}>
-      <div className={`card w-full ${width} max-h-[85vh] overflow-y-auto p-6`} onClick={(e) => e.stopPropagation()}>
+    <div className="tg-fade fixed inset-0 z-50 grid place-items-center p-4 bg-ink/55 backdrop-blur-[3px]" onClick={onClose}>
+      <div className={`tg-pop card w-full ${width} max-h-[85vh] overflow-y-auto p-6 !rounded-[24px] shadow-[0_28px_60px_-14px_rgba(6,17,16,.4)]`} onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4 sticky -top-6 -mt-6 pt-6 bg-white dark:bg-slate-900">
-          <h2 className="text-lg font-bold dark:text-slate-50">{title}</h2>
-          <button className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xl leading-none" onClick={onClose}>×</button>
+          <h2 className="text-xl dark:text-slate-50">{title}</h2>
+          <button className="h-8 w-8 grid place-items-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200 transition-colors" onClick={onClose} aria-label="Cerrar"><X size={18} strokeWidth={1.75} /></button>
         </div>
         {children}
       </div>
@@ -115,5 +116,10 @@ const ORDER_STATUS_TEXT: Record<string, string> = {
 /** `order`: vocabulario del modo encargo (recogido / no recogido…). */
 export function StatusBadge({ status, order }: { status: string; order?: boolean }) {
   const text = order ? ORDER_STATUS_TEXT[status] : STATUS_TEXT[status];
-  return <span className={`badge ${STATUS_STYLES[status] ?? "bg-slate-100"}`}>{text ?? STATUS_TEXT[status] ?? status}</span>;
+  return (
+    <span className={`badge gap-1.5 ${STATUS_STYLES[status] ?? "bg-slate-100"}`}>
+      <span className="h-1.5 w-1.5 rounded-full bg-current opacity-70" aria-hidden="true" />
+      {text ?? STATUS_TEXT[status] ?? status}
+    </span>
+  );
 }

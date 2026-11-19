@@ -83,3 +83,10 @@ h1, h2 { font-family: var(--tg-font-display); font-weight: 600; letter-spacing: 
 @keyframes tg-page { from { opacity: 0; transform: translateY(6px); } }
 .tg-page { animation: tg-page 260ms var(--tg-ease) backwards; }
 @media (prefers-reduced-motion: reduce) { .tg-page { animation: none; } }
+
+/* Modal: velo con fundido y tarjeta que sube suavemente. Sin fill-mode final (no deja transform activo). */
+@keyframes tg-fade { from { opacity: 0; } }
+@keyframes tg-pop { from { opacity: 0; transform: translateY(10px) scale(.98); } }
+.tg-fade { animation: tg-fade 180ms ease-out backwards; }
+.tg-pop { animation: tg-pop 240ms var(--tg-ease) backwards; }
+@media (prefers-reduced-motion: reduce) { .tg-fade, .tg-pop { animation: none; } }
