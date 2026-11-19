@@ -252,10 +252,10 @@ function BusinessDashboard({ business }: { business: Business }) {
           <div style={{ height: 240 }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={stats.chart} margin={{ left: -20 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E8F0EF" />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#DAEAE7" />
                 <XAxis dataKey="label" fontSize={11} tickLine={false} axisLine={false} interval={1} />
                 <YAxis allowDecimals={false} fontSize={11} tickLine={false} axisLine={false} />
-                <Tooltip cursor={{ fill: "#E8F0EF" }} />
+                <Tooltip cursor={{ fill: "#DAEAE7", fillOpacity: 0.6 }} />
                 <Bar dataKey="count" fill="var(--chart-1)" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>

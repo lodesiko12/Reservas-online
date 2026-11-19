@@ -54,3 +54,15 @@
 .dark .badge[class~="bg-purple-100"]:not([class*="dark:bg"]) { background: rgba(168, 85, 247, .2); color: #D8B4FE; }
 .dark .badge[class~="bg-brand-100"]:not([class*="dark:bg"]) { background: rgba(63, 154, 147, .22); color: #9FCFC9; }
 .dark .badge[class~="bg-slate-100"]:not([class*="dark:bg"]) { background: rgba(255, 255, 255, .08); color: #A7C5C0; }
+
+/* Tooltips y cursor de los gráficos con la paleta (recharts los pinta en blanco por defecto). */
+.recharts-default-tooltip { border-radius: 12px !important; border: 1px solid #C8DDD9 !important; box-shadow: var(--tg-shadow-card) !important; padding: 8px 12px !important; }
+.recharts-tooltip-label { font-weight: 700; margin-bottom: 2px !important; }
+.dark .recharts-default-tooltip { background-color: #122825 !important; border-color: #1B3733 !important; color: #DAEAE7 !important; }
+.dark .recharts-tooltip-cursor { fill: rgba(255, 255, 255, .05) !important; }
+
+/* Texto terciario en oscuro (dark:text-slate-500): sube de ~2,5:1 a ~5:1 sobre tarjeta sin tocar cada pantalla. */
+.dark [class*="dark:text-slate-500"] { color: #7C9A96; }
+
+/* Ejes y leyendas de los gráficos en el gris-teal de la paleta (recharts usa #666 por defecto). */
+.recharts-cartesian-axis-tick-value, .recharts-legend-item-text { fill: #4A6764; }

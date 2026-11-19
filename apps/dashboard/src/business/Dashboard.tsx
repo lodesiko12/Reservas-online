@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
+import { BarChart, Bar, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../lib/auth";
 import {
@@ -101,7 +101,7 @@ export function Dashboard() {
       <PageHeader title="Resumen" subtitle={`Hoy · ${new Intl.DateTimeFormat("es-ES", { weekday: "long", day: "numeric", month: "long", timeZone: tz }).format(new Date())}`} />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <StatCard label="Reservas hoy" value={kpis.count} />
+        <StatCard label="Reservas hoy" value={kpis.count} featured />
         {business?.type === "restaurante"
           ? <StatCard label="Comensales hoy" value={kpis.coversToday} accent="var(--chart-1)" />
           : <StatCard label="Ocupación del día" value={`${kpis.occupancy}%`} accent="var(--chart-1)" />}
@@ -111,15 +111,18 @@ export function Dashboard() {
 
       <div className="grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 card p-5">
-          <h3 className="font-semibold mb-4">Próximos 7 días</h3>
+          <h3 className="tg-display text-[19px] mb-4">Próximos 7 días</h3>
           <div style={{ height: 240 }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chart} margin={{ left: -20 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E8F0EF" />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#DAEAE7" />
                 <XAxis dataKey="label" tickLine={false} axisLine={false} fontSize={12} />
                 <YAxis allowDecimals={false} tickLine={false} axisLine={false} fontSize={12} />
-                <Tooltip cursor={{ fill: "#E8F0EF" }} />
-                <Bar dataKey="count" fill="var(--chart-1)" radius={[6, 6, 0, 0]} />
+                <Tooltip cursor={{ fill: "#DAEAE7", fillOpacity: 0.6 }} />
+                <Bar dataKey="count" fill="var(--chart-1)" radius={[8, 8, 0, 0]} maxBarSize={44}>
+                  {/* Hoy a todo color; el resto de días atenuados para dar foco */}
+                  {chart.map((_, i) => <Cell key={i} fillOpacity={i === 0 ? 1 : 0.55} />)}
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -127,7 +130,7 @@ export function Dashboard() {
 
         <div className="card p-5">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold">Próximos turnos de hoy</h3>
+            <h3 className="tg-display text-[19px]">Próximos turnos de hoy</h3>
             <Link to="/app/agenda" className="text-xs text-brand-600 hover:underline">Ver agenda</Link>
           </div>
           {upcoming.length === 0 ? (
@@ -136,7 +139,7 @@ export function Dashboard() {
             <ul className="space-y-3">
               {upcoming.map((b) => (
                 <li key={b.id} className="flex items-center gap-3">
-                  <div className="text-sm font-bold text-brand-600 w-12">{formatTime(b.starts_at, tz)}</div>
+                  <div className="tg-num shrink-0 rounded-lg bg-brand-50 px-2 py-1 text-sm font-bold text-brand-600 dark:bg-brand-500/15 dark:text-brand-300">{formatTime(b.starts_at, tz)}</div>
                   <div className="min-w-0">
                     <div className="text-sm font-medium truncate">{b.customer_name} {b.customer_last_name ?? ""}</div>
                     <div className="text-xs text-slate-400 dark:text-slate-500 truncate">{b.type === "restaurante" ? `Mesa · ${b.party_size} pers.` : `${b.services?.name ?? ""}${b.professionals?.name ? ` · ${b.professionals.name}` : ""}`}</div>
@@ -149,9 +152,9 @@ export function Dashboard() {
       </div>
 
       <div className="card p-5 mt-6">
-        <h3 className="font-semibold mb-3">Ausencias recientes (hoy)</h3>
+        <h3 className="tg-display text-[19px] mb-3">Ausencias recientes (hoy)</h3>
         {recentNoShows.length === 0 ? (
-          <p className="text-sm text-slate-400 dark:text-slate-500">Sin ausencias registradas hoy. 🎉</p>
+          <p className="text-sm text-slate-400 dark:text-slate-500">Sin ausencias registradas hoy.</p>
         ) : (
           <ul className="divide-y divide-slate-100 dark:divide-slate-800">
             {recentNoShows.map((b) => (

@@ -136,7 +136,7 @@ export function Reportes() {
             <div style={{ height: 260 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={stats.series} margin={{ left: -20 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E8F0EF" />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#DAEAE7" />
                   <XAxis dataKey="day" fontSize={11} tickLine={false} axisLine={false} interval={Math.floor(stats.series.length / 12)} />
                   <YAxis allowDecimals={false} fontSize={11} tickLine={false} axisLine={false} />
                   <Tooltip />

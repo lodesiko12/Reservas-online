@@ -19,12 +19,13 @@ export function PageHeader({ title, subtitle, actions }: { title: string; subtit
   );
 }
 
-export function StatCard({ label, value, hint, accent }: { label: string; value: ReactNode; hint?: string; accent?: string }) {
+/** `featured`: tarjeta destacada en teal de marca (la cifra principal de una pantalla). */
+export function StatCard({ label, value, hint, accent, featured }: { label: string; value: ReactNode; hint?: string; accent?: string; featured?: boolean }) {
   return (
-    <div className="card p-5">
-      <div className="text-[13px] font-semibold text-slate-500 dark:text-slate-400">{label}</div>
-      <div className="tg-display tg-num mt-2 text-[2rem] leading-none dark:text-slate-50" style={accent ? { color: accent } : undefined}>{value}</div>
-      {hint && <div className="text-xs text-slate-400 mt-1 dark:text-slate-500">{hint}</div>}
+    <div className={featured ? "card p-5 !bg-brand-500 !border-brand-500 dark:!bg-brand-600 dark:!border-brand-600" : "card p-5"}>
+      <div className={`text-[13px] font-semibold ${featured ? "text-white/80" : "text-slate-500 dark:text-slate-400"}`}>{label}</div>
+      <div className={`tg-display tg-num mt-2 leading-none ${featured ? "text-[2.5rem] text-white" : "text-[2rem] dark:text-slate-50"}`} style={accent && !featured ? { color: accent } : undefined}>{value}</div>
+      {hint && <div className={`text-xs mt-1 ${featured ? "text-white/70" : "text-slate-400 dark:text-slate-500"}`}>{hint}</div>}
     </div>
   );
 }
