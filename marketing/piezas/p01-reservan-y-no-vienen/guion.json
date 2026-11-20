@@ -1,0 +1,14 @@
+{
+  "id": "p01-reservan-y-no-vienen",
+  "titulo": "Reservan y no aparecen",
+  "nicho": "hostelería",
+  "voz": { "perfil": "98164dec", "seed": 11, "idioma": "es" },
+  "frases": [
+    { "id": "s1", "texto": "¿Te ha pasado que reservan una mesa y luego no aparecen?" },
+    { "id": "s2", "texto": "Ese hueco ya no lo recuperas." },
+    { "id": "s3", "texto": "Con Turnigo, tus clientes reservan solitos," },
+    { "id": "s4", "texto": "y tú ves la sala en directo." },
+    { "id": "s5", "texto": "Se acabó el lío del WhatsApp." },
+    { "id": "s6", "texto": "Comenta demo y te lo enseño." }
+  ]
+}

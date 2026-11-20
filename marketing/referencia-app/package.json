@@ -7,7 +7,8 @@
   "scripts": {
     "widget": "tsx capture-widget.ts",
     "panel": "tsx capture-panel.ts",
-    "indice": "tsx indice.ts"
+    "indice": "tsx indice.ts",
+    "demos": "tsx capture-demos-web.ts"
   },
   "devDependencies": {
     "puppeteer-core": "^24.0.0",

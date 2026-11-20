@@ -1,26 +1,30 @@
-// ─────────────────────────────────────────────────────────────────────────────
-//  MARCA — identidad de Turnigo (apps/dashboard/src/styles/turnigo-tokens.css).
-//  Todos los vídeos leen de aquí. Tras cambiar `cta`, regenera la voz
-//  (`npm run voice -- <video>`) porque el CTA también se locuta.
-// ─────────────────────────────────────────────────────────────────────────────
+import {loadFont} from '@remotion/google-fonts/Nunito';
 
-export const BRAND = {
-  name: "Turnigo",
+export const {fontFamily: FONT} = loadFont('normal', {weights: ['700', '800', '900']});
 
-  /** Verde azulado del logo (color principal de la app). */
-  color: "#0B6E6A",
-  colorLight: "#3F9A93",
-  colorDark: "#07403E",
-  /** Coral del logo: acento para resaltar (nunca texto pequeño). */
-  accent: "#FF6B4A",
-
-  /** Icono (cuadrado) y logo completo para fondo oscuro, en `public/`. */
-  icon: "brand/turnigo-icono.svg",
-  logoOnDark: "brand/turnigo-logo-negativo.svg",
-
-  /** Llamada a la acción común a todas las piezas (EndCard y comentario fijado). */
-  cta: "Comenta DEMO y te lo enseño",
-
-  /** Frase corta bajo el logo en el cierre. */
-  tagline: "Reservas online para tu negocio",
+// Tokens de marca (marketing/referencia-app/diseno/turnigo-tokens.css)
+export const C = {
+  teal50: '#E8F4F3',
+  teal100: '#CFE6E3',
+  teal200: '#9FCFC9',
+  teal600: '#0B6E6A',
+  teal700: '#095A57',
+  teal800: '#07403E',
+  coral: '#FF6B4A',
+  coral50: '#FFEFEA',
+  bg: '#F3F7F6',
+  surface: '#FFFFFF',
+  border: '#D9E4E2',
+  text: '#0F2A2A',
+  muted: '#4A6362',
+  success: '#1F8A4C',
+  warning: '#B7791F',
+  danger: '#C0392B',
 };
+
+export const FPS = 30;
+export const W = 1080;
+export const H = 1920;
+// Zona segura de TikTok: nada importante en los 150 px de arriba ni en los 380 de abajo.
+export const SAFE_TOP = 150;
+export const SAFE_BOTTOM = 380;
