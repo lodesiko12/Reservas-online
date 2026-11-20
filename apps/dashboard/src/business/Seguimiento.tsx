@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../lib/auth";
 import { useBookings, useBookingsRealtime, type Booking } from "./hooks";
-import { ymdInTz, zonedDayRange, formatTime, clientSessionSchema } from "@reservas/shared";
+import { ymdInTz, zonedDayRange, formatTime } from "@reservas/shared";
+import { SessionFormModal, readLocalDraft } from "./ficha/SessionFormModal";
 import { PageHeader, Spinner, Modal, EmptyState } from "../components/ui";
 
 type Row = Booking & { services: { name: string } | null; professionals: { name: string; color: string } | null };
@@ -59,7 +60,7 @@ export function Seguimiento() {
             ) : (
               <div className="grid sm:grid-cols-2 gap-3">
                 {inProgress.map((b) => (
-                  <BookingCard key={b.id} booking={b} tz={tz} action={<button className="btn-primary text-xs mt-3" onClick={() => setActive(b)}>Empezar cita</button>} />
+                  <BookingCard key={b.id} booking={b} tz={tz} action={<button className="btn-primary text-xs mt-3" onClick={() => setActive(b)}>{readLocalDraft(b.id) ? "Continuar notas" : "Empezar cita"}</button>} />
                 ))}
               </div>
             )}
@@ -68,7 +69,7 @@ export function Seguimiento() {
             <div>
               <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 mb-2">Siguiente</h3>
               <div className="grid sm:grid-cols-2 gap-3">
-                <BookingCard booking={next} tz={tz} action={<button className="btn-ghost text-xs mt-3" onClick={() => setActive(next)}>Apuntar notas</button>} />
+                <BookingCard booking={next} tz={tz} action={<button className="btn-ghost text-xs mt-3" onClick={() => setActive(next)}>{readLocalDraft(next.id) ? "Continuar notas" : "Apuntar notas"}</button>} />
               </div>
             </div>
           )}
@@ -91,50 +92,27 @@ function BookingCard({ booking: b, tz, action }: { booking: Row; tz: string; act
 }
 
 function StartSessionModal({ booking, onClose }: { booking: Row; onClose: () => void }) {
-  const [form, setForm] = useState({ objetivo: "", notas: "", seguimiento: "", tareas_pautas: "" });
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  async function save() {
-    if (!booking.customer_id) return;
-    setError(null);
-    const result = clientSessionSchema.safeParse(form);
-    if (!result.success) { setError(result.error.issues[0]?.message ?? "Revisa los datos."); return; }
-    setSaving(true);
-    const v = result.data;
-    const { data: { user } } = await supabase.auth.getUser();
-    const { error } = await supabase.from("client_sessions").insert({
-      business_id: booking.business_id, customer_id: booking.customer_id, booking_id: booking.id,
-      author_user_id: user?.id ?? null, session_date: booking.starts_at,
-      objetivo: v.objetivo ?? null, notas: v.notas ?? null,
-      seguimiento: v.seguimiento ?? null, tareas_pautas: v.tareas_pautas ?? null,
-    });
-    setSaving(false);
-    if (error) { setError(error.message); return; }
-    onClose();
-  }
-
-  const hasContent = Object.values(form).some((v) => v.trim());
-
-  return (
-    <Modal open onClose={onClose} title={`Sesión · ${booking.customer_name}`} width="max-w-lg">
-      {!booking.customer_id ? (
+  const customerId = booking.customer_id;
+  if (!customerId) {
+    return (
+      <Modal open onClose={onClose} title={`Sesión · ${booking.customer_name}`} width="max-w-lg">
         <p className="text-sm text-amber-600">Esta reserva no tiene un cliente vinculado, no se puede guardar la sesión.</p>
-      ) : (
-        <>
-          <div className="space-y-3">
-            <div><label className="label">Objetivo</label><textarea className="input" rows={2} placeholder="Objetivo de la sesión…" value={form.objetivo} onChange={(e) => setForm({ ...form, objetivo: e.target.value })} autoFocus /></div>
-            <div><label className="label">Notas de sesión</label><textarea className="input" rows={3} placeholder="Notas sobre la cita…" value={form.notas} onChange={(e) => setForm({ ...form, notas: e.target.value })} /></div>
-            <div><label className="label">Seguimiento</label><textarea className="input" rows={2} placeholder="Qué revisar en próximas sesiones…" value={form.seguimiento} onChange={(e) => setForm({ ...form, seguimiento: e.target.value })} /></div>
-            <div><label className="label">Tareas/Pautas</label><textarea className="input" rows={2} placeholder="Ejercicios o pautas para el cliente…" value={form.tareas_pautas} onChange={(e) => setForm({ ...form, tareas_pautas: e.target.value })} /></div>
-          </div>
-          {error && <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mt-2">{error}</div>}
-          <div className="flex justify-end gap-2 mt-4">
-            <button className="btn-ghost" onClick={onClose}>Cancelar</button>
-            <button className="btn-primary" disabled={!hasContent || saving} onClick={save}>{saving ? "Guardando…" : "Guardar sesión"}</button>
-          </div>
-        </>
-      )}
-    </Modal>
+      </Modal>
+    );
+  }
+  return (
+    <SessionFormModal
+      title={`Sesión · ${booking.customer_name}`} width="max-w-lg"
+      draft={{ bookingId: booking.id, businessId: booking.business_id }}
+      onClose={onClose}
+      onSubmit={async (v) => {
+        const { data: { user } } = await supabase.auth.getUser();
+        const { error } = await supabase.from("client_sessions").insert({
+          business_id: booking.business_id, customer_id: customerId, booking_id: booking.id,
+          author_user_id: user?.id ?? null, session_date: booking.starts_at, ...v,
+        });
+        return error ? error.message : null;
+      }}
+    />
   );
 }

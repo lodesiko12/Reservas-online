@@ -4,7 +4,7 @@ import { Smartphone } from "lucide-react";
 
 type InstallPromptEvent = Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: string }> };
 
-function isStandalone() {
+export function isStandalone() {
   return window.matchMedia("(display-mode: standalone)").matches || (navigator as { standalone?: boolean }).standalone === true;
 }
 
@@ -14,28 +14,38 @@ function isIos() {
   return /iPhone|iPad|iPod/.test(ua) || (ua.includes("Macintosh") && navigator.maxTouchPoints > 1);
 }
 
+// `beforeinstallprompt` se dispara una sola vez al cargar: se captura a nivel de módulo para que
+// los botones que se montan después (menú móvil, cabecera) lo encuentren.
+let deferred: InstallPromptEvent | null = null;
+let wasInstalled = typeof window !== "undefined" && isStandalone();
+const subs = new Set<() => void>();
+const notify = () => subs.forEach((f) => f());
+if (typeof window !== "undefined") {
+  window.addEventListener("beforeinstallprompt", (e) => {
+    e.preventDefault();
+    deferred = e as InstallPromptEvent;
+    notify();
+  });
+  window.addEventListener("appinstalled", () => {
+    wasInstalled = true;
+    deferred = null;
+    notify();
+  });
+}
+
 /** Botón "Instalar app": diálogo nativo en Android/Chrome, instrucciones en iOS. Oculto si ya está instalada. */
-export function InstallAppButton({ className = "btn-ghost w-full justify-start" }: { className?: string }) {
-  const [promptEvent, setPromptEvent] = useState<InstallPromptEvent | null>(null);
-  const [installed, setInstalled] = useState(() => isStandalone());
+export function InstallAppButton({ className = "btn-ghost w-full justify-start", iconOnly = false }: { className?: string; iconOnly?: boolean }) {
+  const [, force] = useState(0);
   const [showIos, setShowIos] = useState(false);
 
   useEffect(() => {
-    const onPrompt = (e: Event) => {
-      e.preventDefault();
-      setPromptEvent(e as InstallPromptEvent);
-    };
-    const onInstalled = () => {
-      setInstalled(true);
-      setPromptEvent(null);
-    };
-    window.addEventListener("beforeinstallprompt", onPrompt);
-    window.addEventListener("appinstalled", onInstalled);
-    return () => {
-      window.removeEventListener("beforeinstallprompt", onPrompt);
-      window.removeEventListener("appinstalled", onInstalled);
-    };
+    const f = () => force((n) => n + 1);
+    subs.add(f);
+    return () => { subs.delete(f); };
   }, []);
+
+  const promptEvent = deferred;
+  const installed = wasInstalled;
 
   if (installed) return null;
   const ios = isIos();
@@ -45,7 +55,8 @@ export function InstallAppButton({ className = "btn-ghost w-full justify-start" 
     if (promptEvent) {
       await promptEvent.prompt();
       await promptEvent.userChoice;
-      setPromptEvent(null);
+      deferred = null;
+      notify();
     } else {
       setShowIos(true);
     }
@@ -53,8 +64,8 @@ export function InstallAppButton({ className = "btn-ghost w-full justify-start" 
 
   return (
     <>
-      <button className={className} onClick={install}>
-        <Smartphone size={16} strokeWidth={1.75} aria-hidden="true" /> Instalar app
+      <button className={className} onClick={install} title="Instalar app" aria-label="Instalar app">
+        <Smartphone size={iconOnly ? 18 : 16} strokeWidth={1.75} aria-hidden="true" />{!iconOnly && " Instalar app"}
       </button>
       <Modal open={showIos} onClose={() => setShowIos(false)} title="Instalar Turnigo en tu iPhone">
         <ol className="list-decimal pl-5 space-y-2 text-sm text-slate-700 dark:text-slate-300">

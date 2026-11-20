@@ -2,8 +2,10 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "../../lib/supabase";
 import { useAuth } from "../../lib/auth";
-import { Spinner, Modal } from "../../components/ui";
-import { formatDateTime, clientSessionSchema } from "@reservas/shared";
+import { Spinner, ConfirmDialog } from "../../components/ui";
+import { formatDateTime } from "@reservas/shared";
+import { Pencil, Trash2 } from "lucide-react";
+import { SessionFormModal, type SessionFields } from "./SessionFormModal";
 import type { Customer } from "../hooks";
 
 const FIELDS = [
@@ -22,6 +24,9 @@ export function HistorialTab({ customer }: { customer: Customer }) {
   const tz = business?.timezone ?? "Europe/Madrid";
   const qc = useQueryClient();
   const [adding, setAdding] = useState(false);
+  const [editing, setEditing] = useState<any | null>(null);
+  const [toDelete, setToDelete] = useState<any | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const { data: sessions, isLoading } = useQuery({
     queryKey: ["customer-sessions", customer.id],
@@ -48,7 +53,18 @@ export function HistorialTab({ customer }: { customer: Customer }) {
         <ul className="space-y-3 max-h-96 overflow-y-auto">
           {sessions.map((s) => (
             <li key={s.id} className="card p-3">
-              <div className="text-xs text-slate-400 dark:text-slate-500 mb-2">{formatDateTime(s.session_date, tz)}</div>
+              <div className="flex items-center gap-2 text-xs text-slate-400 dark:text-slate-500 mb-2">
+                <span>{formatDateTime(s.session_date, tz)}</span>
+                {new Date(s.updated_at).getTime() - new Date(s.created_at).getTime() > 60_000 && <span className="italic">· editada</span>}
+                <span className="ml-auto flex gap-1">
+                  <button className="h-7 w-7 grid place-items-center rounded-md hover:bg-slate-100 dark:hover:bg-slate-800" onClick={() => setEditing(s)}>
+                    <Pencil size={14} strokeWidth={1.75} /><span className="sr-only">Editar sesión</span>
+                  </button>
+                  <button className="h-7 w-7 grid place-items-center rounded-md text-red-500 hover:bg-red-50 dark:hover:bg-slate-800" onClick={() => { setDeleteError(null); setToDelete(s); }}>
+                    <Trash2 size={14} strokeWidth={1.75} /><span className="sr-only">Borrar sesión</span>
+                  </button>
+                </span>
+              </div>
               <dl className="space-y-1.5 text-sm">
                 {FIELDS.map(([key, label]) => {
                   const value = (s as any)[key] as string | null;
@@ -66,50 +82,46 @@ export function HistorialTab({ customer }: { customer: Customer }) {
           ))}
         </ul>
       )}
-      {adding && <AddSessionModal customer={customer} onClose={() => setAdding(false)} onSaved={() => { invalidate(); setAdding(false); }} />}
+      {adding && (
+        <SessionFormModal
+          title="Nueva sesión" compact
+          onClose={() => setAdding(false)}
+          onSubmit={async (v) => {
+            if (!business?.id) return "Negocio no disponible.";
+            const { data: { user } } = await supabase.auth.getUser();
+            const { error } = await supabase.from("client_sessions").insert({
+              business_id: business.id, customer_id: customer.id, author_user_id: user?.id ?? null, ...v,
+            });
+            if (error) return error.message;
+            invalidate();
+            return null;
+          }}
+        />
+      )}
+      {editing && (
+        <SessionFormModal
+          title="Editar sesión" compact submitLabel="Guardar cambios"
+          initial={{ objetivo: editing.objetivo ?? "", notas: editing.notas ?? "", seguimiento: editing.seguimiento ?? "", tareas_pautas: editing.tareas_pautas ?? "" } satisfies SessionFields}
+          onClose={() => setEditing(null)}
+          onSubmit={async (v) => {
+            const { error } = await supabase.from("client_sessions").update(v).eq("id", editing.id);
+            if (error) return error.message;
+            invalidate();
+            return null;
+          }}
+        />
+      )}
+      <ConfirmDialog
+        open={!!toDelete} title="Borrar sesión" confirmLabel="Borrar"
+        message={`Se borrará la sesión del ${toDelete ? formatDateTime(toDelete.session_date, tz) : ""} con todas sus notas. No se puede deshacer.${deleteError ? " Error: " + deleteError : ""}`}
+        onCancel={() => setToDelete(null)}
+        onConfirm={async () => {
+          const { error } = await supabase.from("client_sessions").delete().eq("id", toDelete.id);
+          if (error) { setDeleteError(error.message); return; }
+          setToDelete(null);
+          invalidate();
+        }}
+      />
     </div>
-  );
-}
-
-function AddSessionModal({ customer, onClose, onSaved }: { customer: Customer; onClose: () => void; onSaved: () => void }) {
-  const { business } = useAuth();
-  const [form, setForm] = useState({ objetivo: "", notas: "", seguimiento: "", tareas_pautas: "" });
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  async function save() {
-    if (!business?.id) return;
-    setError(null);
-    const result = clientSessionSchema.safeParse(form);
-    if (!result.success) { setError(result.error.issues[0]?.message ?? "Revisa los datos."); return; }
-    setSaving(true);
-    const v = result.data;
-    const { data: { user } } = await supabase.auth.getUser();
-    const { error } = await supabase.from("client_sessions").insert({
-      business_id: business.id, customer_id: customer.id, author_user_id: user?.id ?? null,
-      objetivo: v.objetivo ?? null, notas: v.notas ?? null,
-      seguimiento: v.seguimiento ?? null, tareas_pautas: v.tareas_pautas ?? null,
-    });
-    setSaving(false);
-    if (error) { setError(error.message); return; }
-    onSaved();
-  }
-
-  const hasContent = Object.values(form).some((v) => v.trim());
-
-  return (
-    <Modal open onClose={onClose} title="Nueva sesión">
-      <div className="space-y-3">
-        <div><label className="label">Objetivo</label><textarea className="input" rows={2} value={form.objetivo} onChange={(e) => setForm({ ...form, objetivo: e.target.value })} /></div>
-        <div><label className="label">Notas (sobre la cita)</label><textarea className="input" rows={2} value={form.notas} onChange={(e) => setForm({ ...form, notas: e.target.value })} /></div>
-        <div><label className="label">Seguimiento (qué revisar en próximas sesiones)</label><textarea className="input" rows={2} value={form.seguimiento} onChange={(e) => setForm({ ...form, seguimiento: e.target.value })} /></div>
-        <div><label className="label">Tareas/Pautas (ejercicios para el cliente)</label><textarea className="input" rows={2} value={form.tareas_pautas} onChange={(e) => setForm({ ...form, tareas_pautas: e.target.value })} /></div>
-      </div>
-      {error && <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mt-3">{error}</div>}
-      <div className="flex justify-end gap-2 mt-4">
-        <button className="btn-ghost" onClick={onClose}>Cancelar</button>
-        <button className="btn-primary" disabled={!hasContent || saving} onClick={save}>{saving ? "Guardando…" : "Guardar sesión"}</button>
-      </div>
-    </Modal>
   );
 }

@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useLocation } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../lib/auth";
 import { useTheme } from "../lib/theme";
 import { InstallAppButton } from "./InstallAppButton";
@@ -28,6 +28,13 @@ export function Layout({ nav, brandLabel, mobileTabs, action }: { nav: NavItem[]
     }
   });
   const [mobileOpen, setMobileOpen] = useState(false);
+  const mobileNavRef = useRef<HTMLElement>(null);
+
+  // El overlay móvil se monta al abrir: centra la sección activa en lugar de empezar arriba.
+  useEffect(() => {
+    if (!mobileOpen) return;
+    mobileNavRef.current?.querySelector('[aria-current="page"]')?.scrollIntoView({ block: "center" });
+  }, [mobileOpen]);
 
   useEffect(() => {
     try {
@@ -42,7 +49,9 @@ export function Layout({ nav, brandLabel, mobileTabs, action }: { nav: NavItem[]
     setMobileOpen(false);
   }, [location.pathname]);
 
-  function SidebarContent({ isCollapsed, onNavigate }: { isCollapsed: boolean; onNavigate?: () => void }) {
+  // Se llama como función (no como <Componente/>) para que React no lo remonte en cada render
+  // y el <nav> conserve su posición de scroll al cambiar de sección.
+  function renderSidebar(isCollapsed: boolean, onNavigate?: () => void, navRef?: React.Ref<HTMLElement>) {
     return (
       <>
         <div className={`h-16 shrink-0 flex items-center ${isCollapsed ? "justify-center px-2" : "gap-3 px-5"}`}>
@@ -77,7 +86,7 @@ export function Layout({ nav, brandLabel, mobileTabs, action }: { nav: NavItem[]
           </div>
         )}
 
-        <nav className="sidebar-scroll flex-1 p-3 space-y-1 overflow-y-auto">
+        <nav ref={navRef} className="sidebar-scroll flex-1 p-3 space-y-1 overflow-y-auto">
           {nav.map((n, i) => {
             const newGroup = !!n.group && n.group !== nav[i - 1]?.group;
             return (
@@ -120,7 +129,7 @@ export function Layout({ nav, brandLabel, mobileTabs, action }: { nav: NavItem[]
             {!isCollapsed && (theme === "dark" ? "Modo claro" : "Modo oscuro")}
           </button>
 
-          {!isCollapsed && <InstallAppButton className="btn w-full justify-start !bg-transparent !text-white/70 hover:!bg-white/[.08] hover:!text-white" />}
+          {<InstallAppButton iconOnly={isCollapsed} className="btn w-full justify-start !bg-transparent !text-white/70 hover:!bg-white/[.08] hover:!text-white" />}
 
           {!isCollapsed && (
             <div className="px-2 pt-1 text-xs text-white/55 truncate">{session?.user.email}</div>
@@ -145,7 +154,7 @@ export function Layout({ nav, brandLabel, mobileTabs, action }: { nav: NavItem[]
           collapsed ? "w-[76px]" : "w-60"
         }`}
       >
-        <SidebarContent isCollapsed={collapsed} />
+        {renderSidebar(collapsed)}
         <button
           className="absolute -right-3 top-[52px] h-6 w-6 rounded-full border border-slate-200 bg-white text-slate-500 shadow-card grid place-items-center hover:text-brand-600 hover:border-brand-300 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300"
           onClick={() => setCollapsed((c) => !c)}
@@ -160,7 +169,7 @@ export function Layout({ nav, brandLabel, mobileTabs, action }: { nav: NavItem[]
         <div className="lg:hidden fixed inset-0 z-50 flex">
           <div className="absolute inset-0 bg-slate-900/50" onClick={() => setMobileOpen(false)} />
           <aside className="relative z-10 w-72 max-w-[82vw] h-full flex flex-col bg-brand-700 dark:bg-ink shadow-xl">
-            <SidebarContent isCollapsed={false} onNavigate={() => setMobileOpen(false)} />
+            {renderSidebar(false, () => setMobileOpen(false), mobileNavRef)}
           </aside>
         </div>
       )}
@@ -184,6 +193,7 @@ export function Layout({ nav, brandLabel, mobileTabs, action }: { nav: NavItem[]
           >
             {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
           </button>
+          <InstallAppButton iconOnly className="h-9 w-9 grid place-items-center rounded-lg border border-slate-200 text-slate-600 dark:border-slate-700 dark:text-slate-300" />
         </header>
 
         <main className={`flex-1 min-w-0 p-4 sm:p-6 lg:p-8 max-w-[1400px] w-full ${mobileTabs ? "pb-28 lg:pb-8" : ""}`}>
