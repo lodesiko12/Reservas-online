@@ -31,21 +31,28 @@ begin
   values ('Consulta Clara Montes', v_slug, 'psicologo', '#0B6E6A', 'Europe/Madrid', 30)
   returning id into v_biz;
 
-  -- Usuario de acceso (cuenta de prueba)
-  insert into auth.users (
-    instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
-    raw_app_meta_data, raw_user_meta_data, created_at, updated_at,
-    confirmation_token, recovery_token, email_change_token_new, email_change
-  ) values (
-    '00000000-0000-0000-0000-000000000000', v_uid, 'authenticated', 'authenticated',
-    'psicologa@psicologo.test', v_pw, now(),
-    '{"provider":"email","providers":["email"]}', jsonb_build_object('full_name', 'Clara Montes'), now(), now(),
-    '', '', '', ''
-  );
-  insert into auth.identities (id, user_id, identity_data, provider, provider_id, last_sign_in_at, created_at, updated_at)
-  values (gen_random_uuid(), v_uid,
-          jsonb_build_object('sub', v_uid::text, 'email', 'psicologa@psicologo.test', 'email_verified', true),
-          'email', v_uid::text, now(), now(), now());
+  -- Usuario de acceso (cuenta de prueba). Si quedó huérfano de una demo anterior, se reutiliza
+  -- (y se restablece su contraseña de prueba) en vez de duplicarlo.
+  select id into v_uid from auth.users where email = 'psicologa@psicologo.test';
+  if v_uid is null then
+    v_uid := gen_random_uuid();
+    insert into auth.users (
+      instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
+      raw_app_meta_data, raw_user_meta_data, created_at, updated_at,
+      confirmation_token, recovery_token, email_change_token_new, email_change
+    ) values (
+      '00000000-0000-0000-0000-000000000000', v_uid, 'authenticated', 'authenticated',
+      'psicologa@psicologo.test', v_pw, now(),
+      '{"provider":"email","providers":["email"]}', jsonb_build_object('full_name', 'Clara Montes'), now(), now(),
+      '', '', '', ''
+    );
+    insert into auth.identities (id, user_id, identity_data, provider, provider_id, last_sign_in_at, created_at, updated_at)
+    values (gen_random_uuid(), v_uid,
+            jsonb_build_object('sub', v_uid::text, 'email', 'psicologa@psicologo.test', 'email_verified', true),
+            'email', v_uid::text, now(), now(), now());
+  else
+    update auth.users set encrypted_password = v_pw, updated_at = now() where id = v_uid;
+  end if;
   insert into public.business_users (business_id, user_id, role) values (v_biz, v_uid, 'owner');
 
   -- Profesional
@@ -75,7 +82,7 @@ begin
 
   -- Pacientes ficticios (sin diagnósticos, solo datos de contacto)
   insert into public.customers (business_id, full_name, last_name, phone, email, nif)
-  select v_biz, t.f, t.l, '6000010' || lpad(t.n::text, 2, '0'), 'paciente' || t.n || '@ejemplo.com', t.nif
+  select v_biz, t.f, t.l, '6000010' || lpad(t.n::text, 2, '0'), 'paciente' || t.n || '@example.com', t.nif
   from (values
     (1, 'Marta',   'Ibáñez Soler',   '12345678Z'),
     (2, 'Daniel',  'Ferrer Pons',    null),
