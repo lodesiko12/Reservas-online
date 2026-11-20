@@ -175,7 +175,7 @@ export function Configuracion() {
           <label className="label">Logo</label>
           <div className="flex items-center gap-4">
             {logoUrl && <img src={logoUrl} alt="logo" className="h-12 w-12 rounded-lg object-cover border" />}
-            <input type="file" accept="image/*" onChange={(e) => e.target.files?.[0] && uploadLogo(e.target.files[0])} />
+            <input type="file" accept="image/*" className="min-w-0 flex-1 text-sm" onChange={(e) => e.target.files?.[0] && uploadLogo(e.target.files[0])} />
             {uploading && <Spinner className="h-4 w-4" />}
           </div>
           <input className="input mt-2" placeholder="…o pega una URL de imagen" value={logoUrl} onChange={(e) => setLogoUrl(e.target.value)} />

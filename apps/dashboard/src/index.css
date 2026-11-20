@@ -9,6 +9,9 @@
     @apply bg-slate-50 text-slate-900 antialiased dark:bg-slate-950 dark:text-slate-100;
     font-family: var(--tg-font);
   }
+  /* El texto .sr-only es absolute: sin un ancestro posicionado escapa de los contenedores con scroll
+     horizontal (tablas) y ensancha toda la página en móvil. Las utilidades (absolute/fixed/sticky) ganan a esto. */
+  :has(> .sr-only) { position: relative; }
   /* Tablas: cabecera compacta en versalitas y fila con realce al pasar el ratón (afecta a todas las tablas del panel). */
   thead th { @apply text-[11.5px] font-bold uppercase tracking-[0.06em]; }
   tbody tr { @apply transition-colors hover:bg-slate-50/70 dark:hover:bg-white/[.03]; }

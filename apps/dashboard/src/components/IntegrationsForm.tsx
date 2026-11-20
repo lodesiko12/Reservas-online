@@ -129,8 +129,8 @@ export function IntegrationsForm({ businessId, onToast, isAutonomo }: { business
       </div>
       <p className="text-xs text-slate-400 dark:text-slate-500 mt-2">
         URIs de redirección a autorizar en Google Cloud (añade las dos):
-        <br /><code className="bg-slate-100 dark:bg-slate-800 px-1 rounded">{`${(import.meta as any).env.VITE_SUPABASE_URL}/functions/v1/google-oauth-callback`}</code>
-        <br /><code className="bg-slate-100 dark:bg-slate-800 px-1 rounded">{`${(import.meta as any).env.VITE_SUPABASE_URL}/functions/v1/google-business-oauth-callback`}</code>
+        <br /><code className="bg-slate-100 dark:bg-slate-800 px-1 rounded break-all">{`${(import.meta as any).env.VITE_SUPABASE_URL}/functions/v1/google-oauth-callback`}</code>
+        <br /><code className="bg-slate-100 dark:bg-slate-800 px-1 rounded break-all">{`${(import.meta as any).env.VITE_SUPABASE_URL}/functions/v1/google-business-oauth-callback`}</code>
       </p>
 
       <button className="btn-primary mt-5" onClick={save} disabled={saving}>{saving ? "Guardando…" : "Guardar integraciones"}</button>

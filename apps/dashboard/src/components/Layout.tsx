@@ -51,7 +51,7 @@ export function Layout({ nav, brandLabel, mobileTabs, action }: { nav: NavItem[]
 
   // Se llama como función (no como <Componente/>) para que React no lo remonte en cada render
   // y el <nav> conserve su posición de scroll al cambiar de sección.
-  function renderSidebar(isCollapsed: boolean, onNavigate?: () => void, navRef?: React.Ref<HTMLElement>) {
+  function renderSidebar(isCollapsed: boolean, onNavigate?: () => void, navRef?: React.Ref<HTMLElement>, isMobile = false) {
     return (
       <>
         <div className={`h-16 shrink-0 flex items-center ${isCollapsed ? "justify-center px-2" : "gap-3 px-5"}`}>
@@ -86,7 +86,7 @@ export function Layout({ nav, brandLabel, mobileTabs, action }: { nav: NavItem[]
           </div>
         )}
 
-        <nav ref={navRef} className="sidebar-scroll flex-1 p-3 space-y-1 overflow-y-auto">
+        <nav ref={navRef} className="sidebar-scroll flex-1 min-h-0 p-3 space-y-1 overflow-y-auto overscroll-contain">
           {nav.map((n, i) => {
             const newGroup = !!n.group && n.group !== nav[i - 1]?.group;
             return (
@@ -119,28 +119,45 @@ export function Layout({ nav, brandLabel, mobileTabs, action }: { nav: NavItem[]
           })}
         </nav>
 
-        <div className={`border-t border-white/10 p-3 space-y-1 ${isCollapsed ? "flex flex-col items-center" : ""}`}>
-          <button
-            className={`flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold text-white/70 hover:bg-white/[.08] hover:text-white transition-colors duration-200 ${isCollapsed ? "justify-center px-2.5" : "w-full"}`}
-            onClick={toggleTheme}
-            title={theme === "dark" ? "Modo claro" : "Modo oscuro"}
-          >
-            {theme === "dark" ? <Sun size={18} strokeWidth={1.75} /> : <Moon size={18} strokeWidth={1.75} />}
-            {!isCollapsed && (theme === "dark" ? "Modo claro" : "Modo oscuro")}
-          </button>
+        {/* Pie siempre visible (shrink-0); en móvil es compacto: el tema y instalar ya están en la barra superior. */}
+        <div
+          className={`shrink-0 border-t border-white/10 p-3 space-y-1 ${isCollapsed ? "flex flex-col items-center" : ""}`}
+          style={isMobile ? { paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" } : undefined}
+        >
+          {!isMobile && (
+            <button
+              className={`flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold text-white/70 hover:bg-white/[.08] hover:text-white transition-colors duration-200 ${isCollapsed ? "justify-center px-2.5" : "w-full"}`}
+              onClick={toggleTheme}
+              title={theme === "dark" ? "Modo claro" : "Modo oscuro"}
+            >
+              {theme === "dark" ? <Sun size={18} strokeWidth={1.75} /> : <Moon size={18} strokeWidth={1.75} />}
+              {!isCollapsed && (theme === "dark" ? "Modo claro" : "Modo oscuro")}
+            </button>
+          )}
 
-          {<InstallAppButton iconOnly={isCollapsed} className="btn w-full justify-start !bg-transparent !text-white/70 hover:!bg-white/[.08] hover:!text-white" />}
+          {!isMobile && <InstallAppButton iconOnly={isCollapsed} className="btn w-full justify-start !bg-transparent !text-white/70 hover:!bg-white/[.08] hover:!text-white" />}
 
           {!isCollapsed && (
             <div className="px-2 pt-1 text-xs text-white/55 truncate">{session?.user.email}</div>
           )}
-          <button
-            className={`flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold text-white/70 hover:bg-white/[.08] hover:text-white transition-colors duration-200 ${isCollapsed ? "justify-center px-2.5" : "w-full"}`}
-            onClick={signOut}
-            title="Cerrar sesión"
-          >
-            <LogOut size={18} strokeWidth={1.75} /> {!isCollapsed && "Cerrar sesión"}
-          </button>
+          <div className={isMobile ? "flex gap-2" : undefined}>
+            {isMobile && (
+              <button
+                className="h-10 w-10 shrink-0 grid place-items-center rounded-xl text-white/70 hover:bg-white/[.08] hover:text-white"
+                onClick={toggleTheme}
+                aria-label={theme === "dark" ? "Modo claro" : "Modo oscuro"}
+              >
+                {theme === "dark" ? <Sun size={18} strokeWidth={1.75} /> : <Moon size={18} strokeWidth={1.75} />}
+              </button>
+            )}
+            <button
+              className={`flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold text-white/70 hover:bg-white/[.08] hover:text-white transition-colors duration-200 ${isCollapsed ? "justify-center px-2.5" : "w-full"}`}
+              onClick={signOut}
+              title="Cerrar sesión"
+            >
+              <LogOut size={18} strokeWidth={1.75} /> {!isCollapsed && "Cerrar sesión"}
+            </button>
+          </div>
         </div>
       </>
     );
@@ -166,10 +183,10 @@ export function Layout({ nav, brandLabel, mobileTabs, action }: { nav: NavItem[]
 
       {/* Menú móvil: overlay a pantalla completa */}
       {mobileOpen && (
-        <div className="lg:hidden fixed inset-0 z-50 flex">
+        <div className="lg:hidden fixed inset-x-0 top-0 h-[100dvh] z-50 flex overflow-hidden">
           <div className="absolute inset-0 bg-slate-900/50" onClick={() => setMobileOpen(false)} />
-          <aside className="relative z-10 w-72 max-w-[82vw] h-full flex flex-col bg-brand-700 dark:bg-ink shadow-xl">
-            {renderSidebar(false, () => setMobileOpen(false), mobileNavRef)}
+          <aside className="relative z-10 w-72 max-w-[82vw] h-full min-h-0 flex flex-col bg-brand-700 dark:bg-ink shadow-xl">
+            {renderSidebar(false, () => setMobileOpen(false), mobileNavRef, true)}
           </aside>
         </div>
       )}
