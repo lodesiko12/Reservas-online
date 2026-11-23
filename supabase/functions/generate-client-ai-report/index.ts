@@ -46,6 +46,13 @@ Deno.serve(async (req) => {
     .eq("id", customer_id).maybeSingle();
   if (!customer) return json({ error: "Cliente no encontrado o sin acceso" }, 404);
 
+  // RGPD: solo la profesional responsable (o quien la cubra hoy) puede generar el informe.
+  const { data: allowed } = await asCaller.rpc("can_access_clinical", { c: customer_id });
+  if (!allowed) {
+    return json({ ok: false, error: "Solo la profesional responsable de este paciente (o quien la cubra) puede generar su informe." }, 200);
+  }
+  await asCaller.rpc("log_clinical_access", { p_customer: customer_id, p_action: "generar_informe" });
+
   const { data: business } = await asCaller
     .from("businesses").select("type").eq("id", customer.business_id).single();
   if (business?.type !== "psicologo") {

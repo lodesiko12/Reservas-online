@@ -10,6 +10,7 @@ import { WhatsappInboxForm } from "../components/WhatsappInboxForm";
 import { GoogleBusinessProfileSection } from "../components/GoogleBusinessProfileSection";
 import { GoogleCalendarBusinessSection } from "../components/GoogleCalendarBusinessSection";
 import { GeminiConfigForm } from "../components/GeminiConfigForm";
+import { CoberturasSection } from "../components/CoberturasSection";
 import { WindowsEditor, type Win } from "../components/WindowsEditor";
 import { ConfiguracionFiscalSection } from "./crm/ConfiguracionFiscal";
 import { OrderSettingsSection, DayOverridesSection } from "./OrderSettings";
@@ -357,6 +358,9 @@ export function Configuracion() {
           <GeminiConfigForm businessId={bid} onToast={flash} />
         </section>
       )}
+
+      {/* Coberturas de ausencia (acceso clínico temporal entre profesionales) */}
+      {isPsicologo && <CoberturasSection onToast={flash} />}
 
       {/* Embed (no aplica a autónomo: sin reserva online) */}
       {!isAutonomo && (

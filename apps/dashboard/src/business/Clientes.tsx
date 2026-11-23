@@ -6,6 +6,7 @@ import { useBusinessId, type Customer } from "./hooks";
 import { formatDateTime } from "@reservas/shared";
 import { PageHeader, Spinner, Modal, StatusBadge, EmptyState, ConfirmDialog } from "../components/ui";
 import { HistorialTab } from "./ficha/HistorialTab";
+import { ClinicalGate, ResponsableBar } from "./ficha/AccesoClinico";
 import { EditarTab } from "./ficha/EditarTab";
 import { InformeTab } from "./ficha/InformeTab";
 import { ReciboTab } from "./ficha/ReciboTab";
@@ -317,6 +318,7 @@ function CustomerModal({ customer, onClose, onDeleted }: { customer: Customer; o
 
       {isPsicologo ? (
         <>
+          <ResponsableBar customer={customer} />
           <div className="flex gap-1 border-b border-slate-200 dark:border-slate-800 mb-4 overflow-x-auto">
             {([
               ["historial", "Historial"], ["editar", "Editar"],
@@ -327,9 +329,9 @@ function CustomerModal({ customer, onClose, onDeleted }: { customer: Customer; o
                 onClick={() => setTab(k)}>{l}</button>
             ))}
           </div>
-          {tab === "historial" && <HistorialTab customer={customer} />}
+          {tab === "historial" && <ClinicalGate customer={customer} action="ver_historial"><HistorialTab customer={customer} /></ClinicalGate>}
           {tab === "editar" && <EditarTab customer={customer} onSaved={() => qc.invalidateQueries({ queryKey: ["customers", bid] })} />}
-          {tab === "informe" && <InformeTab customer={customer} />}
+          {tab === "informe" && <ClinicalGate customer={customer} action="ver_informe"><InformeTab customer={customer} /></ClinicalGate>}
           {tab === "recibo" && <ReciboTab customer={customer} />}
         </>
       ) : isAutonomo ? (
