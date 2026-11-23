@@ -7,6 +7,10 @@ import { buildConfirmationEmail, buildOwnerBookingNotice, sendEmail } from "../_
 import { cleanOptionalText, cleanText, isEmail, isIsoDate, isPhone, isPositiveInt, isUuid } from "../_shared/validation.ts";
 import { getClientIp, rateLimitHit, tooManyRequests } from "../_shared/rateLimit.ts";
 
+// Texto fijo de la casilla de resena (debe coincidir con el del widget); se guarda como prueba.
+const REVIEW_CONSENT_TEXT =
+  "Acepto recibir por correo electrónico una petición de opinión sobre el centro tras mi cita. Puedo retirarlo cuando quiera.";
+
 type Body = {
   business_id?: string;
   // citas:
@@ -25,6 +29,8 @@ type Body = {
   notes?: string;
   // consentimiento de confidencialidad (negocios con consent_required): true = marcó la casilla.
   consent?: boolean;
+  // conformidad opcional (casilla aparte) para recibir la peticion de resena por correo.
+  review_consent?: boolean;
 };
 
 Deno.serve(async (req) => {
@@ -57,7 +63,7 @@ Deno.serve(async (req) => {
 
   // Modo encargo: el email es opcional (el canal habitual es el teléfono/WhatsApp).
   const { data: bizRow } = await supabase.from("businesses")
-    .select("order_mode, consent_required, consent_text").eq("id", business_id).maybeSingle();
+    .select("order_mode, consent_required, consent_text, review_consent_required").eq("id", business_id).maybeSingle();
   const orderMode = !!bizRow?.order_mode;
   // Consentimiento de confidencialidad: se exige en el servidor (no solo en la casilla del widget)
   // y se guarda con el texto vigente, para tener constancia de qué aceptó y cuándo.
@@ -135,6 +141,17 @@ Deno.serve(async (req) => {
       await supabase.from("bookings").delete().eq("id", booking.id);
       return json({ error: "No se pudo registrar la aceptación. Inténtalo de nuevo." }, 500);
     }
+  }
+
+  // 1c) Conformidad opcional para recibir la peticion de resena. Es independiente de la reserva:
+  // si no se puede guardar, la reserva sigue y simplemente no se enviara la peticion.
+  if (bizRow?.review_consent_required && body.review_consent === true) {
+    const { error: reviewErr } = await supabase.from("bookings").update({
+      review_consent_at: new Date().toISOString(),
+      review_consent_text: REVIEW_CONSENT_TEXT,
+      review_consent_source: "widget",
+    }).eq("id", booking.id);
+    if (reviewErr) console.error("review consent save error:", reviewErr.message);
   }
 
   // 2) Datos para el email y la respuesta (incl. credenciales de email del negocio).

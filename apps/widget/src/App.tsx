@@ -341,10 +341,13 @@ function FormStep({
   const [email, setEmail] = useState("");
   const [notes, setNotes] = useState("");
   const [consent, setConsent] = useState(false);
+  const [reviewConsent, setReviewConsent] = useState(false);
   const [saving, setSaving] = useState(false);
 
   // Solo en reservas de citas (no restaurante ni encargos, que tienen su propio formulario).
   const needsConsent = business.consent_required && !business.order_mode;
+  // Casilla opcional (sin marcar, no bloquea la reserva) para la petición de reseña por correo.
+  const asksReview = business.review_consent_required && !business.order_mode;
   const validation = validateBookingContact({ name, lastName, phone, email, notes });
   const valid = validation.success && (!needsConsent || consent);
 
@@ -372,6 +375,7 @@ function FormStep({
         email: c.email,
         notes: c.notes || undefined,
         consent: needsConsent ? true : undefined,
+        review_consent: asksReview && reviewConsent ? true : undefined,
       });
       onDone(r);
     } catch (e: any) {
@@ -427,6 +431,13 @@ function FormStep({
             )}
             {" *"}
           </span>
+        </label>
+      )}
+
+      {asksReview && (
+        <label className="consent">
+          <input type="checkbox" checked={reviewConsent} onChange={(e) => setReviewConsent(e.target.checked)} />
+          <span>Acepto recibir por correo electrónico una petición de opinión sobre el centro tras mi cita. Puedo retirarlo cuando quiera. (Opcional)</span>
         </label>
       )}
 

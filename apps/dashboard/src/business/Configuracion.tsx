@@ -42,6 +42,7 @@ export function Configuracion() {
   const [consentText, setConsentText] = useState(business?.consent_text ?? "");
   const [consentUrl, setConsentUrl] = useState(business?.consent_url ?? "");
   const [savingConsent, setSavingConsent] = useState(false);
+  const [reviewConsentRequired, setReviewConsentRequired] = useState(!!business?.review_consent_required);
 
   const [hours, setHours] = useState<Win[] | null>(null);
   const [savingBranding, setSavingBranding] = useState(false);
@@ -101,6 +102,7 @@ export function Configuracion() {
     await supabase.from("businesses").update({
       google_review_url: result.data.reviewUrl ?? null,
       review_email_message: result.data.reviewMessage ?? null,
+      review_consent_required: reviewConsentRequired,
     }).eq("id", bid);
     await refresh();
     setSavingReview(false); flash("Enlace de reseña guardado");
@@ -334,6 +336,16 @@ export function Configuracion() {
             placeholder={`Hola {cliente}, gracias por confiar en {negocio}. ¿Nos dejas tu opinión?`}
           />
           <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Vacío = mensaje por defecto. Placeholders: {"{cliente}"} {"{negocio}"}.</p>
+          <label className="flex items-start gap-2 text-sm font-medium mt-4">
+            <input type="checkbox" className="mt-0.5" checked={reviewConsentRequired} onChange={(e) => setReviewConsentRequired(e.target.checked)} />
+            <span>
+              Pedir conformidad al reservar (recomendado)
+              <span className="block font-normal text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                El widget muestra una casilla opcional, sin marcar. El email de reseña solo se envía a quien la acepte (o a quien
+                la secretaría marque en «Nueva cita»). Es lo que exige la normativa de protección de datos y de comunicaciones por correo.
+              </span>
+            </span>
+          </label>
           <button className="btn-primary mt-4" onClick={saveReview} disabled={savingReview}>{savingReview ? "Guardando…" : "Guardar"}</button>
         </section>
       )}

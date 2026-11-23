@@ -209,6 +209,9 @@ function NuevaReservaCitas() {
   // Consentimiento de confidencialidad (negocios que lo exigen): la psicóloga confirma que el paciente lo aceptó.
   const needsConsent = !!business?.consent_required;
   const [consentOk, setConsentOk] = useState(false);
+  // Conformidad opcional para recibir la petición de reseña por correo.
+  const asksReview = !!business?.review_consent_required;
+  const [reviewOk, setReviewOk] = useState(false);
 
   const serviceProfessionals = (pros ?? []).filter((p) =>
     (links ?? []).some((l) => l.service_id === serviceId && l.professional_id === p.id)
@@ -254,6 +257,14 @@ function NuevaReservaCitas() {
         setError(`La cita se ha creado (${(data as any).locator}) pero no se pudo guardar la aceptación: ${cErr.message}. Márcala desde la Agenda, en la propia cita.`);
         return;
       }
+    }
+    if (asksReview && reviewOk) {
+      // Opcional: si falla, la cita ya existe y solo se queda sin petición de reseña.
+      await supabase.from("bookings").update({
+        review_consent_at: new Date().toISOString(),
+        review_consent_text: "Acepto recibir por correo electrónico una petición de opinión sobre el centro tras mi cita. Puedo retirarlo cuando quiera.",
+        review_consent_source: "panel",
+      }).eq("id", (data as any).id);
     }
     setSaving(false);
     setOk((data as any).locator);
@@ -310,6 +321,15 @@ function NuevaReservaCitas() {
             <span>
               <span className="font-semibold">El paciente ha aceptado el consentimiento de confidencialidad *</span>
               {business?.consent_text && <span className="block text-slate-500 dark:text-slate-400 mt-1">{business.consent_text}</span>}
+            </span>
+          </label>
+        )}
+        {asksReview && (
+          <label className="card p-5 flex items-start gap-3 text-sm cursor-pointer">
+            <input type="checkbox" className="mt-0.5 h-4 w-4" checked={reviewOk} onChange={(e) => setReviewOk(e.target.checked)} />
+            <span>
+              <span className="font-semibold">El paciente acepta recibir por correo la petición de opinión (opcional)</span>
+              <span className="block text-slate-500 dark:text-slate-400 mt-1">Sin marcar, no se le enviará ninguna petición de reseña.</span>
             </span>
           </label>
         )}

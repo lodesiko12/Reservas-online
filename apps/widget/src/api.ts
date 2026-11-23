@@ -20,6 +20,8 @@ export type PublicBusiness = {
   consent_required: boolean;
   consent_text: string | null;
   consent_url: string | null;
+  // Casilla aparte y opcional: conformidad para recibir la petición de reseña por correo.
+  review_consent_required: boolean;
 };
 
 export type PublicProfessional = { id: string; name: string; color: string };
@@ -159,6 +161,8 @@ export type BookingInput = {
   notes?: string;
   /** true = aceptó el consentimiento de confidencialidad (negocios que lo exigen). */
   consent?: boolean;
+  /** true = marcó la casilla opcional de petición de reseña por correo. */
+  review_consent?: boolean;
 };
 
 export type BookingResult = {

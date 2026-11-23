@@ -925,6 +925,9 @@ export type Database = {
           consent_accepted_at: string | null
           consent_source: string | null
           consent_text: string | null
+          review_consent_at: string | null
+          review_consent_source: string | null
+          review_consent_text: string | null
           paid_at: string | null
           party_size: number | null
           payment_method: string | null
@@ -957,6 +960,9 @@ export type Database = {
           consent_accepted_at?: string | null
           consent_source?: string | null
           consent_text?: string | null
+          review_consent_at?: string | null
+          review_consent_source?: string | null
+          review_consent_text?: string | null
           paid_at?: string | null
           party_size?: number | null
           payment_method?: string | null
@@ -989,6 +995,9 @@ export type Database = {
           consent_accepted_at?: string | null
           consent_source?: string | null
           consent_text?: string | null
+          review_consent_at?: string | null
+          review_consent_source?: string | null
+          review_consent_text?: string | null
           paid_at?: string | null
           party_size?: number | null
           payment_method?: string | null
@@ -1264,6 +1273,7 @@ export type Database = {
           consent_required: boolean
           consent_text: string | null
           consent_url: string | null
+          review_consent_required: boolean
           created_at: string
           default_capacity: number
           google_review_url: string | null
@@ -1293,6 +1303,7 @@ export type Database = {
           consent_required?: boolean
           consent_text?: string | null
           consent_url?: string | null
+          review_consent_required?: boolean
           created_at?: string
           default_capacity?: number
           google_review_url?: string | null
@@ -1322,6 +1333,7 @@ export type Database = {
           consent_required?: boolean
           consent_text?: string | null
           consent_url?: string | null
+          review_consent_required?: boolean
           created_at?: string
           default_capacity?: number
           google_review_url?: string | null
@@ -4171,6 +4183,7 @@ export type Database = {
           consent_required: boolean
           consent_text: string
           consent_url: string
+          review_consent_required: boolean
           id: string
           logo_url: string
           name: string

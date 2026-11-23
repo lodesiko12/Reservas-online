@@ -27,8 +27,8 @@ Deno.serve(async (req) => {
 
   const { data: bookings, error } = await supabase
     .from("bookings")
-    .select("id, business_id, customer_name, customer_email, " +
-            "businesses!inner(name, primary_color, google_review_url, review_email_message)")
+    .select("id, business_id, customer_name, customer_email, review_consent_at, " +
+            "businesses!inner(name, primary_color, google_review_url, review_email_message, review_consent_required)")
     .in("status", ["confirmada", "completada", "sentada"])
     .eq("businesses.is_active", true) // un negocio desactivado no debe seguir enviando correos
     .gte("ends_at", from)
@@ -41,6 +41,9 @@ Deno.serve(async (req) => {
   for (const b of bookings ?? []) {
     const biz = (b as any).businesses;
     if (!biz?.google_review_url || !b.customer_email) { skipped++; continue; }
+    // RGPD/LSSI: si el negocio exige conformidad para la peticion de resena, solo se envia
+    // a quien la marco al reservar (o la confirmo en el panel).
+    if (biz.review_consent_required && !b.review_consent_at) { skipped++; continue; }
 
     const { data: existing } = await supabase
       .from("review_requests_log").select("id").eq("booking_id", b.id).maybeSingle();
