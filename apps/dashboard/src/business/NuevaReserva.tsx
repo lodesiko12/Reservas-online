@@ -262,7 +262,7 @@ function NuevaReservaCitas() {
       // Opcional: si falla, la cita ya existe y solo se queda sin petición de reseña.
       await supabase.from("bookings").update({
         review_consent_at: new Date().toISOString(),
-        review_consent_text: "Acepto recibir por correo electrónico una petición de opinión sobre el centro tras mi cita. Puedo retirarlo cuando quiera.",
+        review_consent_text: "Acepto recibir por correo electrónico una petición de opinión sobre el centro tras mi cita.",
         review_consent_source: "panel",
       }).eq("id", (data as any).id);
     }

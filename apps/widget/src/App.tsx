@@ -437,7 +437,7 @@ function FormStep({
       {asksReview && (
         <label className="consent">
           <input type="checkbox" checked={reviewConsent} onChange={(e) => setReviewConsent(e.target.checked)} />
-          <span>Acepto recibir por correo electrónico una petición de opinión sobre el centro tras mi cita. Puedo retirarlo cuando quiera. (Opcional)</span>
+          <span>Acepto recibir por correo electrónico una petición de opinión sobre el centro tras mi cita. (Opcional)</span>
         </label>
       )}
 

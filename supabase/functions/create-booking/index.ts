@@ -9,7 +9,7 @@ import { getClientIp, rateLimitHit, tooManyRequests } from "../_shared/rateLimit
 
 // Texto fijo de la casilla de resena (debe coincidir con el del widget); se guarda como prueba.
 const REVIEW_CONSENT_TEXT =
-  "Acepto recibir por correo electrónico una petición de opinión sobre el centro tras mi cita. Puedo retirarlo cuando quiera.";
+  "Acepto recibir por correo electrónico una petición de opinión sobre el centro tras mi cita.";
 
 type Body = {
   business_id?: string;
