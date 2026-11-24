@@ -74,7 +74,12 @@ Deno.serve(async (req) => {
     "X-PUBLISHED-TTL:PT1H",
   ];
   for (const b of bookings ?? []) {
-    const who = `${b.customer_name} ${initials(b.customer_last_name)}`.trim();
+    // Si no hay apellido en su campo (citas importadas), el nombre completo viene junto en
+    // customer_name: se deja la primera palabra y el resto se reduce a iniciales.
+    const [first, ...rest] = b.customer_name.trim().split(/\s+/);
+    const who = b.customer_last_name
+      ? `${b.customer_name} ${initials(b.customer_last_name)}`.trim()
+      : `${first} ${initials(rest.join(" "))}`.trim();
     const svc = (b as any).services?.name as string | undefined;
     lines.push(
       "BEGIN:VEVENT",
