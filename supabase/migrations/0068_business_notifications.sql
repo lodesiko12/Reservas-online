@@ -3,7 +3,7 @@
 -- personal del negocio (sección «Notificaciones» del panel + push al móvil).
 --
 --   * Opt-in por negocio: businesses.online_booking_notifications (por defecto false).
---     Esta migración lo activa solo para Ana Sánchez Psicóloga.
+--     Esta migración lo activa solo para Centro de Psicología Ana Sánchez.
 --   * Texto del aviso: «Nueva reserva online - <Nombre> <dd/mm/aaaa hh:mm>» (hora del negocio).
 --   * Las suscripciones push reutilizan agency_push_subscriptions (son por usuario/dispositivo,
 --     las mismas que ya usa el buzón de WhatsApp). El envío lo hace la Edge Function business-push.
@@ -63,8 +63,8 @@ revoke all on function public.notify_online_booking() from public, anon, authent
 
 alter publication supabase_realtime add table public.business_notifications;
 
--- Activar en Ana Sánchez Psicóloga.
-update public.businesses set online_booking_notifications = true where slug = 'ana-sanchez-psicologa';
+-- Activar en Centro de Psicología Ana Sánchez.
+update public.businesses set online_booking_notifications = true where slug = 'centrodepsicologia-anasanchez';
 
 -- Cron cada minuto que dispara business-push. Sustituye REPLACE_WITH_SECRET por el valor de
 -- CRON_SECRET (mismo patrón que 0046; el valor real no va en el repo).
