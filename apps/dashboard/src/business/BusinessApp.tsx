@@ -31,6 +31,7 @@ import { AgenciaApp } from "./agencia/AgenciaApp";
 import { Carta } from "./Carta";
 import { Pedidos } from "./Pedidos";
 import { Mensajes } from "./mensajes/Mensajes";
+import { Notificaciones, useNotificationsUnread } from "./notificaciones/Notificaciones";
 import { useWhatsappRealtime, useWaUnread } from "./mensajes/hooks";
 import { useNewOrdersCount } from "./hooks";
 import { isOrderSoundOn, playOrderBeep } from "../lib/orderAlert";
@@ -58,6 +59,10 @@ export function BusinessApp() {
   useWhatsappRealtime(inbox);
   const waUnread = useWaUnread(inbox);
   const mensajesNav: NavItem[] = inbox ? [{ to: "/app/mensajes", label: "Mensajes", icon: "💬", badge: waUnread }] : [];
+  // Notificaciones de reservas online (opt-in por negocio).
+  const notif = !!business?.online_booking_notifications && business?.type !== "agencia";
+  const notifUnread = useNotificationsUnread(notif);
+  const notifNav: NavItem[] = notif ? [{ to: "/app/notificaciones", label: "Notificaciones", icon: "🔔", badge: notifUnread }] : [];
   if (business?.type === "agencia") return <AgenciaApp />;
 
   const nav: NavItem[] = isAsesoria
@@ -85,6 +90,7 @@ export function BusinessApp() {
         { to: "/app", label: "Resumen", icon: "📊", end: true, group: "Día a día" },
         { to: "/app/agenda", label: "Agenda", icon: "🗓️", group: "Día a día" },
         { to: "/app/seguimiento", label: "Sesión de hoy", icon: "🩺", group: "Día a día" },
+        ...notifNav.map((m) => ({ ...m, group: "Día a día" })),
         ...mensajesNav.map((m) => ({ ...m, group: "Día a día" })),
         { to: "/app/clientes", label: "Clientes", icon: "👤", group: "Día a día" },
         ...(staffLimited ? [] : [
@@ -148,6 +154,7 @@ export function BusinessApp() {
             <Route path="plano" element={<PlanoSala />} />
             <Route path="agenda" element={<Agenda />} />
             {inbox && <Route path="mensajes" element={<Mensajes />} />}
+            {notif && <Route path="notificaciones" element={<Notificaciones />} />}
             <Route path="nueva" element={<NuevaReserva />} />
             <Route path="clientes" element={<Clientes />} />
             <Route path="seguimiento" element={<Seguimiento />} />

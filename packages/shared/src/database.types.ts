@@ -503,6 +503,42 @@ export type Database = {
           },
         ]
       }
+      business_notifications: {
+        Row: {
+          booking_id: string | null
+          business_id: string
+          created_at: string
+          id: string
+          kind: string
+          push_sent_at: string | null
+          read_at: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          booking_id?: string | null
+          business_id: string
+          created_at?: string
+          id?: string
+          kind: string
+          push_sent_at?: string | null
+          read_at?: string | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          booking_id?: string | null
+          business_id?: string
+          created_at?: string
+          id?: string
+          kind?: string
+          push_sent_at?: string | null
+          read_at?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       agency_notifications: {
         Row: {
           body: string | null
@@ -1283,6 +1319,7 @@ export type Database = {
           max_advance_days: number | null
           name: string
           online_orders: boolean
+          online_booking_notifications: boolean
           whatsapp_inbox_enabled: boolean
           order_mode: boolean
           primary_color: string
@@ -1313,6 +1350,7 @@ export type Database = {
           max_advance_days?: number | null
           name: string
           online_orders?: boolean
+          online_booking_notifications?: boolean
           whatsapp_inbox_enabled?: boolean
           order_mode?: boolean
           primary_color?: string
@@ -1343,6 +1381,7 @@ export type Database = {
           max_advance_days?: number | null
           name?: string
           online_orders?: boolean
+          online_booking_notifications?: boolean
           whatsapp_inbox_enabled?: boolean
           order_mode?: boolean
           primary_color?: string
