@@ -111,6 +111,7 @@ function ProfessionalModal({ bid, professional, nextColor, onClose, onSaved }: {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { data: services } = useServices(true);
+  const { business } = useAuth();
 
   useQuery({
     queryKey: ["prof-hours-and-services", professional?.id],
@@ -179,11 +180,75 @@ function ProfessionalModal({ bid, professional, nextColor, onClose, onSaved }: {
           <label className="label">Horario de trabajo</label>
           {loaded ? <WindowsEditor wins={wins} onChange={setWins} /> : <Spinner />}
         </div>
-        {professional && <GoogleCalendarSection professionalId={professional.id} />}
+        {professional && <CalendarFeedSection professionalId={professional.id} />}
+        {professional && business?.type !== "psicologo" && <GoogleCalendarSection professionalId={professional.id} />}
         {error && <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</div>}
         <div className="flex justify-end gap-2"><button className="btn-ghost" onClick={onClose}>Cancelar</button><button className="btn-primary" disabled={!name.trim() || busy} onClick={save}>Guardar</button></div>
       </div>
     </Modal>
+  );
+}
+
+/** Enlace de suscripción (ICS) para ver las citas de este profesional en su
+ * Google Calendar. Solo lectura y de un solo sentido (Turnigo → Google): no
+ * requiere OAuth ni credenciales. Título = nombre + iniciales de apellidos. */
+function CalendarFeedSection({ professionalId }: { professionalId: string }) {
+  const [url, setUrl] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [confirmingReset, setConfirmingReset] = useState(false);
+  const base = `${import.meta.env.VITE_SUPABASE_URL as string}/functions/v1/calendar-feed?t=`;
+
+  async function load(regenerate = false) {
+    setBusy(true); setError(null);
+    const { data, error } = await supabase.rpc(
+      regenerate ? "regenerate_professional_calendar_feed_token" : "get_professional_calendar_feed_token",
+      { p_professional_id: professionalId },
+    );
+    setBusy(false);
+    if (error || !data) { setError(error?.message ?? "No se pudo obtener el enlace"); return; }
+    setUrl(base + (data as string));
+  }
+
+  useEffect(() => { load(); }, [professionalId]);
+
+  async function copy() {
+    if (!url) return;
+    await navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  return (
+    <div>
+      <label className="label">Ver las citas en Google Calendar</label>
+      <div className="border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 space-y-2">
+        <div className="flex gap-2">
+          <input className="input text-xs" readOnly value={url ?? "Generando enlace…"} onFocus={(e) => e.currentTarget.select()} />
+          <button type="button" className="btn-ghost text-xs shrink-0" disabled={!url} onClick={copy}>{copied ? "¡Copiado!" : "Copiar"}</button>
+        </div>
+        <ol className="text-xs text-slate-500 dark:text-slate-400 list-decimal pl-4 space-y-0.5">
+          <li>Copia el enlace.</li>
+          <li>En Google Calendar (ordenador): «Otros calendarios» → «+» → «Desde URL».</li>
+          <li>Pégalo y pulsa «Añadir calendario».</li>
+        </ol>
+        <p className="text-xs text-slate-400 dark:text-slate-500">
+          Solo lectura: las citas pasan de Turnigo a Google, nunca al revés. Se ve nombre e iniciales de apellidos.
+          Google tarda unas horas en reflejar los cambios. No compartas el enlace: quien lo tenga ve las citas.
+        </p>
+        <button type="button" className="btn-ghost text-xs" disabled={busy} onClick={() => setConfirmingReset(true)}>Generar enlace nuevo</button>
+        {error && <p className="text-xs text-red-600">{error}</p>}
+      </div>
+      <ConfirmDialog
+        open={confirmingReset}
+        title="Generar enlace nuevo"
+        message="El enlace actual dejará de funcionar y habrá que volver a suscribirse con el nuevo."
+        confirmLabel="Generar"
+        onConfirm={() => { setConfirmingReset(false); load(true); }}
+        onCancel={() => setConfirmingReset(false)}
+      />
+    </div>
   );
 }
 

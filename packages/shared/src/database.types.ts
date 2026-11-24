@@ -4117,6 +4117,14 @@ export type Database = {
           sync_enabled: boolean
         }[]
       }
+      get_professional_calendar_feed_token: {
+        Args: { p_professional_id: string }
+        Returns: string
+      }
+      regenerate_professional_calendar_feed_token: {
+        Args: { p_professional_id: string }
+        Returns: string
+      }
       get_business_google_status: {
         Args: { p_business_id: string }
         Returns: {
