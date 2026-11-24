@@ -44,6 +44,10 @@ export function Notificaciones() {
     await supabase.from("business_notifications").update({ read_at: new Date().toISOString() }).in("id", ids);
     qc.invalidateQueries({ queryKey: ["business_notifications", bid] });
   }
+  async function markUnread(id: string) {
+    await supabase.from("business_notifications").update({ read_at: null }).eq("id", id);
+    qc.invalidateQueries({ queryKey: ["business_notifications", bid] });
+  }
 
   return (
     <div>
@@ -58,14 +62,17 @@ export function Notificaciones() {
         : (
           <div className="card divide-y divide-slate-100 dark:divide-slate-800">
             {data.map((n) => (
-              <button key={n.id} onClick={() => markRead(n.read_at ? [] : [n.id])} className={`w-full flex items-start gap-3 px-4 py-3 text-left hover:bg-slate-50 dark:hover:bg-slate-800/60 ${n.read_at ? "" : "bg-brand-50/60 dark:bg-brand-500/10"}`}>
+              <div key={n.id} className={`flex items-start gap-3 px-4 py-3 flex-wrap ${n.read_at ? "" : "bg-brand-50/60 dark:bg-brand-500/10"}`}>
                 <CalendarPlus size={20} strokeWidth={1.75} className="mt-0.5 shrink-0 text-brand-600 dark:text-brand-300" aria-hidden="true" />
-                <div className="min-w-0 flex-1">
+                <div className="min-w-0 flex-1 basis-48">
                   <div className={`text-sm break-words ${n.read_at ? "font-semibold" : "font-extrabold"}`}>{n.title}</div>
                   <div className="text-xs text-slate-400 mt-0.5">Recibida {formatDateTime(n.created_at, tz)}</div>
                 </div>
-                {!n.read_at && <span className="mt-1.5 h-2.5 w-2.5 rounded-full bg-coral-500 shrink-0" />}
-              </button>
+                {!n.read_at && <span className="mt-1.5 h-2.5 w-2.5 rounded-full bg-coral-500 shrink-0" aria-label="Sin leer" />}
+                <button className="btn-ghost text-sm shrink-0" onClick={() => (n.read_at ? markUnread(n.id) : markRead([n.id]))}>
+                  {n.read_at ? "Marcar como no leído" : "Marcar como leído"}
+                </button>
+              </div>
             ))}
           </div>
         )}
