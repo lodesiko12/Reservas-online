@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../lib/auth";
 import { useBookings, useBookingsRealtime, type Booking } from "./hooks";
@@ -24,6 +25,26 @@ export function Seguimiento() {
   const { data: bookings, isLoading } = useBookings(from, to);
   useEffect(() => { setNow(new Date()); }, [bookings]);
 
+  // RGPD: solo se pueden apuntar notas de pacientes a los que se tiene acceso clinico
+  // (profesional responsable, cobertura o acceso excepcional). La RLS lo impone en la BD;
+  // aqui se evita ofrecer el formulario para que no se escriba una nota que luego se rechaza.
+  const customerIds = useMemo(
+    () => [...new Set(((bookings ?? []) as Row[]).map((b) => b.customer_id).filter((x): x is string => !!x))].sort(),
+    [bookings]
+  );
+  const { data: access } = useQuery({
+    queryKey: ["seguimiento-access", customerIds.join(",")],
+    enabled: customerIds.length > 0,
+    queryFn: async () => {
+      const entries = await Promise.all(customerIds.map(async (id) => {
+        const { data } = await (supabase as any).rpc("can_access_clinical", { c: id });
+        return [id, !!data] as const;
+      }));
+      return new Map<string, boolean>(entries);
+    },
+  });
+  const canWrite = (b: Row) => !!b.customer_id && access?.get(b.customer_id) === true;
+
   const inProgress = useMemo(() => {
     const nowMs = now.getTime();
     return ((bookings ?? []) as Row[]).filter(
@@ -39,8 +60,9 @@ export function Seguimiento() {
     const upcoming = ((bookings ?? []) as Row[])
       .filter((b) => b.status === "confirmada" && new Date(b.starts_at).getTime() > nowMs)
       .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime());
-    return upcoming[0] ?? null;
-  }, [bookings, now]);
+    // La siguiente cita "propia" (con acceso a sus notas) tiene prioridad sobre la de otra profesional.
+    return upcoming.find((b) => b.customer_id && access?.get(b.customer_id) === true) ?? upcoming[0] ?? null;
+  }, [bookings, now, access]);
 
   const [active, setActive] = useState<Row | null>(null);
 
@@ -60,7 +82,9 @@ export function Seguimiento() {
             ) : (
               <div className="grid sm:grid-cols-2 gap-3">
                 {inProgress.map((b) => (
-                  <BookingCard key={b.id} booking={b} tz={tz} action={<button className="btn-primary text-xs mt-3" onClick={() => setActive(b)}>{readLocalDraft(b.id) ? "Continuar notas" : "Empezar cita"}</button>} />
+                  <BookingCard key={b.id} booking={b} tz={tz} action={canWrite(b)
+                    ? <button className="btn-primary text-xs mt-3" onClick={() => setActive(b)}>{readLocalDraft(b.id) ? "Continuar notas" : "Empezar cita"}</button>
+                    : <NoAccessNote loading={!access} />} />
                 ))}
               </div>
             )}
@@ -69,7 +93,9 @@ export function Seguimiento() {
             <div>
               <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 mb-2">Siguiente</h3>
               <div className="grid sm:grid-cols-2 gap-3">
-                <BookingCard booking={next} tz={tz} action={<button className="btn-ghost text-xs mt-3" onClick={() => setActive(next)}>{readLocalDraft(next.id) ? "Continuar notas" : "Apuntar notas"}</button>} />
+                <BookingCard booking={next} tz={tz} action={canWrite(next)
+                  ? <button className="btn-ghost text-xs mt-3" onClick={() => setActive(next)}>{readLocalDraft(next.id) ? "Continuar notas" : "Apuntar notas"}</button>
+                  : <NoAccessNote loading={!access} />} />
               </div>
             </div>
           )}
@@ -78,6 +104,11 @@ export function Seguimiento() {
       {active && <StartSessionModal booking={active} onClose={() => setActive(null)} />}
     </div>
   );
+}
+
+function NoAccessNote({ loading }: { loading: boolean }) {
+  if (loading) return null;
+  return <p className="text-xs text-slate-500 dark:text-slate-400 mt-3">Las notas de este paciente son de otra profesional: no puedes apuntarlas.</p>;
 }
 
 function BookingCard({ booking: b, tz, action }: { booking: Row; tz: string; action?: ReactNode }) {
