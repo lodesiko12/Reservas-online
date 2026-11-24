@@ -76,6 +76,12 @@ function BlockModal({ bid, tz, onClose, onSaved }: { bid: string; tz: string; on
   const [professionalId, setProfessionalId] = useState("");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
+  // "Todo el dia": basta el dia (por defecto hoy); el bloqueo va de las 00:00 del primer dia
+  // hasta las 00:00 del dia siguiente al ultimo. Sin "Hasta" es un solo dia.
+  const [allDay, setAllDay] = useState(false);
+  const today = new Date().toLocaleDateString("sv-SE", { timeZone: tz });
+  const [dayFrom, setDayFrom] = useState(today);
+  const [dayTo, setDayTo] = useState("");
   const [reason, setReason] = useState("");
   const [cancelAffected, setCancelAffected] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -84,9 +90,20 @@ function BlockModal({ bid, tz, onClose, onSaved }: { bid: string; tz: string; on
 
   async function save() {
     setError(null);
-    if (!from || !to) { setError("Indica fecha/hora de inicio y fin."); return; }
-    const startsAt = fromLocalInput(from, tz);
-    const endsAt = fromLocalInput(to, tz);
+    let startsAt: string, endsAt: string;
+    if (allDay) {
+      const first = dayFrom || today;
+      const last = dayTo || first;
+      if (last < first) { setError("El último día no puede ser anterior al primero."); return; }
+      const next = new Date(`${last}T00:00:00Z`);
+      next.setUTCDate(next.getUTCDate() + 1);
+      startsAt = fromLocalInput(`${first}T00:00`, tz);
+      endsAt = fromLocalInput(`${next.toISOString().slice(0, 10)}T00:00`, tz);
+    } else {
+      if (!from || !to) { setError("Indica fecha/hora de inicio y fin."); return; }
+      startsAt = fromLocalInput(from, tz);
+      endsAt = fromLocalInput(to, tz);
+    }
     if (endsAt <= startsAt) { setError("El fin debe ser posterior al inicio."); return; }
     if (scope === "professional" && !professionalId) { setError("Selecciona un profesional."); return; }
 
@@ -136,10 +153,18 @@ function BlockModal({ bid, tz, onClose, onSaved }: { bid: string; tz: string; on
               </select>
             </div>
           )}
+          <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={allDay} onChange={(e) => setAllDay(e.target.checked)} /> Todo el día</label>
+          {allDay ? (
+            <div className="grid grid-cols-2 gap-3">
+              <div><label className="label">Día</label><input type="date" className="input" value={dayFrom} onChange={(e) => setDayFrom(e.target.value)} /></div>
+              <div><label className="label">Hasta el día (opcional)</label><input type="date" className="input" min={dayFrom} value={dayTo} onChange={(e) => setDayTo(e.target.value)} /></div>
+            </div>
+          ) : (
           <div className="grid grid-cols-2 gap-3">
             <div><label className="label">Desde</label><input type="datetime-local" className="input" value={from} onChange={(e) => setFrom(e.target.value)} /></div>
             <div><label className="label">Hasta</label><input type="datetime-local" className="input" value={to} onChange={(e) => setTo(e.target.value)} /></div>
           </div>
+          )}
           <div><label className="label">Motivo (opcional)</label><input className="input" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Vacaciones, festivo…" /></div>
           <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={cancelAffected} onChange={(e) => setCancelAffected(e.target.checked)} /> Cancelar automáticamente las reservas afectadas</label>
           {error && <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</div>}
