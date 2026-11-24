@@ -173,13 +173,28 @@ function CustomerSearch({ bid, onPick }: { bid: string; onPick: (c: FoundCustome
   );
 }
 
-export function Done({ locator }: { locator: string }) {
+export type EmailStatus = "sent" | "failed" | "none";
+
+/** Envía automáticamente la confirmación al cliente tras una reserva manual (si tiene email). */
+export async function sendConfirmationEmail(locator: string, email: string): Promise<EmailStatus> {
+  if (!email.trim()) return "none";
+  try {
+    const { error } = await supabase.functions.invoke("send-confirmation-email", { body: { locator } });
+    return error ? "failed" : "sent";
+  } catch {
+    return "failed";
+  }
+}
+
+export function Done({ locator, emailStatus }: { locator: string; emailStatus?: EmailStatus }) {
   return (
     <div className="grid place-items-center py-20 text-center">
       <div className="card p-8">
         <CheckCircle2 size={44} strokeWidth={1.5} className="mx-auto text-green-600" aria-hidden="true" />
         <p className="font-semibold mt-2">Reserva creada</p>
         <p className="text-brand-600 font-bold text-xl mt-1">{locator}</p>
+        {emailStatus === "sent" && <p className="text-sm text-green-700 mt-2">Confirmación enviada por email al cliente.</p>}
+        {emailStatus === "failed" && <p className="text-sm text-amber-600 mt-2">La reserva se creó, pero no se pudo enviar el email de confirmación.</p>}
         <p className="text-sm text-slate-400 dark:text-slate-500 mt-2">Redirigiendo a la agenda…</p>
       </div>
     </div>
@@ -206,6 +221,7 @@ function NuevaReservaCitas() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [ok, setOk] = useState<string | null>(null);
+  const [emailStatus, setEmailStatus] = useState<EmailStatus>("none");
   // Consentimiento de confidencialidad (negocios que lo exigen): la psicóloga confirma que el paciente lo aceptó.
   const needsConsent = !!business?.consent_required;
   const [consentOk, setConsentOk] = useState(false);
@@ -266,13 +282,15 @@ function NuevaReservaCitas() {
         review_consent_source: "panel",
       }).eq("id", (data as any).id);
     }
+    const st = await sendConfirmationEmail((data as any).locator, form.email);
     setSaving(false);
+    setEmailStatus(st);
     setOk((data as any).locator);
-    setTimeout(() => nav("/app/agenda"), 1200);
+    setTimeout(() => nav("/app/agenda"), st === "failed" ? 3000 : 1200);
   }
 
   const valid = serviceId && slot && form.name.trim() && form.phone.trim() && (!needsConsent || consentOk);
-  if (ok) return <Done locator={ok} />;
+  if (ok) return <Done locator={ok} emailStatus={emailStatus} />;
 
   return (
     <div className="max-w-2xl">
@@ -358,6 +376,7 @@ function NuevaReservaRestaurante() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [ok, setOk] = useState<string | null>(null);
+  const [emailStatus, setEmailStatus] = useState<EmailStatus>("none");
 
   const avail = useAvailableDays(tz, true, (from, to) => rpcDays("get_available_dining_days", {
     p_business_id: bid, p_date_from: from, p_date_to: to, p_party_size: party,
@@ -402,14 +421,16 @@ function NuevaReservaRestaurante() {
       p_notes: form.notes.trim() || undefined, p_channel: "manual",
       p_table_id: tableId || undefined,
     });
+    if (error) { setSaving(false); setError(error.message); return; }
+    const st = await sendConfirmationEmail((data as any).locator, form.email);
     setSaving(false);
-    if (error) { setError(error.message); return; }
+    setEmailStatus(st);
     setOk((data as any).locator);
-    setTimeout(() => nav("/app/agenda"), 1200);
+    setTimeout(() => nav("/app/agenda"), st === "failed" ? 3000 : 1200);
   }
 
   const valid = slot && form.name.trim() && form.phone.trim();
-  if (ok) return <Done locator={ok} />;
+  if (ok) return <Done locator={ok} emailStatus={emailStatus} />;
 
   return (
     <div className="max-w-2xl">
