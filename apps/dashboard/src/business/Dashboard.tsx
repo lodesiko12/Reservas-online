@@ -9,6 +9,7 @@ import {
   formatTime, WEEKDAYS_SHORT_ES,
 } from "@reservas/shared";
 import { PageHeader, StatCard, Spinner, StatusBadge, EmptyState } from "../components/ui";
+import { dayOccupancy, type Interval } from "./occupancy";
 
 export function Dashboard() {
   const { business } = useAuth();
@@ -25,7 +26,7 @@ export function Dashboard() {
       const last30Start = zonedDayRange(addDaysYmd(todayYmd, -30), tz)[0];
       const todayEnd = zonedDayRange(todayYmd, tz)[1];
 
-      const [today, next7, last30, hours, profs] = await Promise.all([
+      const [today, next7, last30, hours, profs, blocks, override] = await Promise.all([
         supabase.from("bookings").select("*, services(name), professionals(name)")
           .eq("business_id", bid).gte("starts_at", todayStart).lt("starts_at", todayEnd).order("starts_at"),
         supabase.from("bookings").select("starts_at, status")
@@ -33,15 +34,22 @@ export function Dashboard() {
         supabase.from("bookings").select("channel, status")
           .eq("business_id", bid).gte("starts_at", last30Start).lt("starts_at", todayEnd),
         supabase.from("business_hours").select("weekday, open_time, close_time").eq("business_id", bid),
-        supabase.from("professionals").select("id").eq("business_id", bid).eq("is_active", true),
+        supabase.from("professionals").select("id, professional_hours(weekday, start_time, end_time)").eq("business_id", bid).eq("is_active", true),
+        supabase.from("blocks").select("scope, professional_id, starts_at, ends_at")
+          .eq("business_id", bid).lt("starts_at", todayEnd).gt("ends_at", todayStart),
+        supabase.from("business_day_overrides").select("use_weekday").eq("business_id", bid).eq("day", todayYmd).maybeSingle(),
       ]);
       if (today.error) throw today.error;
+      if (profs.error) throw profs.error;
       return {
         today: today.data as any[],
         next7: next7.data ?? [],
         last30: last30.data ?? [],
         hours: hours.data ?? [],
-        profCount: (profs.data ?? []).length,
+        profs: (profs.data ?? []) as { id: string; professional_hours: { weekday: number; start_time: string; end_time: string }[] }[],
+        blocks: blocks.data ?? [],
+        override: override.data,
+        dayRange: [todayStart, todayEnd] as const,
       };
     },
   });
@@ -49,17 +57,40 @@ export function Dashboard() {
   const kpis = useMemo(() => {
     if (!data) return null;
     const todayActive = data.today.filter((b) => b.status !== "cancelada");
-    // Ocupación: minutos reservados hoy / minutos-recurso disponibles hoy.
-    const wd = weekdayInTz(new Date(), tz);
-    const openMin = data.hours
-      .filter((h: any) => h.weekday === wd)
-      .reduce((acc: number, h: any) => acc + minutesBetween(h.open_time, h.close_time), 0);
-    const resources = Math.max(1, data.profCount || (business?.default_capacity ?? 1));
-    const capacityMin = openMin * resources;
-    const bookedMin = todayActive
-      .filter((b) => b.status !== "no_show")
-      .reduce((acc, b) => acc + (new Date(b.ends_at).getTime() - new Date(b.starts_at).getTime()) / 60000, 0);
-    const occupancy = capacityMin > 0 ? Math.min(100, Math.round((bookedMin / capacityMin) * 100)) : 0;
+    // Ocupación: reservado / (reservado + libre), según el horario de cada profesional y los bloqueos.
+    // Un día especial puede usar el horario de otro día de la semana, o estar cerrado (use_weekday null).
+    const wd = data.override ? data.override.use_weekday : weekdayInTz(new Date(), tz);
+    const [dayStart, dayEnd] = data.dayRange.map((d) => new Date(d).getTime());
+    const toRange = (from: string, to: string): Interval => {
+      const min = (iso: string) => {
+        const t = new Date(iso).getTime();
+        if (t <= dayStart) return 0;
+        if (t >= dayEnd) return 1440;
+        return clockMinutes(formatTime(iso, tz));
+      };
+      return [min(from), min(to)];
+    };
+    const occupancy = dayOccupancy({
+      openHours: data.hours
+        .filter((h) => h.weekday === wd)
+        .map((h): Interval => [clockMinutes(h.open_time), clockMinutes(h.close_time)]),
+      professionals: data.profs.map((p) => ({
+        id: p.id,
+        hours: p.professional_hours.length === 0 ? null : p.professional_hours
+          .filter((h) => h.weekday === wd)
+          .map((h): Interval => [clockMinutes(h.start_time), clockMinutes(h.end_time)]),
+      })),
+      blocks: data.blocks
+        .filter((b) => b.scope === "business" || b.professional_id)
+        .map((b) => ({
+          professionalId: b.scope === "business" ? null : b.professional_id,
+          range: toRange(b.starts_at, b.ends_at),
+        })),
+      bookings: todayActive
+        .filter((b) => b.status !== "no_show")
+        .map((b) => ({ professionalId: b.professional_id, range: toRange(b.starts_at, b.ends_at) })),
+      defaultCapacity: business?.default_capacity ?? 1,
+    });
 
     const web = data.last30.filter((b: any) => b.channel === "web").length;
     const total30 = data.last30.filter((b: any) => b.status !== "cancelada").length;
@@ -170,8 +201,8 @@ export function Dashboard() {
   );
 }
 
-function minutesBetween(a: string, b: string): number {
-  const [ah, am] = a.split(":").map(Number);
-  const [bh, bm] = b.split(":").map(Number);
-  return bh * 60 + bm - (ah * 60 + am);
+/** "HH:mm" o "HH:mm:ss" → minutos desde medianoche. */
+function clockMinutes(hhmm: string): number {
+  const [h, m] = hhmm.split(":").map(Number);
+  return h * 60 + m;
 }
