@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../lib/auth";
 import { useBookings, useProfessionals, type Booking } from "./hooks";
+import { fetchScheduleWarnings } from "./bookingWarnings";
 import {
   ymdInTz, addDaysYmd, zonedDayRange, formatTime, formatDate,
   minutesOfDayInTz, WEEKDAYS_SHORT_ES,
@@ -578,7 +579,21 @@ function BookingModal({ booking, tz, trackPayments, onClose, onChanged }: {
     await supabase.from("bookings").delete().eq("id", booking.id);
     qc.invalidateQueries(); setBusy(false); onChanged();
   }
+  // Antes de mover una cita se avisa si la hora nueva se sale de lo normal.
+  const [rescheduleWarnings, setRescheduleWarnings] = useState<string[] | null>(null);
+  async function checkReschedule() {
+    if (booking.type !== "citas" || orderMode) { await saveReschedule(); return; }
+    setBusy(true);
+    const w = await fetchScheduleWarnings({
+      supabase, businessId: booking.business_id, tz, professionalId: booking.professional_id,
+      startISO: fromLocalInput(newStart, tz), durationMin, excludeBookingId: booking.id,
+    });
+    setBusy(false);
+    if (w.length > 0) { setRescheduleWarnings(w); return; }
+    await saveReschedule();
+  }
   async function saveReschedule() {
+    setRescheduleWarnings(null);
     setBusy(true);
     const start = fromLocalInput(newStart, tz);
     const end = new Date(new Date(start).getTime() + durationMin * 60000).toISOString();
@@ -668,7 +683,7 @@ function BookingModal({ booking, tz, trackPayments, onClose, onChanged }: {
           <label className="label">Nueva fecha y hora</label>
           <input type="datetime-local" className="input" value={newStart} onChange={(e) => setNewStart(e.target.value)} />
           <div className="flex gap-2 mt-3">
-            <button className="btn-primary" disabled={busy} onClick={saveReschedule}>Guardar</button>
+            <button className="btn-primary" disabled={busy || !newStart} onClick={checkReschedule}>Guardar</button>
             <button className="btn-ghost" onClick={() => setReschedule(false)}>Cancelar</button>
           </div>
           <p className="text-xs text-slate-400 dark:text-slate-500 mt-2">Reprogramación manual (sin re-verificar disponibilidad).</p>
@@ -694,6 +709,14 @@ function BookingModal({ booking, tz, trackPayments, onClose, onChanged }: {
         message="¿Eliminar esta reserva definitivamente?"
         onConfirm={remove}
         onCancel={() => setConfirmingDelete(false)}
+      />
+      <ConfirmDialog
+        open={!!rescheduleWarnings}
+        title="Revisa la hora"
+        message={(rescheduleWarnings ?? []).join(" ")}
+        confirmLabel="Guardar de todos modos"
+        onConfirm={saveReschedule}
+        onCancel={() => setRescheduleWarnings(null)}
       />
     </Modal>
   );

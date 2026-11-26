@@ -4,7 +4,9 @@ import { supabase } from "../lib/supabase";
 import { useAuth } from "../lib/auth";
 import { useServices, useProfessionals, useServiceProfessionals } from "./hooks";
 import { ymdInTz, addDaysYmd, weekdayInTz, WEEKDAYS_SHORT_ES, formatTime, formatDuration, PARTY_SIZE_OPTIONS } from "@reservas/shared";
-import { PageHeader, Spinner } from "../components/ui";
+import { PageHeader, Spinner, ConfirmDialog } from "../components/ui";
+import { fromLocalInput } from "../lib/datetime";
+import { fetchScheduleWarnings } from "./bookingWarnings";
 import { NuevoEncargo } from "./NuevoEncargo";
 import { CheckCircle2 } from "lucide-react";
 
@@ -252,15 +254,56 @@ function NuevaReservaCitas() {
     })();
   }, [serviceId, professionalId, date, bid]);
 
+  // «Otra hora»: cualquier fecha y hora, con avisos y confirmación si se salen de lo normal.
+  const [freeTime, setFreeTime] = useState(false);
+  const [freeValue, setFreeValue] = useState(""); // datetime-local en la zona del negocio
+  const [warnings, setWarnings] = useState<string[]>([]);
+  const [confirming, setConfirming] = useState<string[] | null>(null);
+  const durationMin = services?.find((s) => s.id === serviceId)?.duration_min ?? 0;
+  // En «Otra hora» hay que decir con quién; si solo hay una profesional, es ella.
+  const freeProfessionalId = professionalId || (serviceProfessionals.length === 1 ? serviceProfessionals[0].id : "");
+  const needsProfessional = freeTime && serviceProfessionals.length > 1 && !professionalId;
+  const freeISO = freeTime && freeValue ? fromLocalInput(freeValue, tz) : "";
+  const checkFreeTime = () => fetchScheduleWarnings({
+    supabase, businessId: bid, tz, professionalId: freeProfessionalId || null, startISO: freeISO, durationMin,
+  });
+
+  useEffect(() => {
+    setWarnings([]);
+    if (!freeISO || !durationMin || needsProfessional) return;
+    let cancelled = false;
+    checkFreeTime().then((w) => { if (!cancelled) setWarnings(w); });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [freeISO, durationMin, freeProfessionalId, needsProfessional, bid]);
+
   async function submit(e: React.FormEvent) {
-    e.preventDefault(); setError(null); setSaving(true);
-    const { data, error } = await supabase.rpc("create_public_booking", {
-      p_business_id: bid, p_service_id: serviceId, p_starts_at: slot,
+    e.preventDefault(); setError(null);
+    if (freeTime) {
+      // Se vuelve a comprobar al guardar, por si algo ha cambiado desde que se eligió la hora.
+      setSaving(true);
+      const w = await checkFreeTime();
+      setSaving(false);
+      if (w.length > 0) { setConfirming(w); return; }
+    }
+    await create();
+  }
+
+  async function create() {
+    setConfirming(null); setError(null); setSaving(true);
+    const base = {
+      p_business_id: bid, p_service_id: serviceId,
       p_name: form.name.trim(), p_last_name: form.last_name.trim(),
       p_phone: form.phone.trim(), p_email: form.email.trim(),
-      p_notes: form.notes.trim() || undefined, p_channel: "manual",
-      p_professional_id: professionalId || undefined,
-    });
+      p_notes: form.notes.trim() || undefined,
+    };
+    const { data, error } = freeTime
+      ? await supabase.rpc("create_manual_booking_free_time", {
+          ...base, p_starts_at: freeISO, p_professional_id: freeProfessionalId || undefined,
+        })
+      : await supabase.rpc("create_public_booking", {
+          ...base, p_starts_at: slot, p_channel: "manual", p_professional_id: professionalId || undefined,
+        });
     if (error) { setSaving(false); setError(error.message); return; }
     if (needsConsent) {
       const { error: cErr } = await supabase.from("bookings").update({
@@ -289,7 +332,8 @@ function NuevaReservaCitas() {
     setTimeout(() => nav("/app/agenda"), st === "failed" ? 3000 : 1200);
   }
 
-  const valid = serviceId && slot && form.name.trim() && form.phone.trim() && (!needsConsent || consentOk);
+  const timeOk = freeTime ? !!freeISO && !needsProfessional : !!slot;
+  const valid = serviceId && timeOk && form.name.trim() && form.phone.trim() && (!needsConsent || consentOk);
   if (ok) return <Done locator={ok} emailStatus={emailStatus} />;
 
   return (
@@ -312,6 +356,28 @@ function NuevaReservaCitas() {
             </>
           )}
           {serviceId && (
+            <div className="flex gap-2 mt-4" role="group" aria-label="Cómo elegir la hora">
+              {([[false, "Huecos libres"], [true, "Otra hora"]] as const).map(([value, text]) => (
+                <button key={text} type="button" aria-pressed={freeTime === value} onClick={() => setFreeTime(value)}
+                  className={`rounded-lg border px-3 py-1.5 text-sm font-semibold ${freeTime === value ? "bg-brand-500 text-white border-brand-500" : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700"}`}>
+                  {text}
+                </button>
+              ))}
+            </div>
+          )}
+          {serviceId && freeTime && (
+            <>
+              <label className="label mt-4">Fecha y hora</label>
+              <input type="datetime-local" className="input" value={freeValue} onChange={(e) => setFreeValue(e.target.value)} />
+              {needsProfessional && <p className="text-sm text-amber-600 mt-2">Elige la profesional para usar otra hora.</p>}
+              {warnings.length > 0 && (
+                <ul className="mt-3 text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 space-y-1">
+                  {warnings.map((w) => <li key={w}>{w}</li>)}
+                </ul>
+              )}
+            </>
+          )}
+          {serviceId && !freeTime && (
             <>
               <label className="label mt-4">Fecha</label>
               <DateStrip tz={tz} date={date} setDate={setDate} available={avail.days} loading={avail.loading} failed={avail.failed} />
@@ -354,6 +420,14 @@ function NuevaReservaCitas() {
         {error && <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</div>}
         <button className="btn-primary" disabled={!valid || saving}>{saving ? "Guardando…" : business?.type === "psicologo" ? "Crear cita" : "Crear reserva"}</button>
       </form>
+      <ConfirmDialog
+        open={!!confirming}
+        title="Revisa la hora"
+        message={(confirming ?? []).join(" ")}
+        confirmLabel="Crear de todos modos"
+        onConfirm={create}
+        onCancel={() => setConfirming(null)}
+      />
     </div>
   );
 }

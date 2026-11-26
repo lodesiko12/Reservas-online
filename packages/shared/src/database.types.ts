@@ -3595,7 +3595,21 @@ export type Database = {
         Args: { p_locator: string }
         Returns: boolean
       }
-      create_public_booking: {
+      create_manual_booking_free_time: {
+        Args: {
+          p_business_id: string
+          p_email: string
+          p_last_name: string
+          p_name: string
+          p_notes?: string
+          p_phone: string
+          p_professional_id?: string
+          p_service_id: string
+          p_starts_at: string
+        }
+        Returns: Database["public"]["Tables"]["bookings"]["Row"]
+      }
+      create_public_booking:{
         Args: {
           p_business_id: string
           p_channel?: Database["public"]["Enums"]["booking_channel"]
