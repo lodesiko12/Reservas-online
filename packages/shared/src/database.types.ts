@@ -1326,6 +1326,7 @@ export type Database = {
           reminder_lang: string
           reminder_template_name: string | null
           review_email_message: string | null
+          slot_chaining: boolean
           slot_interval_min: number
           slug: string
           timezone: string
@@ -1357,6 +1358,7 @@ export type Database = {
           reminder_lang?: string
           reminder_template_name?: string | null
           review_email_message?: string | null
+          slot_chaining?: boolean
           slot_interval_min?: number
           slug: string
           timezone?: string
@@ -1388,6 +1390,7 @@ export type Database = {
           reminder_lang?: string
           reminder_template_name?: string | null
           review_email_message?: string | null
+          slot_chaining?: boolean
           slot_interval_min?: number
           slug?: string
           timezone?: string
@@ -2241,6 +2244,7 @@ export type Database = {
           name: string
           online_max_covers: number | null
           pacing_enabled: boolean
+          slot_chaining: boolean
           slot_interval_min: number
           start_time: string
           updated_at: string
@@ -2262,6 +2266,7 @@ export type Database = {
           name: string
           online_max_covers?: number | null
           pacing_enabled?: boolean
+          slot_chaining?: boolean
           slot_interval_min?: number
           start_time: string
           updated_at?: string
@@ -2283,6 +2288,7 @@ export type Database = {
           name?: string
           online_max_covers?: number | null
           pacing_enabled?: boolean
+          slot_chaining?: boolean
           slot_interval_min?: number
           start_time?: string
           updated_at?: string
@@ -2668,6 +2674,7 @@ export type Database = {
           max_orders_per_slot: number | null
           min_order_amount: number
           prep_minutes: number
+          slot_chaining: boolean
           slot_interval_min: number
           updated_at: string
         }
@@ -2679,6 +2686,7 @@ export type Database = {
           max_orders_per_slot?: number | null
           min_order_amount?: number
           prep_minutes?: number
+          slot_chaining?: boolean
           slot_interval_min?: number
           updated_at?: string
         }
@@ -2690,6 +2698,7 @@ export type Database = {
           max_orders_per_slot?: number | null
           min_order_amount?: number
           prep_minutes?: number
+          slot_chaining?: boolean
           slot_interval_min?: number
           updated_at?: string
         }
@@ -4237,6 +4246,7 @@ export type Database = {
           online_orders: boolean
           order_mode: boolean
           primary_color: string
+          slot_chaining: boolean
           slot_interval_min: number
           timezone: string
           type: Database["public"]["Enums"]["business_type"]
