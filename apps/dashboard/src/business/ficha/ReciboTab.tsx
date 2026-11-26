@@ -3,8 +3,9 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "../../lib/supabase";
 import { useAuth } from "../../lib/auth";
 import { Spinner, StatusBadge } from "../../components/ui";
-import { formatDateTime, formatCurrency } from "@reservas/shared";
+import { formatDateTime, formatCurrency, ymdInTz } from "@reservas/shared";
 import { generateClientReceiptPdf } from "./ReciboPdf";
+import { buildProfessionalInvoice } from "./ProfessionalInvoicePdf";
 import type { Customer } from "../hooks";
 import { FileDown } from "lucide-react";
 
@@ -36,10 +37,41 @@ export function ReciboTab({ customer }: { customer: Customer }) {
   const completed = (history ?? []).filter((b) => b.status === "completada");
   const total = completed.reduce((sum, b) => sum + (b.services?.price ?? 0), 0);
 
+  // Si la profesional responsable del paciente tiene factura propia, sale la suya.
+  const professionalId = customer.professional_id;
+  const profile = useQuery({
+    queryKey: ["invoice-profile", professionalId],
+    enabled: !!professionalId,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("professional_invoice_profiles")
+        .select("*").eq("professional_id", professionalId!).maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+  // Hasta saber cuál toca no se puede generar: no debe salir por error con los datos de otra persona.
+  const profileReady = !professionalId || profile.isSuccess;
+
+  function generate() {
+    if (!business) return;
+    if (profile.data) {
+      const number = invoiceNumber.trim();
+      const name = customer.full_name.trim().toLowerCase().replace(/\s+/g, "-");
+      buildProfessionalInvoice(profile.data, customer, history ?? [], ymdInTz(new Date(), tz), number)
+        .save(`factura-${number.replace(/[\\/]/g, "-")}-${name}.pdf`);
+    } else {
+      generateClientReceiptPdf(business, customer, history ?? [], tz, invoiceNumber.trim());
+    }
+  }
+
   return (
     <div>
       <h3 className="font-semibold text-sm mb-3">Recibo</h3>
-      <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">Genera la factura en el formato de Ana Sánchez con las sesiones completadas.</p>
+      <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
+        {profile.isError ? "No se ha podido comprobar qué factura corresponde. Recarga la página."
+          : !profileReady ? "Comprobando qué factura corresponde…"
+          : `Genera la factura de ${profile.data?.issuer_name ?? "Ana Sánchez"} con las sesiones completadas.`}
+      </p>
       <div className="flex items-center gap-2 mb-3">
         <input
           className="input text-xs max-w-[160px]"
@@ -49,8 +81,8 @@ export function ReciboTab({ customer }: { customer: Customer }) {
         />
         <button
           className="btn-ghost text-xs"
-          disabled={!business || !completed.length || !invoiceNumber.trim()}
-          onClick={() => business && generateClientReceiptPdf(business, customer, history ?? [], tz, invoiceNumber.trim())}
+          disabled={!business || !profileReady || !completed.length || !invoiceNumber.trim()}
+          onClick={generate}
         >
           <FileDown size={15} strokeWidth={1.75} aria-hidden="true" /> Generar factura PDF
         </button>

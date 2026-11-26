@@ -6,6 +6,7 @@ import { useServices, useProfessionals, useServiceProfessionals, useBusinessId, 
 import { formatDuration, formatCurrency, shortTime, professionalSchema, serviceSchema, firstIssue } from "@reservas/shared";
 import { PageHeader, Spinner, Modal, EmptyState, ConfirmDialog } from "../components/ui";
 import { WindowsEditor, type Win } from "../components/WindowsEditor";
+import { InvoiceProfileSection } from "./InvoiceProfileSection";
 import { Trash2 } from "lucide-react";
 
 const DEFAULT_COLORS = [
@@ -180,6 +181,7 @@ function ProfessionalModal({ bid, professional, nextColor, onClose, onSaved }: {
           <label className="label">Horario de trabajo</label>
           {loaded ? <WindowsEditor wins={wins} onChange={setWins} /> : <Spinner />}
         </div>
+        {professional && business?.type === "psicologo" && <InvoiceProfileSection businessId={bid} professionalId={professional.id} />}
         {professional && <CalendarFeedSection professionalId={professional.id} />}
         {professional && business?.type !== "psicologo" && <GoogleCalendarSection professionalId={professional.id} />}
         {error && <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</div>}

@@ -503,6 +503,57 @@ export type Database = {
           },
         ]
       }
+      professional_invoice_profiles: {
+        Row: {
+          account_holder: string | null
+          address: string | null
+          bank_name: string | null
+          business_id: string
+          due_days: number | null
+          footnote: string | null
+          iban: string | null
+          issuer_name: string
+          issuer_title: string | null
+          logo_data: string | null
+          professional_id: string
+          registration: string | null
+          tax_id: string
+          updated_at: string
+        }
+        Insert: {
+          account_holder?: string | null
+          address?: string | null
+          bank_name?: string | null
+          business_id: string
+          due_days?: number | null
+          footnote?: string | null
+          iban?: string | null
+          issuer_name: string
+          issuer_title?: string | null
+          logo_data?: string | null
+          professional_id: string
+          registration?: string | null
+          tax_id: string
+          updated_at?: string
+        }
+        Update: {
+          account_holder?: string | null
+          address?: string | null
+          bank_name?: string | null
+          business_id?: string
+          due_days?: number | null
+          footnote?: string | null
+          iban?: string | null
+          issuer_name?: string
+          issuer_title?: string | null
+          logo_data?: string | null
+          professional_id?: string
+          registration?: string | null
+          tax_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       business_notifications: {
         Row: {
           booking_id: string | null
@@ -2095,6 +2146,7 @@ export type Database = {
           phone_norm: string | null
           postal_code: string | null
           profession: string | null
+          professional_id: string | null
           province: string | null
           tags: string[]
           updated_at: string
@@ -2117,6 +2169,7 @@ export type Database = {
           phone_norm?: string | null
           postal_code?: string | null
           profession?: string | null
+          professional_id?: string | null
           province?: string | null
           tags?: string[]
           updated_at?: string
@@ -2139,6 +2192,7 @@ export type Database = {
           phone_norm?: string | null
           postal_code?: string | null
           profession?: string | null
+          professional_id?: string | null
           province?: string | null
           tags?: string[]
           updated_at?: string
