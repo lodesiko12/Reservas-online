@@ -62,8 +62,8 @@ Flujo tras cualquier cambio de código:
   local del asistente, nunca en el repo.
 - Negocio demo restaurante: `restaurante-la-plaza` (`staff@restaurante.test` / `Restaurante1234!`).
 - `barberia-demo` y `admin@reservas.test` **ya no existen** en producción (`seed.sql` los recrearía).
-- Para citas/psicólogo se usa un negocio **real** del usuario, *Ana Sánchez Psicóloga*
-  (`ana-sanchez-psicologa`, `type='psicologo'`): crear solo datos de prueba propios y borrarlos al
+- Para citas/psicólogo se usa un negocio **real** del usuario, *Centro de Psicología Ana Sánchez*
+  (`centrodepsicologia-anasanchez`, `type='psicologo'`): crear solo datos de prueba propios y borrarlos al
   terminar; no tocar clientes/reservas reales.
 - *Mimate* (`mimate`, tipo citas, 5 profesionales) es un negocio de **demo comercial** para un
   cliente potencial: el 2026-09-22 se cargaron 48 clientes y 821 reservas ficticias (14 sept–10 oct)
