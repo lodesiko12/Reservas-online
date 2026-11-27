@@ -4,7 +4,10 @@ import App from "./App";
 import "./styles.css";
 
 const params = new URLSearchParams(window.location.search);
-const slug = params.get("slug") ?? "";
+// El negocio llega como ?slug=<slug> (embed.js, emails) o como ruta limpia /<slug> (p. ej. la ficha de
+// Google, que puede no admitir parámetros en la URL).
+const pathSlug = /^\/([a-z0-9-]+)\/?$/i.exec(window.location.pathname)?.[1] ?? "";
+const slug = params.get("slug") || pathSlug.toLowerCase();
 const initialView = params.get("view") === "mi-reserva" ? "lookup" : "booking";
 const initialLocator = params.get("locator") ?? "";
 
