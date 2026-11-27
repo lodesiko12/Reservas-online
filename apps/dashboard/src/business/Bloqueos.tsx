@@ -48,7 +48,7 @@ export function Bloqueos() {
                   <div className="font-medium">{formatDateTime(b.starts_at, tz)} → {formatDateTime(b.ends_at, tz)}</div>
                   <div className="text-xs text-slate-500 dark:text-slate-400">
                     {b.scope === "professional" ? `Profesional: ${b.professionals?.name ?? "—"}` : "Todo el negocio"}
-                    {b.reason ? ` · ${b.reason}` : ""}
+                    {b.kind === "reunion" ? " · Reunión" : ""}{b.reason ? ` · ${b.reason}` : ""}
                   </div>
                 </div>
                 <button className="btn-ghost text-xs" onClick={() => setRemovingId(b.id)}>Eliminar</button>

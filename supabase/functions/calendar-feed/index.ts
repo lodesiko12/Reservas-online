@@ -1,6 +1,6 @@
 // calendar-feed — Endpoint PUBLICO (verify_jwt = false). GET ?t=<token>.
-// Sirve un calendario iCalendar (.ics) con las citas de UN profesional, para
-// que se suscriba desde Google Calendar ("Otros calendarios > Desde URL").
+// Sirve un calendario iCalendar (.ics) con las citas y reuniones de UN profesional,
+// para que se suscriba desde Google Calendar ("Otros calendarios > Desde URL").
 // Solo lectura y de un solo sentido: lo que hagan en Google no vuelve a Turnigo.
 // Privacidad clinica: el titulo lleva solo nombre + iniciales de los apellidos
 // y la descripcion el servicio; nunca notas, telefono ni email.
@@ -63,6 +63,18 @@ Deno.serve(async (req) => {
     .order("starts_at");
   if (error) return new Response("Error", { status: 500 });
 
+  // Reuniones a las que asiste: las suyas y las de todo el equipo.
+  const { data: meetings, error: meetingsError } = await sb
+    .from("blocks")
+    .select("meeting_id, starts_at, ends_at, reason, created_at")
+    .eq("business_id", pro.business_id)
+    .eq("kind", "reunion")
+    .or(`scope.eq.business,professional_id.eq.${pro.id}`)
+    .gte("starts_at", from)
+    .lte("starts_at", to)
+    .order("starts_at");
+  if (meetingsError) return new Response("Error", { status: 500 });
+
   const lines: string[] = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
@@ -89,6 +101,19 @@ Deno.serve(async (req) => {
       `DTEND:${icsDate(b.ends_at)}`,
       `SUMMARY:${icsEscape(who)}`,
       ...(svc ? [`DESCRIPTION:${icsEscape(svc)}`] : []),
+      "TRANSP:OPAQUE",
+      "END:VEVENT",
+    );
+  }
+  for (const m of meetings ?? []) {
+    lines.push(
+      "BEGIN:VEVENT",
+      // meeting_id se mantiene al editar, así Google actualiza el mismo evento.
+      `UID:reunion-${m.meeting_id}@turnigo.es`,
+      `DTSTAMP:${icsDate(m.created_at)}`,
+      `DTSTART:${icsDate(m.starts_at)}`,
+      `DTEND:${icsDate(m.ends_at)}`,
+      `SUMMARY:${icsEscape(`Reunión: ${m.reason ?? ""}`)}`,
       "TRANSP:OPAQUE",
       "END:VEVENT",
     );

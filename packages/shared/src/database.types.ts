@@ -943,6 +943,8 @@ export type Database = {
           created_at: string
           ends_at: string
           id: string
+          kind: string
+          meeting_id: string | null
           professional_id: string | null
           reason: string | null
           scope: Database["public"]["Enums"]["block_scope"]
@@ -955,6 +957,8 @@ export type Database = {
           created_at?: string
           ends_at: string
           id?: string
+          kind?: string
+          meeting_id?: string | null
           professional_id?: string | null
           reason?: string | null
           scope?: Database["public"]["Enums"]["block_scope"]
@@ -967,6 +971,8 @@ export type Database = {
           created_at?: string
           ends_at?: string
           id?: string
+          kind?: string
+          meeting_id?: string | null
           professional_id?: string | null
           reason?: string | null
           scope?: Database["public"]["Enums"]["block_scope"]

@@ -5,6 +5,7 @@ import { supabase } from "../lib/supabase";
 import { useAuth } from "../lib/auth";
 import { useBookings, useProfessionals, type Booking } from "./hooks";
 import { fetchScheduleWarnings } from "./bookingWarnings";
+import { useMeetings, attendeesLabel, MeetingModal, type Meeting } from "./meetings";
 import {
   ymdInTz, addDaysYmd, zonedDayRange, formatTime, formatDate,
   minutesOfDayInTz, WEEKDAYS_SHORT_ES,
@@ -31,6 +32,12 @@ const BLOCK_STYLE: Record<string, { bg: string; border: string; text: string }> 
   completada: { bg: "light-dark(#EAF6EF, rgba(42, 154, 91, .24))", border: "light-dark(#1F8A4C, #3FA66D)", text: "light-dark(#0D3A20, #D3EDDF)" },
   no_show: { bg: "light-dark(#FBEDEB, rgba(201, 74, 59, .26))", border: "light-dark(#C0392B, #D4584A)", text: "light-dark(#4F1812, #F6D6D2)" },
   cancelada: { bg: "light-dark(#E7F2F0, rgba(255, 255, 255, .06))", border: "light-dark(#6A8884, #6A8884)", text: "light-dark(#4A6764, #A7C5C0)" },
+};
+
+// Las reuniones se distinguen de las citas por el rayado y el borde discontinuo.
+const MEETING_STYLE: React.CSSProperties = {
+  background: "repeating-linear-gradient(135deg, light-dark(#EEF0F3, #2A3338) 0 6px, light-dark(#E2E6EA, #333E44) 6px 12px)",
+  borderLeft: "4px dashed light-dark(#475569, #94A3B8)",
 };
 
 // Convierte "#rrggbb" a rgba con la opacidad dada (para teñir el fondo del bloque).
@@ -77,6 +84,9 @@ export function Agenda() {
   const [selected, setSelected] = useState<any | null>(null);
   const trackPayments = business?.type === "psicologo";
   const orderMode = !!business?.order_mode;
+  // Reuniones (negocios de citas): null = cerrado, "new" = creando.
+  const meetingsEnabled = !!business && business.type !== "restaurante" && !orderMode;
+  const [meetingOpen, setMeetingOpen] = useState<Meeting | "new" | null>(null);
   // Filtro por profesional (clic en la leyenda). Vacío = todas.
   const [proFilter, setProFilter] = useState<Set<string>>(new Set());
 
@@ -119,6 +129,12 @@ export function Agenda() {
     return allBookings.filter((b) => b.professional_id && proFilter.has(b.professional_id));
   }, [allBookings, proFilter]);
 
+  const { data: allMeetings, isError: meetingsFailed } = useMeetings(from, to, meetingsEnabled);
+  const meetings = useMemo(
+    () => (allMeetings ?? []).filter((m) => proFilter.size === 0 || m.allTeam || m.professionalIds.some((id) => proFilter.has(id))),
+    [allMeetings, proFilter]
+  );
+
   function toggleProFilter(id: string) {
     setProFilter((prev) => {
       const next = new Set(prev);
@@ -159,6 +175,7 @@ export function Agenda() {
             <button className="btn-ghost !px-2.5" onClick={goBack} aria-label="Anterior"><ChevronLeft size={18} strokeWidth={1.75} /></button>
             <button className="btn-ghost" onClick={() => setAnchor(ymdInTz(new Date(), tz))}>Hoy</button>
             <button className="btn-ghost !px-2.5" onClick={goForward} aria-label="Siguiente"><ChevronRight size={18} strokeWidth={1.75} /></button>
+            {meetingsEnabled && <button className="btn-primary" onClick={() => setMeetingOpen("new")}>+ Nueva reunión</button>}
           </div>
         }
       />
@@ -197,23 +214,43 @@ export function Agenda() {
         </div>
       )}
 
+      {meetingsFailed && <p className="text-sm text-amber-600 mb-3">No se han podido cargar las reuniones. Recarga la página.</p>}
+
       {isLoading ? (
         <div className="grid place-items-center py-20"><Spinner /></div>
       ) : view === "week" && orderMode ? (
         <OrderWeek weekDays={weekDays} tz={tz} bookings={bookings ?? []} today={ymdInTz(new Date(), tz)} onSelect={setSelected} />
       ) : view === "week" ? (
-        <WeekGrid weekDays={weekDays} tz={tz} bookings={bookings ?? []} today={ymdInTz(new Date(), tz)} onSelect={setSelected} trackPayments={trackPayments} />
+        <WeekGrid weekDays={weekDays} tz={tz} bookings={bookings ?? []} today={ymdInTz(new Date(), tz)} onSelect={setSelected} trackPayments={trackPayments} meetings={meetings} onMeeting={setMeetingOpen} />
       ) : view === "month" ? (
         <MonthGrid
           monthDays={monthDays} tz={tz} bookings={bookings ?? []} today={ymdInTz(new Date(), tz)} anchorMonth={anchor}
-          onSelect={setSelected}
+          onSelect={setSelected} meetings={meetings} onMeeting={setMeetingOpen}
           onDayClick={(d) => { setAnchor(d); setView("day"); }}
         />
-      ) : !bookings?.length ? (
+      ) : !bookings?.length && !meetings.length ? (
         <EmptyState title={orderMode ? "Sin encargos este día" : "Sin reservas este día"} hint={orderMode ? "Prueba otra fecha o crea un encargo manual." : "Prueba otra fecha o crea una reserva manual."} />
       ) : (
         <div className="card divide-y divide-slate-100 dark:divide-slate-800">
-          {bookings.map((b) => {
+          {[...(bookings ?? []), ...meetings.map((m) => ({ meeting: m, starts_at: m.starts_at }) as any)]
+            .sort((a, b) => a.starts_at.localeCompare(b.starts_at))
+            .map((b) => {
+            if (b.meeting) {
+              const m: Meeting = b.meeting;
+              return (
+                <button key={m.id} onClick={() => setMeetingOpen(m)} className="w-full flex items-center gap-4 px-5 py-3 text-left hover:bg-slate-50 dark:hover:bg-slate-800" style={MEETING_STYLE}>
+                  <div className="w-16 shrink-0">
+                    <div className="font-bold text-slate-700 dark:text-slate-200">{formatTime(m.starts_at, tz)}</div>
+                    <div className="text-xs text-slate-500 dark:text-slate-400">{formatTime(m.ends_at, tz)}</div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium truncate">{m.title}</div>
+                    <div className="text-xs text-slate-500 dark:text-slate-400 truncate">{attendeesLabel(m, professionals)}</div>
+                  </div>
+                  <span className="badge bg-slate-700 text-white shrink-0">Reunión</span>
+                </button>
+              );
+            }
             const color = proColor(b);
             return (
             <button
@@ -248,6 +285,10 @@ export function Agenda() {
         </div>
       )}
 
+      {meetingOpen && (
+        <MeetingModal meeting={meetingOpen === "new" ? null : meetingOpen} tz={tz}
+          defaultDay={view === "day" ? anchor : ymdInTz(new Date(), tz)} onClose={() => setMeetingOpen(null)} />
+      )}
       {selected && <BookingModal booking={selected} tz={tz} trackPayments={trackPayments} onClose={() => setSelected(null)} onChanged={() => { refetch(); setSelected(null); }} />}
     </div>
   );
@@ -307,15 +348,16 @@ function OrderWeek({ weekDays, tz, bookings, today, onSelect }: {
 }
 
 /* ------------------------------ Rejilla semanal ------------------------------ */
-function WeekGrid({ weekDays, tz, bookings, today, onSelect, trackPayments }: {
+function WeekGrid({ weekDays, tz, bookings, today, onSelect, trackPayments, meetings, onMeeting }: {
   weekDays: string[]; tz: string; bookings: any[]; today: string; onSelect: (b: any) => void; trackPayments: boolean;
+  meetings: Meeting[]; onMeeting: (m: Meeting) => void;
 }) {
   const HOUR = 46; // px por hora
 
   // Rango horario visible: derivado de las reservas, con margen 8–22 por defecto.
   const { startH, endH } = useMemo(() => {
     let minM = 8 * 60, maxM = 22 * 60;
-    for (const b of bookings) {
+    for (const b of [...bookings, ...meetings]) {
       const s = minutesOfDayInTz(b.starts_at, tz);
       let e = minutesOfDayInTz(b.ends_at, tz);
       if (e <= s) e = 24 * 60; // cruza medianoche → cap a fin de día
@@ -323,7 +365,7 @@ function WeekGrid({ weekDays, tz, bookings, today, onSelect, trackPayments }: {
       maxM = Math.max(maxM, e);
     }
     return { startH: Math.max(0, Math.floor(minM / 60)), endH: Math.min(24, Math.ceil(maxM / 60)) };
-  }, [bookings, tz]);
+  }, [bookings, meetings, tz]);
 
   const hours = Array.from({ length: endH - startH }, (_, i) => startH + i);
   const gridHeight = (endH - startH) * HOUR;
@@ -389,6 +431,23 @@ function WeekGrid({ weekDays, tz, bookings, today, onSelect, trackPayments }: {
                   <div className="absolute -left-[3px] -top-[3px] h-[7px] w-[7px] rounded-full bg-coral-500" />
                 </div>
               )}
+              {/* Reuniones: encima de las citas; si coinciden con alguna, ocupan solo la mitad derecha. */}
+              {meetings.filter((m) => ymdInTz(new Date(m.starts_at), tz) === d).map((m) => {
+                const s = minutesOfDayInTz(m.starts_at, tz);
+                let e = minutesOfDayInTz(m.ends_at, tz);
+                if (e <= s) e = 24 * 60;
+                const shared = byDay[d].some((b) => b.starts_at < m.ends_at && b.ends_at > m.starts_at);
+                const height = Math.max(20, ((e - s) / 60) * HOUR - 2);
+                return (
+                  <button key={m.id} onClick={() => onMeeting(m)} title={`Reunión: ${m.title}`}
+                    className={`absolute right-1 z-[4] rounded-lg px-2 py-1 text-left overflow-hidden shadow-sm text-slate-900 dark:text-slate-50 hover:z-10 hover:shadow-md ${shared ? "left-1/2" : "left-1"}`}
+                    style={{ top: ((s - startH * 60) / 60) * HOUR, height, ...MEETING_STYLE }}>
+                    <div className="text-[11px] font-semibold leading-tight">{formatTime(m.starts_at, tz)}</div>
+                    <div className="text-[11px] font-medium leading-tight truncate">{m.title}</div>
+                    {height > 44 && <div className="text-[10px] opacity-80 leading-tight">Reunión</div>}
+                  </button>
+                );
+              })}
               {/* Bloques de reserva */}
               {byDay[d].map((b) => {
                 const s = minutesOfDayInTz(b.starts_at, tz);
@@ -420,8 +479,9 @@ function WeekGrid({ weekDays, tz, bookings, today, onSelect, trackPayments }: {
 }
 
 /* ------------------------------ Rejilla mensual ------------------------------ */
-function MonthGrid({ monthDays, tz, bookings, today, anchorMonth, onSelect, onDayClick }: {
+function MonthGrid({ monthDays, tz, bookings, today, anchorMonth, onSelect, onDayClick, meetings, onMeeting }: {
   monthDays: string[]; tz: string; bookings: any[]; today: string; anchorMonth: string;
+  meetings: Meeting[]; onMeeting: (m: Meeting) => void;
   onSelect: (b: any) => void; onDayClick: (ymd: string) => void;
 }) {
   const currentMonth = anchorMonth.slice(0, 7); // YYYY-MM
@@ -463,6 +523,13 @@ function MonthGrid({ monthDays, tz, bookings, today, anchorMonth, onSelect, onDa
                   {d.slice(8)}
                 </div>
                 <div className="space-y-0.5">
+                  {/* Las reuniones van siempre visibles, sin entrar en el recuento de «+N más». */}
+                  {meetings.filter((m) => ymdInTz(new Date(m.starts_at), tz) === d).map((m) => (
+                    <div key={m.id} role="button" onClick={(e) => { e.stopPropagation(); onMeeting(m); }} title={`Reunión: ${m.title}`}
+                      className="text-[10px] font-semibold leading-tight truncate rounded px-1 py-0.5 text-slate-900 dark:text-slate-50" style={MEETING_STYLE}>
+                      {formatTime(m.starts_at, tz)} {m.title}
+                    </div>
+                  ))}
                   {dayBookings.slice(0, MAX_VISIBLE).map((b) => {
                     const bs = blockStyle(b);
                     return (

@@ -14,7 +14,7 @@ export interface ScheduleInput {
   professionalName: string | null;
   /** Otras citas del mismo profesional ese día. */
   others: { range: Range; label: string }[];
-  blocked: Range[];
+  blocked: { range: Range; label: string }[];
 }
 
 /** Huecos sueltos menores que esto se consideran descanso normal; a partir de 60 min cabe otra cita. */
@@ -31,7 +31,7 @@ export function scheduleWarnings(i: ScheduleInput): string[] {
   const out: string[] = [];
 
   for (const o of others) if (overlaps(o.range, start, end)) out.push(`Se solapa con ${o.label}.`);
-  if (i.blocked.some((r) => overlaps(r, start, end))) out.push("Coincide con un bloqueo.");
+  for (const b of i.blocked) if (overlaps(b.range, start, end)) out.push(`Coincide con ${b.label}.`);
   if (!inside(i.openHours, start, end)) out.push("Queda fuera del horario del centro.");
   if (i.professionalHours && !inside(i.professionalHours, start, end)) out.push(`Queda fuera del horario de ${who}.`);
 
@@ -80,7 +80,7 @@ export async function fetchScheduleWarnings(p: {
     professionalId
       ? supabase.from("professionals").select("name, professional_hours(weekday, start_time, end_time)").eq("id", professionalId).maybeSingle()
       : Promise.resolve({ data: null, error: null }),
-    supabase.from("blocks").select("scope, professional_id, starts_at, ends_at")
+    supabase.from("blocks").select("scope, professional_id, starts_at, ends_at, kind, reason")
       .eq("business_id", businessId).lt("starts_at", endISO).gt("ends_at", p.startISO),
     professionalId
       ? supabase.from("bookings").select("id, starts_at, ends_at, customer_name")
@@ -116,6 +116,9 @@ export async function fetchScheduleWarnings(p: {
       })),
     blocked: (blocks.data ?? [])
       .filter((b: any) => b.scope === "business" || (professionalId && b.professional_id === professionalId))
-      .map((b: any): Range => [minuteOf(b.starts_at), minuteOf(b.ends_at)]),
+      .map((b: any) => ({
+        range: [minuteOf(b.starts_at), minuteOf(b.ends_at)] as Range,
+        label: b.kind === "reunion" ? `la reunión «${b.reason}»` : "un bloqueo",
+      })),
   });
 }
